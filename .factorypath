@@ -1,0 +1,6 @@
+<factorypath>
+    <factorypathentry kind="EXTJAR" id="/home/flashrun24/.gradle/caches/modules-2/files-2.1/org.littletonrobotics.akit/akit-autolog/26.0.0/397467b476e3d4614bf2da173b15c47e28ca7ed6/akit-autolog-26.0.0.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="EXTJAR" id="/home/flashrun24/.gradle/caches/modules-2/files-2.1/edu.wpi.first.epilogue/epilogue-runtime-java/2026.1.1/862de5ab03b6cf0bffaa85ffc290656178f55d86/epilogue-runtime-java-2026.1.1.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="EXTJAR" id="/home/flashrun24/.gradle/caches/modules-2/files-2.1/edu.wpi.first.epilogue/epilogue-processor-java/2026.1.1/42cc93c9a74622d8a8c4f6f1722c4ab4779df9fb/epilogue-processor-java-2026.1.1.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="EXTJAR" id="/home/flashrun24/.gradle/caches/modules-2/files-2.1/com.squareup/javapoet/1.13.0/d6562d385049f35eb50403fa86bb11cce76b866a/javapoet-1.13.0.jar" enabled="true" runInBatchMode="false"/>
+</factorypath>
