@@ -27,16 +27,16 @@ For the 2026 season, we are using **AdvantageKit** as our primary robot framewor
 
 ## Naming Conventions
 
-- **Subsystems**: Use `UpperCamelCase`.  
+- **Subsystems**: Use `UpperCamelCase`.
   Example: `DriveSubsystem`
 
-- **Commands**: Use descriptive `UpperCamelCase`.  
+- **Commands**: Use descriptive `UpperCamelCase`.
   Example: `RunShooterAtRPM`, `DriveToPose`
 
 - **Constants**:
-  - In constants files: Prefix with `k` and use `UpperCamelCase`.  
+  - In constants files: Prefix with `k` and use `UpperCamelCase`.
     Example: `kMaxSpeed`
-  - Within other files: Use `UPPER_SNAKE_CASE`.  
+  - Within other files: Use `UPPER_SNAKE_CASE`.
     Example: `MAX_SPEED`
 
 Following these conventions enhances code clarity and maintainability.
@@ -57,9 +57,9 @@ Your PR will fail if not :(
 ## Branching Strategy
 
 - **Branch Creation**: Create a new branch for each feature or bug fix. Do not commit directly to `main`.
-- **Naming**: Use clear, descriptive branch names.  
+- **Naming**: Use clear, descriptive branch names.
   Examples: `swerve`, `vision`, `shooter`
-- **Unfinished Work**: It is acceptable to commit unfinished work to your own branch.  
+- **Unfinished Work**: It is acceptable to commit unfinished work to your own branch.
   Communicate status clearly (Slack / Canvas) so others can continue if needed.
 
 This keeps the repository organized and collaboration smooth.
