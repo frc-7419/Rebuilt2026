@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -24,6 +25,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.turret.Turret;
+import frc.robot.subsystems.turret.TurretConstants;
+import frc.robot.subsystems.turret.TurretIO;
+import frc.robot.subsystems.turret.TurretIOTalonFX;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionIO;
@@ -40,6 +45,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Vision vision;
+  private final Turret turret;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -86,6 +92,7 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOLimelight(VisionConstants.camera0Name, drive::getRotation),
                 new VisionIOLimelight(VisionConstants.camera1Name, drive::getRotation));
+        turret = new Turret(new TurretIOTalonFX(TurretConstants.kTurretMotorId));
         // vision =
         // new Vision(
         // demoDrive::addVisionMeasurement,
@@ -108,6 +115,7 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOLimelight(VisionConstants.camera0Name, drive::getRotation),
                 new VisionIOLimelight(VisionConstants.camera1Name, drive::getRotation));
+        turret = new Turret(new TurretIO() {});
 
         break;
 
@@ -124,6 +132,7 @@ public class RobotContainer {
         // Replayed robot, disable IO implementations
         // (Use same number of dummy implementations as the real robot)
         vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+        turret = new Turret(new TurretIO() {});
         break;
     }
 
@@ -165,6 +174,9 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
+    // Default turret manual control on right stick X
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> controller.getRightX()));
+
     // Lock to 0 when A button is held
     controller
         .a()
@@ -188,6 +200,9 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                     drive)
                 .ignoringDisable(true));
+
+    // Reset turret to zero when Y pressed
+    controller.y().onTrue(Commands.runOnce(() -> turret.setAngle(Rotation2d.kZero), turret));
   }
 
   /**
