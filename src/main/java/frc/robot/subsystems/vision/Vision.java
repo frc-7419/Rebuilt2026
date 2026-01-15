@@ -1,9 +1,7 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
+// Vision processing logic adapted from Team 254's 2024 codebase
+// Copyright (c) 2024 Team 254
+// Licensed under the MIT License
+// https://github.com/Team254/FRC-2024-Public
 
 package frc.robot.subsystems.vision;
 
@@ -12,167 +10,319 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
-import java.util.LinkedList;
+import frc.robot.RobotState;
+import frc.robot.subsystems.drive.Drive;
+
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
-  private final VisionConsumer consumer;
-  private final VisionIO[] io;
-  private final VisionIOInputsAutoLogged[] inputs;
-  private final Alert[] disconnectedAlerts;
+  private final VisionIO io;
+  private final RobotState robotState;
+  private final VisionIO.VisionIOInputs inputs = new VisionIO.VisionIOInputs();
+  private Drive drive;
 
-  public Vision(VisionConsumer consumer, VisionIO... io) {
-    this.consumer = consumer;
+  private double lastProcessedTurretTimestamp = 0.0;
+  private double lastProcessedSupplementaryTimestamp = 0.0;
+
+  private static final Set<Integer> kHubTagsBlue = new HashSet<>(List.of(26, 25));
+  private static final Set<Integer> kHubTagsRed = new HashSet<>(List.of(9, 10));
+
+  public Vision(VisionIO io) {
     this.io = io;
-
-    // Initialize inputs
-    this.inputs = new VisionIOInputsAutoLogged[io.length];
-    for (int i = 0; i < inputs.length; i++) {
-      inputs[i] = new VisionIOInputsAutoLogged();
-    }
-
-    // Initialize disconnected alerts
-    this.disconnectedAlerts = new Alert[io.length];
-    for (int i = 0; i < inputs.length; i++) {
-      disconnectedAlerts[i] =
-          new Alert(
-              "Vision camera " + Integer.toString(i) + " is disconnected.", AlertType.kWarning);
-    }
+    this.robotState = RobotState.getInstance();
   }
 
-  /**
-   * Returns the X angle to the best target, which can be used for simple servoing with vision.
-   *
-   * @param cameraIndex The index of the camera to use.
-   */
-  public Rotation2d getTargetX(int cameraIndex) {
-    return inputs[cameraIndex].latestTargetObservation.tx();
+  public void setDrive(Drive drive) {
+    this.drive = drive;
   }
 
   @Override
   public void periodic() {
-    for (int i = 0; i < io.length; i++) {
-      io[i].updateInputs(inputs[i]);
-      Logger.processInputs("Vision/Camera" + Integer.toString(i), inputs[i]);
+    double timestamp = Timer.getFPGATimestamp();
+    io.updateInputs(inputs);
+    Logger.recordOutput("Vision/connected", inputs.connected);
+    Logger.recordOutput("Vision/turretHasTarget", inputs.turretHasTarget);
+    Logger.recordOutput("Vision/supplementaryHasTarget", inputs.supplementaryHasTarget);
+
+    if (inputs.turretHasTarget && inputs.turretPose != null) {
+      updateVision(inputs.turretPose, true);
+    } else if (inputs.supplementaryHasTarget && inputs.supplementaryPose != null) {
+      updateVision(inputs.supplementaryPose, false);
     }
 
-    // Initialize logging values
-    List<Pose3d> allTagPoses = new LinkedList<>();
-    List<Pose3d> allRobotPoses = new LinkedList<>();
-    List<Pose3d> allRobotPosesAccepted = new LinkedList<>();
-    List<Pose3d> allRobotPosesRejected = new LinkedList<>();
-
-    // Loop over cameras
-    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
-      // Update disconnected alert
-      disconnectedAlerts[cameraIndex].set(!inputs[cameraIndex].connected);
-
-      // Initialize logging values
-      List<Pose3d> tagPoses = new LinkedList<>();
-      List<Pose3d> robotPoses = new LinkedList<>();
-      List<Pose3d> robotPosesAccepted = new LinkedList<>();
-      List<Pose3d> robotPosesRejected = new LinkedList<>();
-
-      // Add tag poses
-      for (int tagId : inputs[cameraIndex].tagIds) {
-        var tagPose = aprilTagLayout.getTagPose(tagId);
-        if (tagPose.isPresent()) {
-          tagPoses.add(tagPose.get());
-        }
-      }
-
-      // Loop over pose observations
-      for (var observation : inputs[cameraIndex].poseObservations) {
-        // Check whether to reject pose
-        boolean rejectPose =
-            observation.tagCount() == 0 // Must have at least one tag
-                || (observation.tagCount() == 1
-                    && observation.ambiguity() > maxAmbiguity) // Cannot be high ambiguity
-                || Math.abs(observation.pose().getZ())
-                    > maxZError // Must have realistic Z coordinate
-
-                // Must be within the field boundaries
-                || observation.pose().getX() < 0.0
-                || observation.pose().getX() > aprilTagLayout.getFieldLength()
-                || observation.pose().getY() < 0.0
-                || observation.pose().getY() > aprilTagLayout.getFieldWidth();
-
-        // Add pose to log
-        robotPoses.add(observation.pose());
-        if (rejectPose) {
-          robotPosesRejected.add(observation.pose());
-        } else {
-          robotPosesAccepted.add(observation.pose());
-        }
-
-        // Skip if rejected
-        if (rejectPose) {
-          continue;
-        }
-
-        // Calculate standard deviations
-        double stdDevFactor =
-            Math.pow(observation.averageTagDistance(), 2.0) / observation.tagCount();
-        double linearStdDev = linearStdDevBaseline * stdDevFactor;
-        double angularStdDev = angularStdDevBaseline * stdDevFactor;
-        if (observation.type() == PoseObservationType.MEGATAG_2) {
-          linearStdDev *= linearStdDevMegatag2Factor;
-          angularStdDev *= angularStdDevMegatag2Factor;
-        }
-        if (cameraIndex < cameraStdDevFactors.length) {
-          linearStdDev *= cameraStdDevFactors[cameraIndex];
-          angularStdDev *= cameraStdDevFactors[cameraIndex];
-        }
-
-        // Send vision observation
-        consumer.accept(
-            observation.pose().toPose2d(),
-            observation.timestamp(),
-            VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev));
-      }
-
-      // Log camera metadata
-      Logger.recordOutput(
-          "Vision/Camera" + Integer.toString(cameraIndex) + "/TagPoses",
-          tagPoses.toArray(new Pose3d[0]));
-      Logger.recordOutput(
-          "Vision/Camera" + Integer.toString(cameraIndex) + "/RobotPoses",
-          robotPoses.toArray(new Pose3d[0]));
-      Logger.recordOutput(
-          "Vision/Camera" + Integer.toString(cameraIndex) + "/RobotPosesAccepted",
-          robotPosesAccepted.toArray(new Pose3d[0]));
-      Logger.recordOutput(
-          "Vision/Camera" + Integer.toString(cameraIndex) + "/RobotPosesRejected",
-          robotPosesRejected.toArray(new Pose3d[0]));
-      allTagPoses.addAll(tagPoses);
-      allRobotPoses.addAll(robotPoses);
-      allRobotPosesAccepted.addAll(robotPosesAccepted);
-      allRobotPosesRejected.addAll(robotPosesRejected);
-    }
-
-    // Log summary data
-    Logger.recordOutput("Vision/Summary/TagPoses", allTagPoses.toArray(new Pose3d[0]));
-    Logger.recordOutput("Vision/Summary/RobotPoses", allRobotPoses.toArray(new Pose3d[0]));
-    Logger.recordOutput(
-        "Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(new Pose3d[0]));
-    Logger.recordOutput(
-        "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
+    Logger.recordOutput("Vision/latencyPeriodicSec", Timer.getFPGATimestamp() - timestamp);
   }
 
-  @FunctionalInterface
-  public static interface VisionConsumer {
-    public void accept(
-        Pose2d visionRobotPoseMeters,
-        double timestampSeconds,
-        Matrix<N3, N1> visionMeasurementStdDevs);
+  private void updateVision(PoseObservation observation, boolean isTurretCamera) {
+    String logPrefix = "Vision/" + (isTurretCamera ? "Turret/" : "Supplementary/");
+    double timestamp = observation.timestampSeconds;
+    double lastProcessedTimestamp =
+        isTurretCamera ? lastProcessedTurretTimestamp : lastProcessedSupplementaryTimestamp;
+
+    if (timestamp == lastProcessedTimestamp) {
+      return;
+    }
+
+    Optional<RobotState.VisionObservation> megatag1Estimate =
+        processMegatag1Estimate(observation, isTurretCamera);
+    Optional<RobotState.VisionObservation> megatag2Estimate =
+        processMegatag2Estimate(observation, isTurretCamera, logPrefix);
+
+    boolean usedMegatag1 = false;
+    if (megatag1Estimate.isPresent()) {
+      if (shouldUseMegatag1(observation, isTurretCamera, logPrefix)) {
+        Logger.recordOutput(logPrefix + "Megatag1Estimate", megatag1Estimate.get().visionPose());
+        addVisionObservation(megatag1Estimate.get());
+        usedMegatag1 = true;
+      } else {
+        Logger.recordOutput(
+            logPrefix + "Megatag1EstimateRejected", megatag1Estimate.get().visionPose());
+      }
+    }
+
+    if (megatag2Estimate.isPresent() && !usedMegatag1) {
+      if (shouldUseMegatag2(observation, isTurretCamera, logPrefix)) {
+        Logger.recordOutput(logPrefix + "Megatag2Estimate", megatag2Estimate.get().visionPose());
+        addVisionObservation(megatag2Estimate.get());
+      } else {
+        Logger.recordOutput(
+            logPrefix + "Megatag2EstimateRejected", megatag2Estimate.get().visionPose());
+      }
+    }
+
+    if (isTurretCamera) {
+      lastProcessedTurretTimestamp = timestamp;
+    } else {
+      lastProcessedSupplementaryTimestamp = timestamp;
+    }
+  }
+
+  private boolean shouldUseMegatag1(PoseObservation observation, boolean isTurretCamera, String logPrefix) {
+    final int kExpectedTagCount = 2;
+
+    if (observation.tagCount < kExpectedTagCount) {
+      Logger.recordOutput(logPrefix + "tagCount", false);
+      return false;
+    }
+    Logger.recordOutput(logPrefix + "tagCount", true);
+
+    if (observation.fiducialIds == null || observation.fiducialIds.length < 1) {
+      Logger.recordOutput(logPrefix + "fiducialIdsEmpty", false);
+      return false;
+    }
+    Logger.recordOutput(logPrefix + "fiducialIdsEmpty", true);
+
+    if (observation.estimatedPose.getTranslation().getNorm() < 1.0) {
+      Logger.recordOutput(logPrefix + "poseNorm", false);
+      return false;
+    }
+    Logger.recordOutput(logPrefix + "poseNorm", true);
+
+    Set<Integer> seenTagIds =
+        Arrays.stream(observation.fiducialIds)
+            .boxed()
+            .collect(Collectors.toCollection(HashSet::new));
+    Set<Integer> expectedHubTags = robotState.isRedAlliance() ? kHubTagsRed : kHubTagsBlue;
+    boolean matchesHubTags = expectedHubTags.equals(seenTagIds);
+    Logger.recordOutput(logPrefix + "hubTagsMatch", matchesHubTags);
+    return matchesHubTags;
+  }
+
+  private boolean shouldUseMegatag2(PoseObservation observation, boolean isTurretCamera, String logPrefix) {
+    return isMotionAcceptable(observation.timestampSeconds, isTurretCamera, logPrefix);
+  }
+
+  private boolean isMotionAcceptable(double timestamp, boolean isTurretCamera, String logPrefix) {
+    final double kMaxYawRateRadPerS = Units.degreesToRadians(100.0);
+
+    var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
+    double robotYawRateRadPerS = Math.abs(robotSpeeds.omegaRadiansPerSecond);
+
+    if (isTurretCamera) {
+      var turretAngularVelocity = robotState.getLatestTurretAngularVelocity();
+      double turretYawRateRadPerS =
+          Math.abs(turretAngularVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
+      double combinedYawRateRadPerS = robotYawRateRadPerS + turretYawRateRadPerS;
+
+      if (combinedYawRateRadPerS > kMaxYawRateRadPerS) {
+        Logger.recordOutput(logPrefix + "motionAcceptable", false);
+        return false;
+      }
+      Logger.recordOutput(logPrefix + "motionAcceptable", true);
+    } else {
+      if (robotYawRateRadPerS > kMaxYawRateRadPerS) {
+        Logger.recordOutput(logPrefix + "motionAcceptable", false);
+        return false;
+      }
+      Logger.recordOutput(logPrefix + "motionAcceptable", true);
+    }
+
+    return true;
+  }
+
+  private Optional<Pose2d> getFieldToRobotEstimate(PoseObservation observation, boolean isTurretCamera) {
+    Pose2d fieldToCamera = observation.estimatedPose;
+    if (fieldToCamera.getX() == 0.0) {
+      return Optional.empty();
+    }
+
+    Optional<Rotation2d> robotToTurret =
+        robotState.getRobotToTurret(observation.timestampSeconds);
+    if (robotToTurret.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Transform3d turretToCamera3d = getTurretToCameraTransform(isTurretCamera);
+    Transform3d cameraToTurret3d = turretToCamera3d.inverse();
+    Transform2d cameraToTurret2d =
+        new Transform2d(
+            new Translation2d(cameraToTurret3d.getX(), cameraToTurret3d.getY()),
+            new Rotation2d(cameraToTurret3d.getRotation().getZ()));
+    Pose2d fieldToTurret = fieldToCamera.transformBy(cameraToTurret2d);
+
+    if (isTurretCamera) {
+      Transform2d turretToRobot =
+          new Transform2d(new Translation2d(), robotToTurret.get().unaryMinus());
+      return Optional.of(fieldToTurret.transformBy(turretToRobot));
+    } else {
+      return Optional.of(fieldToTurret);
+    }
+  }
+
+  private Transform3d getTurretToCameraTransform(boolean isTurretCamera) {
+    if (isTurretCamera) {
+      return new Transform3d(
+          new Translation3d(0.0, 0.0, kTurretCameraHeightM),
+          new edu.wpi.first.math.geometry.Rotation3d(
+              0.0, Units.degreesToRadians(kTurretCameraPitchDeg), 0.0));
+    } else {
+      return new Transform3d(
+          new Translation3d(0.0, 0.0, kSupplementaryCameraHeightM),
+          new edu.wpi.first.math.geometry.Rotation3d(
+              Units.degreesToRadians(kSupplementaryCameraRollDeg),
+              Units.degreesToRadians(kSupplementaryCameraPitchDeg),
+              0.0));
+    }
+  }
+
+  private Optional<RobotState.VisionObservation> processMegatag2Estimate(
+      PoseObservation observation, boolean isTurretCamera, String logPrefix) {
+    Optional<Pose2d> loggedFieldToRobot = robotState.getFieldToRobot(observation.timestampSeconds);
+    if (loggedFieldToRobot.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Optional<Pose2d> fieldToRobotEstimate = getFieldToRobotEstimate(observation, isTurretCamera);
+    if (fieldToRobotEstimate.isEmpty()) {
+      return Optional.empty();
+    }
+
+    double poseDifferenceMeters =
+        fieldToRobotEstimate
+            .get()
+            .getTranslation()
+            .getDistance(loggedFieldToRobot.get().getTranslation());
+
+    double xyStdDevMeters;
+    if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
+      Set<Integer> hubTags =
+          new HashSet<>(robotState.isRedAlliance() ? kHubTagsRed : kHubTagsBlue);
+      hubTags.removeAll(
+          Arrays.stream(observation.fiducialIds)
+              .boxed()
+              .collect(Collectors.toCollection(HashSet::new)));
+      boolean seesHubTags = hubTags.size() < 2;
+
+      if (observation.fiducialIds.length >= 2 && observation.tagCount > 0) {
+        xyStdDevMeters = 0.2;
+      } else if (seesHubTags && observation.tagCount > 0) {
+        xyStdDevMeters = 0.5;
+      } else if (observation.tagCount > 0 && poseDifferenceMeters < 0.5) {
+        xyStdDevMeters = 0.5;
+      } else if (observation.tagCount > 0 && poseDifferenceMeters < 0.3) {
+        xyStdDevMeters = 1.0;
+      } else if (observation.fiducialIds.length > 1) {
+        xyStdDevMeters = 1.2;
+      } else {
+        xyStdDevMeters = 2.0;
+      }
+
+      Logger.recordOutput(logPrefix + "megatag2StdDevMeters", xyStdDevMeters);
+      Logger.recordOutput(logPrefix + "megatag2PoseDifferenceMeters", poseDifferenceMeters);
+
+      Matrix<N3, N1> stdDevs =
+          VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(50.0));
+      Pose2d correctedPose =
+          new Pose2d(
+              fieldToRobotEstimate.get().getTranslation(), loggedFieldToRobot.get().getRotation());
+      return Optional.of(
+          new RobotState.VisionObservation(observation.timestampSeconds, correctedPose, stdDevs));
+    }
+    return Optional.empty();
+  }
+
+  private Optional<RobotState.VisionObservation> processMegatag1Estimate(
+      PoseObservation observation, boolean isTurretCamera) {
+    Optional<Pose2d> loggedFieldToRobot = robotState.getFieldToRobot(observation.timestampSeconds);
+    if (loggedFieldToRobot.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Optional<Pose2d> fieldToRobotEstimate = getFieldToRobotEstimate(observation, isTurretCamera);
+    if (fieldToRobotEstimate.isEmpty()) {
+      return Optional.empty();
+    }
+
+    double poseDifferenceMeters =
+        fieldToRobotEstimate
+            .get()
+            .getTranslation()
+            .getDistance(loggedFieldToRobot.get().getTranslation());
+
+    if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
+      double xyStdDevMeters = 1.0;
+      double rotationStdDevDeg = 12.0;
+
+      if (observation.fiducialIds.length >= 2) {
+        xyStdDevMeters = 0.5;
+        rotationStdDevDeg = 6.0;
+      } else if (observation.tagCount > 0 && poseDifferenceMeters < 0.5) {
+        xyStdDevMeters = 1.0;
+        rotationStdDevDeg = 12.0;
+      } else if (observation.tagCount > 0 && poseDifferenceMeters < 0.3) {
+        xyStdDevMeters = 2.0;
+        rotationStdDevDeg = 30.0;
+      }
+
+      Matrix<N3, N1> stdDevs =
+          VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(rotationStdDevDeg));
+      return Optional.of(
+          new RobotState.VisionObservation(
+              observation.timestampSeconds, fieldToRobotEstimate.get(), stdDevs));
+    }
+    return Optional.empty();
+  }
+
+  private void addVisionObservation(RobotState.VisionObservation observation) {
+    if (drive != null) {
+      drive.addVisionMeasurement(
+          observation.visionPose(), observation.timestamp(), observation.stdDevs());
+    }
   }
 }
