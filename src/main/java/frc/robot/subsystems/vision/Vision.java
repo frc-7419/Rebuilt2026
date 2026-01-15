@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +61,8 @@ public class Vision extends SubsystemBase {
 
     if (inputs.turretHasTarget && inputs.turretPose != null) {
       updateVision(inputs.turretPose, true);
-    } else if (inputs.supplementaryHasTarget && inputs.supplementaryPose != null) {
+    }
+    if (inputs.supplementaryHasTarget && inputs.supplementaryPose != null) {
       updateVision(inputs.supplementaryPose, false);
     }
 
@@ -79,30 +79,44 @@ public class Vision extends SubsystemBase {
       return;
     }
 
-    Optional<RobotState.VisionObservation> megatag1Estimate =
-        processMegatag1Estimate(observation, isTurretCamera);
     Optional<RobotState.VisionObservation> megatag2Estimate =
         processMegatag2Estimate(observation, isTurretCamera, logPrefix);
+    Optional<RobotState.VisionObservation> megatag1Estimate =
+        processMegatag1Estimate(observation, isTurretCamera);
+
+    boolean shouldPrioritizeMegatag1 =
+        kUseMegatag1ForHubTagsOnTurret
+            && isTurretCamera
+            && shouldUseMegatag1(observation, isTurretCamera, logPrefix);
 
     boolean usedMegatag1 = false;
-    if (megatag1Estimate.isPresent()) {
-      if (shouldUseMegatag1(observation, isTurretCamera, logPrefix)) {
-        Logger.recordOutput(logPrefix + "Megatag1Estimate", megatag1Estimate.get().visionPose());
-        addVisionObservation(megatag1Estimate.get());
-        usedMegatag1 = true;
-      } else {
-        Logger.recordOutput(
-            logPrefix + "Megatag1EstimateRejected", megatag1Estimate.get().visionPose());
-      }
-    }
+    boolean usedMegatag2 = false;
 
-    if (megatag2Estimate.isPresent() && !usedMegatag1) {
-      if (shouldUseMegatag2(observation, isTurretCamera, logPrefix)) {
-        Logger.recordOutput(logPrefix + "Megatag2Estimate", megatag2Estimate.get().visionPose());
-        addVisionObservation(megatag2Estimate.get());
-      } else {
-        Logger.recordOutput(
-            logPrefix + "Megatag2EstimateRejected", megatag2Estimate.get().visionPose());
+    if (shouldPrioritizeMegatag1 && megatag1Estimate.isPresent()) {
+      Logger.recordOutput(logPrefix + "Megatag1Estimate", megatag1Estimate.get().visionPose());
+      addVisionObservation(megatag1Estimate.get());
+      usedMegatag1 = true;
+    } else {
+      if (megatag2Estimate.isPresent()) {
+        if (shouldUseMegatag2(observation, isTurretCamera, logPrefix)) {
+          Logger.recordOutput(logPrefix + "Megatag2Estimate", megatag2Estimate.get().visionPose());
+          addVisionObservation(megatag2Estimate.get());
+          usedMegatag2 = true;
+        } else {
+          Logger.recordOutput(
+              logPrefix + "Megatag2EstimateRejected", megatag2Estimate.get().visionPose());
+        }
+      }
+
+      if (!usedMegatag2 && megatag1Estimate.isPresent()) {
+        if (shouldUseMegatag1(observation, isTurretCamera, logPrefix)) {
+          Logger.recordOutput(logPrefix + "Megatag1Estimate", megatag1Estimate.get().visionPose());
+          addVisionObservation(megatag1Estimate.get());
+          usedMegatag1 = true;
+        } else {
+          Logger.recordOutput(
+              logPrefix + "Megatag1EstimateRejected", megatag1Estimate.get().visionPose());
+        }
       }
     }
 
@@ -113,7 +127,8 @@ public class Vision extends SubsystemBase {
     }
   }
 
-  private boolean shouldUseMegatag1(PoseObservation observation, boolean isTurretCamera, String logPrefix) {
+  private boolean shouldUseMegatag1(
+      PoseObservation observation, boolean isTurretCamera, String logPrefix) {
     final int kExpectedTagCount = 2;
 
     if (observation.tagCount < kExpectedTagCount) {
@@ -144,7 +159,8 @@ public class Vision extends SubsystemBase {
     return matchesHubTags;
   }
 
-  private boolean shouldUseMegatag2(PoseObservation observation, boolean isTurretCamera, String logPrefix) {
+  private boolean shouldUseMegatag2(
+      PoseObservation observation, boolean isTurretCamera, String logPrefix) {
     return isMotionAcceptable(observation.timestampSeconds, isTurretCamera, logPrefix);
   }
 
@@ -176,14 +192,14 @@ public class Vision extends SubsystemBase {
     return true;
   }
 
-  private Optional<Pose2d> getFieldToRobotEstimate(PoseObservation observation, boolean isTurretCamera) {
+  private Optional<Pose2d> getFieldToRobotEstimate(
+      PoseObservation observation, boolean isTurretCamera) {
     Pose2d fieldToCamera = observation.estimatedPose;
     if (fieldToCamera.getX() == 0.0) {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> robotToTurret =
-        robotState.getRobotToTurret(observation.timestampSeconds);
+    Optional<Rotation2d> robotToTurret = robotState.getRobotToTurret(observation.timestampSeconds);
     if (robotToTurret.isEmpty()) {
       return Optional.empty();
     }
@@ -241,8 +257,7 @@ public class Vision extends SubsystemBase {
 
     double xyStdDevMeters;
     if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
-      Set<Integer> hubTags =
-          new HashSet<>(robotState.isRedAlliance() ? kHubTagsRed : kHubTagsBlue);
+      Set<Integer> hubTags = new HashSet<>(robotState.isRedAlliance() ? kHubTagsRed : kHubTagsBlue);
       hubTags.removeAll(
           Arrays.stream(observation.fiducialIds)
               .boxed()
@@ -311,7 +326,8 @@ public class Vision extends SubsystemBase {
       }
 
       Matrix<N3, N1> stdDevs =
-          VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(rotationStdDevDeg));
+          VecBuilder.fill(
+              xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(rotationStdDevDeg));
       return Optional.of(
           new RobotState.VisionObservation(
               observation.timestampSeconds, fieldToRobotEstimate.get(), stdDevs));

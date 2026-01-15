@@ -29,7 +29,14 @@ public class VisionConstants {
   public static final double kSupplementaryCameraPitchDeg = -10.0;
   public static final double kSupplementaryCameraRollDeg = 0.0;
   public static final double[] kSupplementaryCameraPose = {
-    0.0, 0.0, kSupplementaryCameraHeightM,
-    kSupplementaryCameraRollDeg, kSupplementaryCameraPitchDeg, 0.0
+    0.0,
+    0.0,
+    kSupplementaryCameraHeightM,
+    kSupplementaryCameraRollDeg,
+    kSupplementaryCameraPitchDeg,
+    0.0
   };
+
+  // Use MegaTag1 when hub tags are seen on turret camera (avoids yaw lag on moving turret)
+  public static final boolean kUseMegatag1ForHubTagsOnTurret = false;
 }

@@ -73,9 +73,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
       return new Transform3d(
           new edu.wpi.first.math.geometry.Translation3d(0.0, 0.0, kTurretCameraHeightM),
           new edu.wpi.first.math.geometry.Rotation3d(
-              0.0,
-              edu.wpi.first.math.util.Units.degreesToRadians(kTurretCameraPitchDeg),
-              0.0));
+              0.0, edu.wpi.first.math.util.Units.degreesToRadians(kTurretCameraPitchDeg), 0.0));
     } else {
       return new Transform3d(
           new edu.wpi.first.math.geometry.Translation3d(0.0, 0.0, kSupplementaryCameraHeightM),
@@ -97,7 +95,10 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
 
     writeToTable(turretCamera.getAllUnreadResults(), turretTable, turretCameraSim, true);
     writeToTable(
-        supplementaryCamera.getAllUnreadResults(), supplementaryTable, supplementaryCameraSim, false);
+        supplementaryCamera.getAllUnreadResults(),
+        supplementaryTable,
+        supplementaryCameraSim,
+        false);
 
     super.updateInputs(inputs);
   }
@@ -113,7 +114,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     }
 
     Transform3d robotToCamera;
-    
+
     if (isTurretCamera) {
       var latestTurretRotation = robotState.getLatestRobotToTurret();
       if (latestTurretRotation != null) {
@@ -130,7 +131,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     } else {
       robotToCamera = getTurretToCameraTransform(false);
     }
-    
+
     Transform3d cameraToRobot = robotToCamera.inverse();
     Pose3d fieldToRobot =
         new Pose3d(fieldToCamera.getTranslation(), fieldToCamera.getRotation())
@@ -177,32 +178,37 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
       if (result.getMultiTagResult().isPresent()) {
         var multiTagResult = result.getMultiTagResult().get();
         Transform3d best = multiTagResult.estimatedPose.best;
-        poseData = getBotpose(best, multiTagResult.fiducialIDsUsed.size(), result, cameraSim, isTurretCamera);
+        poseData =
+            getBotpose(
+                best, multiTagResult.fiducialIDsUsed.size(), result, cameraSim, isTurretCamera);
       } else if (result.hasTargets()) {
         var bestTarget = result.getBestTarget();
         Optional<Pose3d> tagPose = aprilTagLayout.getTagPose(bestTarget.getFiducialId());
         if (tagPose.isPresent()) {
           Transform3d best =
               new Transform3d(
-                  tagPose.get().getTranslation().minus(new Translation3d()),
-                  tagPose.get().getRotation())
+                      tagPose.get().getTranslation().minus(new Translation3d()),
+                      tagPose.get().getRotation())
                   .plus(bestTarget.bestCameraToTarget.inverse());
           poseData = getBotpose(best, 1, result, cameraSim, isTurretCamera);
         }
       }
 
       if (poseData != null) {
-        table.getEntry("botpose_wpiblue")
+        table
+            .getEntry("botpose_wpiblue")
             .setDoubleArray(poseData.stream().mapToDouble(Double::doubleValue).toArray());
-        table.getEntry("botpose_orb_wpiblue")
+        table
+            .getEntry("botpose_orb_wpiblue")
             .setDoubleArray(poseData.stream().mapToDouble(Double::doubleValue).toArray());
-        table.getEntry("stddevs")
-            .setDoubleArray(new double[] {0.3, 0.3, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+        table
+            .getEntry("stddevs")
+            .setDoubleArray(
+                new double[] {0.3, 0.3, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
         seesTarget = true;
       }
       table.getEntry("cl").setDouble(result.metadata.getLatencyMillis() / 1000.0);
     }
     table.getEntry("tv").setInteger(seesTarget ? 1 : 0);
   }
-
 }

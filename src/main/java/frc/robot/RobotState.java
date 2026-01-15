@@ -21,10 +21,11 @@ import org.littletonrobotics.junction.AutoLogOutput;
 public class RobotState {
   private static final double LOOKBACK_TIME_SEC = 2.0;
   private static final Matrix<N3, N1> odometryStateStdDevs =
-      new Matrix<>(VecBuilder.fill(
-          Meters.of(0.003).in(Meters),
-          Meters.of(0.003).in(Meters),
-          Radians.of(0.002).in(Radians)));
+      new Matrix<>(
+          VecBuilder.fill(
+              Meters.of(0.003).in(Meters),
+              Meters.of(0.003).in(Meters),
+              Radians.of(0.002).in(Radians)));
 
   private static RobotState instance;
 
