@@ -1,10 +1,12 @@
 package frc.robot.subsystems.vision;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraTable;
 import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraTable;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -12,14 +14,12 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.RobotState;
 import frc.robot.util.LimelightHelpers;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class VisionIOLimelight implements VisionIO {
   private final NetworkTable turretTable;
   private final NetworkTable supplementaryTable;
   private final RobotState robotState;
-  private final AtomicReference<VisionIOInputs> cachedInputs =
-      new AtomicReference<>(new VisionIOInputs());
+  private final AtomicReference<VisionIOInputs> cachedInputs = new AtomicReference<>(new VisionIOInputs());
 
   public VisionIOLimelight() {
     turretTable = NetworkTableInstance.getDefault().getTable(kTurretCameraTable);
@@ -40,13 +40,11 @@ public class VisionIOLimelight implements VisionIO {
     var latestTurretRotation = robotState.getLatestRobotToTurret();
 
     if (latestRobotPose != null && latestTurretRotation != null) {
-      Rotation2d fieldToTurretRotation =
-          latestRobotPose.getValue().getRotation().plus(latestTurretRotation.getValue());
+      Rotation2d fieldToTurretRotation = latestRobotPose.getValue().getRotation().plus(latestTurretRotation.getValue());
       var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
       var turretAngularVelocityMeasure = robotState.getLatestTurretAngularVelocity();
       double turretAngularVelocityRadPerS = turretAngularVelocityMeasure.in(RadiansPerSecond);
-      double combinedYawRateRadPerS =
-          robotSpeeds.omegaRadiansPerSecond + turretAngularVelocityRadPerS;
+      double combinedYawRateRadPerS = robotSpeeds.omegaRadiansPerSecond + turretAngularVelocityRadPerS;
       double combinedYawRateDegPerS = Units.radiansToDegrees(combinedYawRateRadPerS);
 
       LimelightHelpers.SetRobotOrientation(
@@ -98,8 +96,7 @@ public class VisionIOLimelight implements VisionIO {
     }
 
     if (supplementarySeesTarget) {
-      var megatag2 =
-          LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kSupplementaryCameraTable);
+      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kSupplementaryCameraTable);
       var megatag1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kSupplementaryCameraTable);
 
       if (megatag2 != null && megatag2.tagCount > 0) {
