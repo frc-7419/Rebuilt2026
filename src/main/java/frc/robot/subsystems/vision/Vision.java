@@ -5,12 +5,15 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -28,6 +31,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
@@ -59,6 +64,9 @@ public class Vision extends SubsystemBase {
     Logger.recordOutput("Vision/turretHasTarget", inputs.turretHasTarget);
     Logger.recordOutput("Vision/supplementaryHasTarget", inputs.supplementaryHasTarget);
 
+    // Log camera poses in field space
+    logCameraPoses();
+
     if (inputs.turretHasTarget && inputs.turretPose != null) {
       updateVision(inputs.turretPose, true);
     }
@@ -67,6 +75,42 @@ public class Vision extends SubsystemBase {
     }
 
     Logger.recordOutput("Vision/latencyPeriodicSec", Timer.getFPGATimestamp() - timestamp);
+  }
+
+  @AutoLogOutput(key = "Vision/TurretCameraPose")
+  private Pose3d turretCameraPose = new Pose3d();
+
+  @AutoLogOutput(key = "Vision/SupplementaryCameraPose")
+  private Pose3d supplementaryCameraPose = new Pose3d();
+
+  private void logCameraPoses() {
+    var latestRobotPose = robotState.getLatestFieldToRobot();
+    if (latestRobotPose == null) {
+      turretCameraPose = new Pose3d();
+      supplementaryCameraPose = new Pose3d();
+      return;
+    }
+
+    Pose2d robotPose = latestRobotPose.getValue();
+    Pose3d robotPose3d = new Pose3d(robotPose);
+
+    // Calculate turret camera pose
+    var latestTurretRotation = robotState.getLatestRobotToTurret();
+    if (latestTurretRotation != null) {
+      Transform3d robotToTurret3d =
+          new Transform3d(
+              new Translation3d(),
+              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
+      Transform3d turretToCamera3d = getTurretToCameraTransform(true);
+      Transform3d robotToTurretCamera3d = robotToTurret3d.plus(turretToCamera3d);
+      turretCameraPose = robotPose3d.transformBy(robotToTurretCamera3d);
+    } else {
+      turretCameraPose = new Pose3d();
+    }
+
+    // Calculate supplementary camera pose (fixed to robot, not turret)
+    Transform3d robotToSupplementaryCamera3d = getTurretToCameraTransform(false);
+    supplementaryCameraPose = robotPose3d.transformBy(robotToSupplementaryCamera3d);
   }
 
   private void updateVision(PoseObservation observation, boolean isTurretCamera) {
@@ -173,7 +217,7 @@ public class Vision extends SubsystemBase {
     if (isTurretCamera) {
       var turretAngularVelocity = robotState.getLatestTurretAngularVelocity();
       double turretYawRateRadPerS =
-          Math.abs(turretAngularVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
+          Math.abs(turretAngularVelocity.in(RadiansPerSecond));
       double combinedYawRateRadPerS = robotYawRateRadPerS + turretYawRateRadPerS;
 
       if (combinedYawRateRadPerS > kMaxYawRateRadPerS) {
@@ -223,17 +267,25 @@ public class Vision extends SubsystemBase {
 
   private Transform3d getTurretToCameraTransform(boolean isTurretCamera) {
     if (isTurretCamera) {
+      // kTurretCameraPose: [forward, side, up, roll(deg), pitch(deg), yaw(deg)]
+      // Convert rotation angles from degrees to radians
       return new Transform3d(
-          new Translation3d(0.0, 0.0, kTurretCameraHeightM),
-          new edu.wpi.first.math.geometry.Rotation3d(
-              0.0, Units.degreesToRadians(kTurretCameraPitchDeg), 0.0));
+          new Translation3d(kTurretCameraPose[0], kTurretCameraPose[1], kTurretCameraPose[2]),
+          new Rotation3d(
+              Units.degreesToRadians(kTurretCameraPose[3]),
+              Units.degreesToRadians(kTurretCameraPose[4]),
+              Units.degreesToRadians(kTurretCameraPose[5])));
     } else {
+      // kSupplementaryCameraPose: [forward, side, up, roll(deg), pitch(deg), yaw(deg)]
       return new Transform3d(
-          new Translation3d(0.0, 0.0, kSupplementaryCameraHeightM),
-          new edu.wpi.first.math.geometry.Rotation3d(
-              Units.degreesToRadians(kSupplementaryCameraRollDeg),
-              Units.degreesToRadians(kSupplementaryCameraPitchDeg),
-              0.0));
+          new Translation3d(
+              kSupplementaryCameraPose[0],
+              kSupplementaryCameraPose[1],
+              kSupplementaryCameraPose[2]),
+          new Rotation3d(
+              Units.degreesToRadians(kSupplementaryCameraPose[3]),
+              Units.degreesToRadians(kSupplementaryCameraPose[4]),
+              Units.degreesToRadians(kSupplementaryCameraPose[5])));
     }
   }
 

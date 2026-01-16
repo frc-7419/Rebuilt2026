@@ -27,6 +27,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
@@ -41,6 +42,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import frc.robot.RobotState;
 import frc.robot.generated.TunerConstants;
 import frc.robot.util.LocalADStarAK;
 import java.util.concurrent.locks.Lock;
@@ -97,6 +99,8 @@ public class Drive extends SubsystemBase {
       };
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+  private SwerveDriveOdometry odometryOnly =
+      new SwerveDriveOdometry(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
   public Drive(
       GyroIO gyroIO,
@@ -159,6 +163,7 @@ public class Drive extends SubsystemBase {
     }
     odometryLock.unlock();
 
+    RobotState robotState = RobotState.getInstance();
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
       for (var module : modules) {
@@ -200,9 +205,25 @@ public class Drive extends SubsystemBase {
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
 
-      // Apply update
+      // Update odometry-only pose (before vision corrections)
+      Pose2d odometryOnlyPose = odometryOnly.update(rawGyroRotation, modulePositions);
+      robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
+
+      // Apply update to pose estimator (includes vision corrections)
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
     }
+
+    Pose2d visionCorrectedPose = poseEstimator.getEstimatedPosition();
+    robotState.setEstimatedPose(visionCorrectedPose);
+
+    Pose2d odometryOnlyPose = odometryOnly.getPoseMeters();
+    Logger.recordOutput("Odometry/OdometryOnly", odometryOnlyPose);
+    Logger.recordOutput("Odometry/VisionCorrected", visionCorrectedPose);
+    Logger.recordOutput(
+        "Odometry/VisionCorrection",
+        new Pose2d(
+            visionCorrectedPose.getTranslation().minus(odometryOnlyPose.getTranslation()),
+            visionCorrectedPose.getRotation().minus(odometryOnlyPose.getRotation())));
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
@@ -326,6 +347,15 @@ public class Drive extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    odometryOnly.resetPosition(rawGyroRotation, getModulePositions(), pose);
+  }
+
+  /**
+   * Returns the odometry-only pose (without vision corrections). This is used to prevent feedback
+   * loops in vision simulation.
+   */
+  public Pose2d getOdometryOnlyPose() {
+    return odometryOnly.getPoseMeters();
   }
 
   /** Adds a new timestamped vision measurement. */

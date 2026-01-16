@@ -9,6 +9,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.LimelightHelpers;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -152,5 +153,14 @@ public class Robot extends LoggedRobot {
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    if (Constants.currentMode == Constants.Mode.SIM) {
+      SimulatedRobotState simulatedRobotState = SimulatedRobotState.getInstance();
+      var drive = robotContainer.getDrive();
+      if (drive != null) {
+        var groundTruthPose = drive.getOdometryOnlyPose();
+        simulatedRobotState.addFieldToRobot(groundTruthPose);
+      }
+    }
+  }
 }

@@ -19,22 +19,22 @@ public class VisionConstants {
   public static String kSupplementaryCameraTable = "limelight-supplementary";
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
-  public static final double kTurretCameraHeightM = 0.5;
-  public static final double kTurretCameraPitchDeg = 0.0;
+  public static final double kTurretCameraHeightM = 0.2;
+  public static final double kTurretCameraPitchDeg = -15;
   public static final double[] kTurretCameraPose = {
-    0.0, 0.0, kTurretCameraHeightM, 0.0, kTurretCameraPitchDeg, 0.0
+    0.33, 0.0, kTurretCameraHeightM, 0.0, kTurretCameraPitchDeg, 0.0
   };
 
   public static final double kSupplementaryCameraHeightM = 0.3;
   public static final double kSupplementaryCameraPitchDeg = -10.0;
   public static final double kSupplementaryCameraRollDeg = 0.0;
   public static final double[] kSupplementaryCameraPose = {
-    0.0,
+    -0.33,
     0.0,
     kSupplementaryCameraHeightM,
     kSupplementaryCameraRollDeg,
     kSupplementaryCameraPitchDeg,
-    0.0
+    180.0
   };
 
   // Use MegaTag1 when hub tags are seen on turret camera (avoids yaw lag on moving turret)

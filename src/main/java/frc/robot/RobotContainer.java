@@ -189,4 +189,13 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     return autoChooser.get();
   }
+
+  /**
+   * Gets the drive subsystem. Used for simulation updates.
+   *
+   * @return the drive subsystem
+   */
+  public Drive getDrive() {
+    return drive;
+  }
 }
