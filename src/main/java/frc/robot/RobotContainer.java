@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-import static frc.robot.subsystems.vision.VisionConstants.*;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -83,16 +81,8 @@ public class RobotContainer {
         // new ModuleIOTalonFXS(TunerConstants.BackRight));
 
         // Real robot, instantiate hardware IO implementations
-        vision =
-            new Vision(
-                drive::addVisionMeasurement,
-                new VisionIOLimelight(camera0Name, drive::getRotation),
-                new VisionIOLimelight(camera1Name, drive::getRotation));
-        // vision =
-        // new Vision(
-        // demoDrive::addVisionMeasurement,
-        // new VisionIOPhotonVision(camera0Name, robotToCamera0),
-        // new VisionIOPhotonVision(camera1Name, robotToCamera1));
+        vision = new Vision(new VisionIOLimelight());
+        vision.setDrive(drive);
 
         break;
 
@@ -107,11 +97,8 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.BackRight));
 
         // Sim robot, instantiate physics sim IO implementations
-        vision =
-            new Vision(
-                drive::addVisionMeasurement,
-                new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
-                new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
+        vision = new Vision(new VisionIOPhotonVisionSim());
+        vision.setDrive(drive);
 
         break;
 
@@ -126,8 +113,8 @@ public class RobotContainer {
                 new ModuleIO() {});
 
         // Replayed robot, disable IO implementations
-        // (Use same number of dummy implementations as the real robot)
-        vision = new Vision(drive::addVisionMeasurement, new VisionIO() {}, new VisionIO() {});
+        vision = new Vision(new VisionIO() {});
+        vision.setDrive(drive);
         break;
     }
 
@@ -201,5 +188,14 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
+  }
+
+  /**
+   * Gets the drive subsystem. Used for simulation updates.
+   *
+   * @return the drive subsystem
+   */
+  public Drive getDrive() {
+    return drive;
   }
 }
