@@ -15,8 +15,7 @@ import frc.robot.subsystems.turret.Turret;
 import java.util.function.DoubleSupplier;
 
 public final class TurretCommands {
-  private TurretCommands() {
-  }
+  private TurretCommands() {}
 
   /** Manual joystick turret control. Expects input in [-1, 1]. */
   public static Command joystickTurret(Turret turret, DoubleSupplier input) {
