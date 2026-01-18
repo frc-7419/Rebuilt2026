@@ -6,19 +6,10 @@
 package frc.robot.subsystems.vision;
 
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kUseMegatag1ForHubTagsOnTurret;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -37,6 +28,14 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
   private final VisionIO io;
@@ -100,9 +99,13 @@ public class Vision extends SubsystemBase {
     // Calculate turret camera pose
     var latestTurretRotation = robotState.getLatestRobotToTurret();
     if (latestTurretRotation != null) {
-      Transform3d robotToTurret3d = new Transform3d(
-          new Translation3d(),
-          new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
+      Transform3d robotToTurret3d =
+          new Transform3d(
+              new Translation3d(
+                  kTurretOffset.getTranslation().getX(),
+                  kTurretOffset.getTranslation().getY(),
+                  0.0),
+              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
       Transform3d turretToCamera3d = getTurretToCameraTransform(true);
       Transform3d robotToTurretCamera3d = robotToTurret3d.plus(turretToCamera3d);
       turretCameraPose = robotPose3d.transformBy(robotToTurretCamera3d);
@@ -118,19 +121,22 @@ public class Vision extends SubsystemBase {
   private void updateVision(PoseObservation observation, boolean isTurretCamera) {
     String logPrefix = "Vision/" + (isTurretCamera ? "Turret/" : "Supplementary/");
     double timestamp = observation.timestampSeconds;
-    double lastProcessedTimestamp = isTurretCamera ? lastProcessedTurretTimestamp : lastProcessedSupplementaryTimestamp;
+    double lastProcessedTimestamp =
+        isTurretCamera ? lastProcessedTurretTimestamp : lastProcessedSupplementaryTimestamp;
 
     if (timestamp == lastProcessedTimestamp) {
       return;
     }
 
-    Optional<RobotState.VisionObservation> megatag2Estimate = processMegatag2Estimate(observation, isTurretCamera,
-        logPrefix);
-    Optional<RobotState.VisionObservation> megatag1Estimate = processMegatag1Estimate(observation, isTurretCamera);
+    Optional<RobotState.VisionObservation> megatag2Estimate =
+        processMegatag2Estimate(observation, isTurretCamera, logPrefix);
+    Optional<RobotState.VisionObservation> megatag1Estimate =
+        processMegatag1Estimate(observation, isTurretCamera);
 
-    boolean shouldPrioritizeMegatag1 = kUseMegatag1ForHubTagsOnTurret
-        && isTurretCamera
-        && shouldUseMegatag1(observation, isTurretCamera, logPrefix);
+    boolean shouldPrioritizeMegatag1 =
+        kUseMegatag1ForHubTagsOnTurret
+            && isTurretCamera
+            && shouldUseMegatag1(observation, isTurretCamera, logPrefix);
 
     boolean usedMegatag1 = false;
     boolean usedMegatag2 = false;
@@ -192,9 +198,10 @@ public class Vision extends SubsystemBase {
     }
     Logger.recordOutput(logPrefix + "poseNorm", true);
 
-    Set<Integer> seenTagIds = Arrays.stream(observation.fiducialIds)
-        .boxed()
-        .collect(Collectors.toCollection(HashSet::new));
+    Set<Integer> seenTagIds =
+        Arrays.stream(observation.fiducialIds)
+            .boxed()
+            .collect(Collectors.toCollection(HashSet::new));
     Set<Integer> expectedHubTags = robotState.isRedAlliance() ? kHubTagsRed : kHubTagsBlue;
     boolean matchesHubTags = expectedHubTags.equals(seenTagIds);
     Logger.recordOutput(logPrefix + "hubTagsMatch", matchesHubTags);
@@ -247,13 +254,16 @@ public class Vision extends SubsystemBase {
 
     Transform3d turretToCamera3d = getTurretToCameraTransform(isTurretCamera);
     Transform3d cameraToTurret3d = turretToCamera3d.inverse();
-    Transform2d cameraToTurret2d = new Transform2d(
-        new Translation2d(cameraToTurret3d.getX(), cameraToTurret3d.getY()),
-        new Rotation2d(cameraToTurret3d.getRotation().getZ()));
+    Transform2d cameraToTurret2d =
+        new Transform2d(
+            new Translation2d(cameraToTurret3d.getX(), cameraToTurret3d.getY()),
+            new Rotation2d(cameraToTurret3d.getRotation().getZ()));
     Pose2d fieldToTurret = fieldToCamera.transformBy(cameraToTurret2d);
 
     if (isTurretCamera) {
-      Transform2d turretToRobot = new Transform2d(new Translation2d(), robotToTurret.get().unaryMinus());
+      Transform2d turretToRobot =
+          new Transform2d(
+              kTurretOffset.getTranslation().unaryMinus(), robotToTurret.get().unaryMinus());
       return Optional.of(fieldToTurret.transformBy(turretToRobot));
     } else {
       return Optional.of(fieldToTurret);
@@ -297,10 +307,11 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    double poseDifferenceMeters = fieldToRobotEstimate
-        .get()
-        .getTranslation()
-        .getDistance(loggedFieldToRobot.get().getTranslation());
+    double poseDifferenceMeters =
+        fieldToRobotEstimate
+            .get()
+            .getTranslation()
+            .getDistance(loggedFieldToRobot.get().getTranslation());
 
     double xyStdDevMeters;
     if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
@@ -328,9 +339,11 @@ public class Vision extends SubsystemBase {
       Logger.recordOutput(logPrefix + "megatag2StdDevMeters", xyStdDevMeters);
       Logger.recordOutput(logPrefix + "megatag2PoseDifferenceMeters", poseDifferenceMeters);
 
-      Matrix<N3, N1> stdDevs = VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(50.0));
-      Pose2d correctedPose = new Pose2d(
-          fieldToRobotEstimate.get().getTranslation(), loggedFieldToRobot.get().getRotation());
+      Matrix<N3, N1> stdDevs =
+          VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(50.0));
+      Pose2d correctedPose =
+          new Pose2d(
+              fieldToRobotEstimate.get().getTranslation(), loggedFieldToRobot.get().getRotation());
       return Optional.of(
           new RobotState.VisionObservation(observation.timestampSeconds, correctedPose, stdDevs));
     }
@@ -349,10 +362,11 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    double poseDifferenceMeters = fieldToRobotEstimate
-        .get()
-        .getTranslation()
-        .getDistance(loggedFieldToRobot.get().getTranslation());
+    double poseDifferenceMeters =
+        fieldToRobotEstimate
+            .get()
+            .getTranslation()
+            .getDistance(loggedFieldToRobot.get().getTranslation());
 
     if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
       double xyStdDevMeters = 1.0;
@@ -369,8 +383,9 @@ public class Vision extends SubsystemBase {
         rotationStdDevDeg = 30.0;
       }
 
-      Matrix<N3, N1> stdDevs = VecBuilder.fill(
-          xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(rotationStdDevDeg));
+      Matrix<N3, N1> stdDevs =
+          VecBuilder.fill(
+              xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(rotationStdDevDeg));
       return Optional.of(
           new RobotState.VisionObservation(
               observation.timestampSeconds, fieldToRobotEstimate.get(), stdDevs));

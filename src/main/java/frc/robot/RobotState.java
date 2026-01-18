@@ -10,6 +10,7 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -40,6 +41,10 @@ public class RobotState {
       TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> turretAngularVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> hoodPosition =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> shooterVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final Matrix<N3, N1> qStdDevs = new Matrix<>(Nat.N3(), Nat.N1());
 
   private final AtomicReference<ChassisSpeeds> measuredRobotRelativeChassisSpeeds =
@@ -58,6 +63,8 @@ public class RobotState {
     fieldToRobot.addSample(0.0, Pose2d.kZero);
     robotToTurret.addSample(0.0, Rotation2d.kZero);
     turretAngularVelocity.addSample(0.0, 0.0);
+    hoodPosition.addSample(0.0, 0.0);
+    shooterVelocity.addSample(0.0, 0.0);
   }
 
   public void resetPose(Pose2d pose) {
@@ -167,6 +174,26 @@ public class RobotState {
     var buffer = turretAngularVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
     return RadiansPerSecond.of(value);
+  }
+
+  public void addShooterUpdates(
+      double timestamp, Angle hoodPositionMeasure, AngularVelocity shooterVelocityMeasure) {
+    hoodPosition.addSample(timestamp, hoodPositionMeasure.baseUnitMagnitude());
+    shooterVelocity.addSample(timestamp, shooterVelocityMeasure.baseUnitMagnitude());
+  }
+
+  public Angle getCurrentHoodPosition() {
+    var buffer = hoodPosition.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    // return Radians.of(value);
+    return Degrees.of(60);
+  }
+
+  public AngularVelocity getCurrentShooterVelocity() {
+    var buffer = shooterVelocity.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    // return RadiansPerSecond.of(value);
+    return RotationsPerSecond.of(50);
   }
 
   public boolean isRedAlliance() {

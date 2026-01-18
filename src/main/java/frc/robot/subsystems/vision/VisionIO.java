@@ -12,6 +12,5 @@ public interface VisionIO {
     public PoseObservation supplementaryPose;
   }
 
-  public default void updateInputs(VisionIOInputs inputs) {
-  }
+  public default void updateInputs(VisionIOInputs inputs) {}
 }
