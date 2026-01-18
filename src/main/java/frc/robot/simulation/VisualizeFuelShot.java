@@ -17,6 +17,7 @@ import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.TurretConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
@@ -49,6 +50,10 @@ public class VisualizeFuelShot extends Command {
           double hoodAngleRad =
               state.getCurrentHoodPosition().in(Radians) - ShooterConstants.kHoodZeroed.in(Radians);
 
+          double hoodAngleUncertaintyDeg = 0.25 + random.nextDouble() * (1.0 - 0.25);
+          double hoodAngleUncertaintySign = random.nextBoolean() ? 1.0 : -1.0;
+          hoodAngleRad += Math.toRadians(hoodAngleUncertaintyDeg * hoodAngleUncertaintySign);
+
           double wheelRotPerSec = state.getCurrentShooterVelocity().in(RotationsPerSecond);
 
           Logger.recordOutput("FuelVisualizer/Inputs/RobotPoseX", robotPose.getX());
@@ -64,6 +69,10 @@ public class VisualizeFuelShot extends Command {
           // Calculate fuel exit velocity from wheel rotation rate
           double fuelExitMps =
               wheelRotPerSec * ShooterConstants.kFuelLaunchVelMetersPerSecPerRotPerSec;
+
+          double speedUncertaintyPercent = random.nextDouble() * 5.0;
+          double speedUncertaintySign = random.nextBoolean() ? 1.0 : -1.0;
+          fuelExitMps *= (1.0 + speedUncertaintySign * speedUncertaintyPercent / 100.0);
 
           Logger.recordOutput("FuelVisualizer/Inputs/FuelExitMps", fuelExitMps);
 
@@ -174,6 +183,10 @@ public class VisualizeFuelShot extends Command {
           double omegaBallRadPerSec =
               ((wheelSurfaceMps - fuelExitMps) / kFuelRadiusMeters) * spinTransfer;
 
+          double spinUncertaintyPercent = 5.0 + random.nextDouble() * (10.0 - 3.0);
+          double spinUncertaintySign = random.nextBoolean() ? 1.0 : -1.0;
+          omegaBallRadPerSec *= (1.0 + spinUncertaintySign * spinUncertaintyPercent / 100.0);
+
           omegaBallRadPerSec = clamp(omegaBallRadPerSec, -600.0, 600.0);
 
           Logger.recordOutput("FuelVisualizer/Inputs/WheelSurfaceMps", wheelSurfaceMps);
@@ -217,6 +230,8 @@ public class VisualizeFuelShot extends Command {
 
   private static final double kGravity = 9.81;
   private static final double kEpsilon = 1e-6;
+
+  private static final Random random = new Random();
 
   private static final ConcurrentHashMap<Integer, Pose3d> activeFuelShots =
       new ConcurrentHashMap<>();
