@@ -9,35 +9,44 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 
 public class VisionConstants {
   // AprilTag layout
   public static AprilTagFieldLayout aprilTagLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
-  public static String kTurretCameraTable = "limelight-turret";
-  public static String kSupplementaryCameraTable = "limelight-supplementary";
+  // Camera names, must match names configured on coprocessor
+  public static String camera0Name = "limelight-four";
+  public static String camera1Name = "camera_1";
 
-  // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
-  public static final double kTurretCameraHeightM = 0.2;
-  public static final double kTurretCameraPitchDeg = -15;
-  public static final double[] kTurretCameraPose = {
-    0.33, 0.0, kTurretCameraHeightM, 0.0, kTurretCameraPitchDeg, 0.0
-  };
+  // Robot to camera transforms
+  // (Not used by Limelight, configure in web UI instead)
+  public static Transform3d robotToCamera0 =
+      new Transform3d(0.2, 0.0, 0.2, new Rotation3d(0.0, -0.4, 0.0));
+  public static Transform3d robotToCamera1 =
+      new Transform3d(-0.2, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI));
 
-  public static final double kSupplementaryCameraHeightM = 0.3;
-  public static final double kSupplementaryCameraPitchDeg = -10.0;
-  public static final double kSupplementaryCameraRollDeg = 0.0;
-  public static final double[] kSupplementaryCameraPose = {
-    -0.33,
-    0.0,
-    kSupplementaryCameraHeightM,
-    kSupplementaryCameraRollDeg,
-    kSupplementaryCameraPitchDeg,
-    180.0
-  };
+  // Basic filtering thresholds
+  public static double maxAmbiguity = 0.3;
+  public static double maxZError = 0.75;
 
-  // Use MegaTag1 when hub tags are seen on turret camera (avoids yaw lag on
-  // moving turret)
-  public static final boolean kUseMegatag1ForHubTagsOnTurret = false;
+  // Standard deviation baselines, for 1 meter distance and 1 tag
+  // (Adjusted automatically based on distance and # of tags)
+  public static double linearStdDevBaseline = 0.02; // Meters
+  public static double angularStdDevBaseline = 0.06; // Radians
+
+  // Standard deviation multipliers for each camera
+  // (Adjust to trust some cameras more than others)
+  public static double[] cameraStdDevFactors =
+      new double[] {
+        1.0, // Camera 0
+        1.0 // Camera 1
+      };
+
+  // Multipliers to apply for MegaTag 2 observations
+  public static double linearStdDevMegatag2Factor = 0.5; // More stable than full 3D solve
+  public static double angularStdDevMegatag2Factor =
+      Double.POSITIVE_INFINITY; // No rotation data available
 }
