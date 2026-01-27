@@ -6,10 +6,10 @@ public interface VisionIO {
   @AutoLog
   public static class VisionIOInputs {
     public boolean connected = false;
-    public boolean turretHasTarget;
-    public boolean supplementaryHasTarget;
-    public PoseObservation turretPose;
-    public PoseObservation supplementaryPose;
+    public boolean leftHasTarget;
+    public boolean rightHasTarget;
+    public PoseObservation leftPose;
+    public PoseObservation rightPose;
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}

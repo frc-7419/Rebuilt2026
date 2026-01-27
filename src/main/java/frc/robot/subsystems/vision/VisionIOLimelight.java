@@ -1,10 +1,9 @@
 package frc.robot.subsystems.vision;
 
-import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
-import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraTable;
-import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraPose;
-import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraTable;
+import static frc.robot.subsystems.vision.VisionConstants.kLeftCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLeftCameraTable;
+import static frc.robot.subsystems.vision.VisionConstants.kRightCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kRightCameraTable;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -15,60 +14,37 @@ import frc.robot.util.LimelightHelpers;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class VisionIOLimelight implements VisionIO {
-  private final NetworkTable turretTable;
-  private final NetworkTable supplementaryTable;
+  private final NetworkTable leftTable;
+  private final NetworkTable rightTable;
   private final RobotState robotState;
   private final AtomicReference<VisionIOInputs> cachedInputs =
       new AtomicReference<>(new VisionIOInputs());
 
   public VisionIOLimelight() {
-    turretTable = NetworkTableInstance.getDefault().getTable(kTurretCameraTable);
-    supplementaryTable = NetworkTableInstance.getDefault().getTable(kSupplementaryCameraTable);
+    leftTable = NetworkTableInstance.getDefault().getTable(kLeftCameraTable);
+    rightTable = NetworkTableInstance.getDefault().getTable(kRightCameraTable);
     robotState = RobotState.getInstance();
     configureLimelightSettings();
   }
 
   private void configureLimelightSettings() {
-    turretTable.getEntry("camerapose_robotspace_set").setDoubleArray(kTurretCameraPose);
-    supplementaryTable
-        .getEntry("camerapose_robotspace_set")
-        .setDoubleArray(kSupplementaryCameraPose);
+    leftTable.getEntry("camerapose_robotspace_set").setDoubleArray(kLeftCameraPose);
+    rightTable.getEntry("camerapose_robotspace_set").setDoubleArray(kRightCameraPose);
   }
 
   private void updateRobotOrientation() {
     var latestRobotPose = robotState.getLatestFieldToRobot();
-    var latestTurretRotation = robotState.getLatestRobotToTurret();
 
-    if (latestRobotPose != null && latestTurretRotation != null) {
-      Rotation2d fieldToTurretRotation =
-          latestRobotPose.getValue().getRotation().plus(latestTurretRotation.getValue());
-      var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
-      var turretAngularVelocityMeasure = robotState.getLatestTurretAngularVelocity();
-      double turretAngularVelocityRadPerS = turretAngularVelocityMeasure.in(RadiansPerSecond);
-      double combinedYawRateRadPerS =
-          robotSpeeds.omegaRadiansPerSecond + turretAngularVelocityRadPerS;
-      double combinedYawRateDegPerS = Units.radiansToDegrees(combinedYawRateRadPerS);
-
-      LimelightHelpers.SetRobotOrientation(
-          kTurretCameraTable,
-          fieldToTurretRotation.getDegrees(),
-          combinedYawRateDegPerS,
-          0.0,
-          0.0,
-          0.0,
-          0.0);
-
+    if (latestRobotPose != null) {
       Rotation2d robotRotation = latestRobotPose.getValue().getRotation();
+      var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
       double robotYawRateDegPerS = Units.radiansToDegrees(robotSpeeds.omegaRadiansPerSecond);
 
       LimelightHelpers.SetRobotOrientation(
-          kSupplementaryCameraTable,
-          robotRotation.getDegrees(),
-          robotYawRateDegPerS,
-          0.0,
-          0.0,
-          0.0,
-          0.0);
+          kLeftCameraTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
+
+      LimelightHelpers.SetRobotOrientation(
+          kRightCameraTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
     }
   }
 
@@ -76,41 +52,32 @@ public class VisionIOLimelight implements VisionIO {
   public void updateInputs(VisionIOInputs inputs) {
     inputs.connected = true;
 
-    boolean turretSeesTarget = turretTable.getEntry("tv").getDouble(0) == 1.0;
-    boolean supplementarySeesTarget = supplementaryTable.getEntry("tv").getDouble(0) == 1.0;
+    boolean leftSeesTarget = leftTable.getEntry("tv").getDouble(0) == 1.0;
+    boolean rightSeesTarget = rightTable.getEntry("tv").getDouble(0) == 1.0;
 
-    inputs.turretHasTarget = turretSeesTarget;
-    inputs.supplementaryHasTarget = supplementarySeesTarget;
+    inputs.leftHasTarget = leftSeesTarget;
+    inputs.rightHasTarget = rightSeesTarget;
 
-    if (turretSeesTarget) {
-      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kTurretCameraTable);
-      var megatag1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kTurretCameraTable);
-
+    if (leftSeesTarget) {
+      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLeftCameraTable);
       if (megatag2 != null && megatag2.tagCount > 0) {
-        inputs.turretPose = PoseObservation.fromLimelight(megatag2);
-      } else if (megatag1 != null && megatag1.tagCount > 0) {
-        inputs.turretPose = PoseObservation.fromLimelight(megatag1);
+        inputs.leftPose = PoseObservation.fromLimelight(megatag2);
       } else {
-        inputs.turretPose = null;
+        inputs.leftPose = null;
       }
     } else {
-      inputs.turretPose = null;
+      inputs.leftPose = null;
     }
 
-    if (supplementarySeesTarget) {
-      var megatag2 =
-          LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kSupplementaryCameraTable);
-      var megatag1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kSupplementaryCameraTable);
-
+    if (rightSeesTarget) {
+      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kRightCameraTable);
       if (megatag2 != null && megatag2.tagCount > 0) {
-        inputs.supplementaryPose = PoseObservation.fromLimelight(megatag2);
-      } else if (megatag1 != null && megatag1.tagCount > 0) {
-        inputs.supplementaryPose = PoseObservation.fromLimelight(megatag1);
+        inputs.rightPose = PoseObservation.fromLimelight(megatag2);
       } else {
-        inputs.supplementaryPose = null;
+        inputs.rightPose = null;
       }
     } else {
-      inputs.supplementaryPose = null;
+      inputs.rightPose = null;
     }
 
     cachedInputs.set(inputs);

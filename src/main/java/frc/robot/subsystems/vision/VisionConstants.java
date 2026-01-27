@@ -15,28 +15,21 @@ public class VisionConstants {
   public static AprilTagFieldLayout aprilTagLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
-  public static String kTurretCameraTable = "limelight-turret";
-  public static String kSupplementaryCameraTable = "limelight-supplementary";
+  public static String kLeftCameraTable = "limelight-left";
+  public static String kRightCameraTable = "limelight-right";
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
-  public static final double kTurretCameraHeightM = 0.2;
-  public static final double kTurretCameraPitchDeg = -15;
-  public static final double[] kTurretCameraPose = {
-    0.33, 0.0, kTurretCameraHeightM, 0.0, kTurretCameraPitchDeg, 0.0
+  public static final double kLeftCameraHeightM = 0.15;
+  public static final double kLeftCameraPitchDeg = -15;
+  public static final double kLeftCameraYawDeg = -45;
+  public static final double[] kLeftCameraPose = {
+    0.33, -0.33, kLeftCameraHeightM, 0, kLeftCameraPitchDeg, kLeftCameraYawDeg
   };
 
-  public static final double kSupplementaryCameraHeightM = 0.3;
-  public static final double kSupplementaryCameraPitchDeg = -10.0;
-  public static final double kSupplementaryCameraRollDeg = 0.0;
-  public static final double[] kSupplementaryCameraPose = {
-    -0.33,
-    0.0,
-    kSupplementaryCameraHeightM,
-    kSupplementaryCameraRollDeg,
-    kSupplementaryCameraPitchDeg,
-    180.0
+  public static final double kRightCameraHeightM = 0.15;
+  public static final double kRightCameraPitchDeg = -15;
+  public static final double kRightCameraYawDeg = 45;
+  public static final double[] kRightCameraPose = {
+    0.33, 0.33, kRightCameraHeightM, 0, kRightCameraPitchDeg, kRightCameraYawDeg
   };
-
-  // Use MegaTag1 when hub tags are seen on turret camera (avoids yaw lag on moving turret)
-  public static final boolean kUseMegatag1ForHubTagsOnTurret = false;
 }
