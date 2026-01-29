@@ -5,6 +5,7 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
@@ -24,6 +25,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
@@ -97,7 +99,7 @@ public class Vision extends SubsystemBase {
     Pose3d robotPose3d = new Pose3d(robotPose);
 
     // Calculate turret camera pose
-    var latestTurretRotation = robotState.getLatestRobotToTurret();
+    var latestTurretRotation = robotState.getLatestTurretAngle();
     if (latestTurretRotation != null) {
       Transform3d robotToTurret3d =
           new Transform3d(
@@ -105,7 +107,7 @@ public class Vision extends SubsystemBase {
                   kTurretOffset.getTranslation().getX(),
                   kTurretOffset.getTranslation().getY(),
                   0.0),
-              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
+              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians)));
       Transform3d turretToCamera3d = getTurretToCameraTransform(true);
       Transform3d robotToTurretCamera3d = robotToTurret3d.plus(turretToCamera3d);
       turretCameraPose = robotPose3d.transformBy(robotToTurretCamera3d);
@@ -247,7 +249,7 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> robotToTurret = robotState.getRobotToTurret(observation.timestampSeconds);
+    Optional<Angle> robotToTurret = robotState.getTurretAngle(observation.timestampSeconds);
     if (robotToTurret.isEmpty()) {
       return Optional.empty();
     }
@@ -263,7 +265,7 @@ public class Vision extends SubsystemBase {
     if (isTurretCamera) {
       Transform2d turretToRobot =
           new Transform2d(
-              kTurretOffset.getTranslation().unaryMinus(), robotToTurret.get().unaryMinus());
+              kTurretOffset.getTranslation().unaryMinus(), new Rotation2d(robotToTurret.get().unaryMinus().in(Radians)));
       return Optional.of(fieldToTurret.transformBy(turretToRobot));
     } else {
       return Optional.of(fieldToTurret);

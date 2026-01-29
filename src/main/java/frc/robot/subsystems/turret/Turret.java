@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
@@ -33,7 +34,7 @@ public class Turret extends SubsystemBase {
     double timestamp = Timer.getFPGATimestamp();
     RobotState.getInstance()
         .addTurretUpdates(
-            timestamp, inputs.position, RadiansPerSecond.of(inputs.velocityRadPerSec));
+            timestamp, inputs.absolutePosition, RadiansPerSecond.of(inputs.velocityRadPerSec));
   }
 
   /** Sets the turret in open loop (volts). Cancels any position hold. */
@@ -59,7 +60,7 @@ public class Turret extends SubsystemBase {
   }
 
   /** Returns the most recent turret angle. */
-  public Rotation2d getAngle() {
-    return inputs.position;
+  public Angle getAngle() {
+    return inputs.absolutePosition;
   }
 }

@@ -93,7 +93,7 @@ public class RobotContainer {
         // Real robot, instantiate hardware IO implementations
         vision = new Vision(new VisionIOLimelight());
         vision.setDrive(drive);
-        turret = new Turret(new TurretIOTalonFX(TurretConstants.kTurretMotorId));
+        turret = new Turret(new TurretIOTalonFX());
 
         break;
 

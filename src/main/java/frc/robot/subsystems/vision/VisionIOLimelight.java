@@ -1,5 +1,6 @@
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
@@ -40,7 +41,7 @@ public class VisionIOLimelight implements VisionIO {
   }
 
   private void updateTurretCameraPose() {
-    var latestTurretRotation = robotState.getLatestRobotToTurret();
+    var latestTurretRotation = robotState.getLatestTurretAngle();
     if (latestTurretRotation != null) {
 
       Transform3d robotToTurret =
@@ -49,7 +50,7 @@ public class VisionIOLimelight implements VisionIO {
                   kTurretOffset.getTranslation().getX(),
                   kTurretOffset.getTranslation().getY(),
                   0.0),
-              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
+              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians)));
 
       Transform3d turretToCamera =
           new Transform3d(
@@ -78,11 +79,14 @@ public class VisionIOLimelight implements VisionIO {
 
   private void updateRobotOrientation() {
     var latestRobotPose = robotState.getLatestFieldToRobot();
-    var latestTurretRotation = robotState.getLatestRobotToTurret();
+    var latestTurretRotation = robotState.getLatestTurretAngle();
 
     if (latestRobotPose != null && latestTurretRotation != null) {
       Rotation2d fieldToTurretRotation =
-          latestRobotPose.getValue().getRotation().plus(latestTurretRotation.getValue());
+          latestRobotPose
+              .getValue()
+              .getRotation()
+              .plus(Rotation2d.fromRadians(latestTurretRotation.getValue().in(Radians)));
       var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
       var turretAngularVelocityMeasure = robotState.getLatestTurretAngularVelocity();
       double turretAngularVelocityRadPerS = turretAngularVelocityMeasure.in(RadiansPerSecond);

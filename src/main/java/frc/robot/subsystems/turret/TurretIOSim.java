@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.turret.TurretConstants.*;
 
 import edu.wpi.first.math.MathUtil;
@@ -26,6 +27,9 @@ public class TurretIOSim implements TurretIO {
   private double positionRad = 0.0;
   private double velocityRadPerSec = 0.0;
   private double currentAmps = 0.0;
+
+  private double encoderOnePosition = 0.0;
+  private double encoderTwoPosition = 0.0;
 
   /** Creates a new TurretIOSim. */
   public TurretIOSim() {
@@ -78,12 +82,18 @@ public class TurretIOSim implements TurretIO {
 
     currentAmps = Math.abs(motorSim.getCurrentDrawAmps());
 
+    encoderOnePosition =
+        ((positionRad * kMotorToEncoderOneGearRatio) + encoderOnePosition) % (2.0 * Math.PI);
+    encoderTwoPosition =
+        ((positionRad * kMotorToEncoderTwoGearRatio) + encoderTwoPosition) % (2.0 * Math.PI);
+
     inputs.connected = true;
-    inputs.position = new Rotation2d(positionRad);
-    inputs.absolutePosition = inputs.position;
+    inputs.rotorPosition = Radians.of(positionRad);
     inputs.velocityRadPerSec = velocityRadPerSec;
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = currentAmps;
+    inputs.encoderOnePosition = Radians.of(encoderOnePosition);
+    inputs.encoderTwoPosition = Radians.of(encoderTwoPosition);
   }
 
   @Override

@@ -7,15 +7,23 @@
 
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Rotations;
+
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface TurretIO {
   @AutoLog
   public static class TurretIOInputs {
     public boolean connected = false;
-    public Rotation2d absolutePosition = Rotation2d.kZero;
-    public Rotation2d position = Rotation2d.kZero;
+    public Angle absolutePosition = Degrees.of(0.0);
+    public Angle rotorPosition = Degrees.of(0.0);
+    public Angle encoderOnePosition = Degrees.of(0.0);
+    public Angle encoderTwoPosition = Degrees.of(0.0);
+    public Angle encoderOneZeroOffset = Rotations.of(0);
+    public Angle encoderTwoZeroOffset = Rotations.of(0);
     public double velocityRadPerSec = 0.0;
     public double appliedVolts = 0.0;
     public double currentAmps = 0.0;

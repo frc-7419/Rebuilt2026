@@ -37,8 +37,8 @@ public class RobotState {
 
   private final TimeInterpolatableBuffer<Pose2d> fieldToRobot =
       TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
-  private final TimeInterpolatableBuffer<Rotation2d> robotToTurret =
-      TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> turretAngle =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> turretAngularVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> hoodPosition =
@@ -61,7 +61,7 @@ public class RobotState {
       qStdDevs.set(i, 0, Math.pow(odometryStateStdDevs.get(i, 0), 2));
     }
     fieldToRobot.addSample(0.0, Pose2d.kZero);
-    robotToTurret.addSample(0.0, Rotation2d.kZero);
+    turretAngle.addSample(0.0, 0.0);
     turretAngularVelocity.addSample(0.0, 0.0);
     hoodPosition.addSample(0.0, 0.0);
     shooterVelocity.addSample(0.0, 0.0);
@@ -156,18 +156,20 @@ public class RobotState {
   }
 
   public void addTurretUpdates(
-      double timestamp, Rotation2d turretRotation, AngularVelocity turretAngularVelocityMeasure) {
-    robotToTurret.addSample(timestamp, turretRotation);
+      double timestamp, Angle turretRotation, AngularVelocity turretAngularVelocityMeasure) {
+    turretAngle.addSample(timestamp, turretRotation.in(Radians));
     turretAngularVelocity.addSample(timestamp, turretAngularVelocityMeasure.baseUnitMagnitude());
   }
 
-  public Optional<Rotation2d> getRobotToTurret(double timestamp) {
-    return robotToTurret.getSample(timestamp);
+  public Optional<Angle> getTurretAngle(double timestamp) {
+    return turretAngle.getSample(timestamp).map(Radians::of);
   }
 
-  public Map.Entry<Double, Rotation2d> getLatestRobotToTurret() {
-    var buffer = robotToTurret.getInternalBuffer();
-    return buffer.isEmpty() ? null : buffer.lastEntry();
+  public Map.Entry<Double, Angle> getLatestTurretAngle() {
+    var buffer = turretAngle.getInternalBuffer();
+    if (buffer.isEmpty()) return null;
+    var last = buffer.lastEntry();
+    return Map.entry(last.getKey(), Radians.of(last.getValue()));
   }
 
   public AngularVelocity getLatestTurretAngularVelocity() {

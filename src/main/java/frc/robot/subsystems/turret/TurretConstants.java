@@ -17,6 +17,8 @@ public final class TurretConstants {
 
   // Default CAN ID for turret motor (override to match hardware)
   public static final int kTurretMotorId = 9;
+  public static final int kEncoderOneId = 6;
+  public static final int kEncoderTwoId = 7;
 
   // Control gains (software PID for safety). Tune as needed.
   public static final double kP = 40;
@@ -36,8 +38,15 @@ public final class TurretConstants {
   // Small deadband for joystick control
   public static final double kDeadband = 0.05;
 
-  // Gear ratio between motor and turret (change)
-  public static final double kMotorToTurretGearRatio = 0.4;
+  // Arbitary gear ratios
+  public static final double kMotorToEncoderOneGearRatio = (24.0 / 16.0);
+  public static final double kEncoderOneToEncoderTwoGearRatio = (32.0 / 12.0);
+  public static final double kEncoderTwoToTurretGearRatio = (20.0 / 12.0);
+
+  public static final double kMotorToEncoderTwoGearRatio =
+      kMotorToEncoderOneGearRatio * kEncoderOneToEncoderTwoGearRatio;
+  public static final double kMotorToTurretGearRatio =
+      kMotorToEncoderTwoGearRatio * kEncoderTwoToTurretGearRatio;
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center

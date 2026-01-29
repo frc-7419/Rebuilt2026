@@ -5,6 +5,7 @@
 
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.aprilTagLayout;
 import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
@@ -120,7 +121,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
       robotPose = Pose2d.kZero;
     }
 
-    var latestTurretRotation = robotState.getLatestRobotToTurret();
+    var latestTurretRotation = robotState.getLatestTurretAngle();
     if (latestTurretRotation != null && baseTurretToCamera != null) {
       Transform3d robotToTurret =
           new Transform3d(
@@ -128,9 +129,9 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
                   kTurretOffset.getTranslation().getX(),
                   kTurretOffset.getTranslation().getY(),
                   0.0),
-              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians()));
+              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians)));
 
-      Rotation3d turretRot = new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().getRadians());
+      Rotation3d turretRot = new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians));
       Transform3d rotatedTurretToCamera =
           new Transform3d(
               baseTurretToCamera.getTranslation().rotateBy(turretRot),
