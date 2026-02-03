@@ -1,12 +1,7 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static frc.robot.subsystems.turret.TurretConstants.kMotorToTurretGearRatio;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -20,8 +15,6 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -37,7 +30,7 @@ public class TurretIOTalonFX implements TurretIO {
   private final StatusSignal<Voltage> motorAppliedVolts;
   private final StatusSignal<Current> motorCurrent;
   private final StatusSignal<AngularVelocity> motorVelocity;
-  private final StatusSignal<edu.wpi.first.units.measure.Angle> motorPosition;
+  private final StatusSignal<Angle> motorPosition;
   private final StatusSignal<Angle> encoderOnePosition;
   private final StatusSignal<Angle> encoderTwoPosition;
 
@@ -83,8 +76,9 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.connected = status.equals(StatusCode.OK);
     inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
     inputs.currentAmps = motorCurrent.getValueAsDouble();
-    inputs.velocityRadPerSec = Units.rotationsToRadians(motorVelocity.getValueAsDouble());
+    inputs.velocity = motorVelocity.getValue().div(kMotorToTurretGearRatio);
     inputs.rotorPosition = motorPosition.getValue();
+    inputs.turretPosition = motorPosition.getValue().div(kMotorToTurretGearRatio);
     inputs.encoderOnePosition = encoderOnePosition.getValue();
     inputs.encoderTwoPosition = encoderTwoPosition.getValue();
   }
@@ -95,7 +89,7 @@ public class TurretIOTalonFX implements TurretIO {
   }
 
   @Override
-  public void setPosition(Rotation2d position) {
-    motor.setControl(positionVoltageRequest.withPosition(position.getRotations()));
+  public void setPosition(Angle position) {
+    motor.setControl(positionVoltageRequest.withPosition(position.in(Rotations)));
   }
 }

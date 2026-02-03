@@ -1,13 +1,14 @@
 package frc.robot.subsystems.turret;
 
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.turret.TurretConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** Simulation implementation of TurretIO. */
@@ -24,7 +25,8 @@ public class TurretIOSim implements TurretIO {
   private double targetPositionRad = 0.0;
   private double appliedVolts = 0.0;
 
-  private double positionRad = 0.0;
+  private double rotorPositionRad = 0.0;
+  private double turretPositionRad = 0.0;
   private double velocityRadPerSec = 0.0;
   private double currentAmps = 0.0;
 
@@ -45,30 +47,31 @@ public class TurretIOSim implements TurretIO {
   @Override
   public void updateInputs(TurretIOInputs inputs) {
     if (positionControl) {
-      double pidOutput = positionController.calculate(positionRad, targetPositionRad);
+      double pidOutput = positionController.calculate(turretPositionRad, targetPositionRad);
       appliedVolts = MathUtil.clamp(pidOutput, -kMaxVoltage, kMaxVoltage);
     }
 
-    if (positionRad <= kMinAngleRad && appliedVolts < 0) {
+    if (turretPositionRad <= kMinAngleRad && appliedVolts < 0) {
       appliedVolts = 0.0;
       motorSim.setState(kMinAngleRad, 0.0);
-    } else if (positionRad >= kMaxAngleRad && appliedVolts > 0) {
+    } else if (turretPositionRad >= kMaxAngleRad && appliedVolts > 0) {
       appliedVolts = 0.0;
       motorSim.setState(kMaxAngleRad, 0.0);
     }
 
-    if (positionRad < kMinAngleRad) {
-      positionRad = kMinAngleRad;
-      motorSim.setState(positionRad, 0.0);
-    } else if (positionRad > kMaxAngleRad) {
-      positionRad = kMaxAngleRad;
-      motorSim.setState(positionRad, 0.0);
+    if (turretPositionRad < kMinAngleRad) {
+      turretPositionRad = kMinAngleRad;
+      motorSim.setState(turretPositionRad, 0.0);
+    } else if (turretPositionRad > kMaxAngleRad) {
+      turretPositionRad = kMaxAngleRad;
+      motorSim.setState(turretPositionRad, 0.0);
     }
 
     motorSim.setInputVoltage(appliedVolts);
     motorSim.update(SIMULATION_DT);
 
-    positionRad = motorSim.getAngularPositionRad();
+    turretPositionRad = motorSim.getAngularPositionRad();
+    rotorPositionRad = turretPositionRad * kMotorToTurretGearRatio;
     velocityRadPerSec = motorSim.getAngularVelocityRadPerSec();
 
     if (Math.abs(appliedVolts) < 0.01) {
@@ -77,19 +80,22 @@ public class TurretIOSim implements TurretIO {
       if (Math.abs(velocityRadPerSec) < 0.01) {
         velocityRadPerSec = 0.0;
       }
-      motorSim.setState(positionRad, velocityRadPerSec);
+      motorSim.setState(turretPositionRad, velocityRadPerSec);
     }
 
     currentAmps = Math.abs(motorSim.getCurrentDrawAmps());
 
     encoderOnePosition =
-        ((positionRad * kMotorToEncoderOneGearRatio) + encoderOnePosition) % (2.0 * Math.PI);
+        ((rotorPositionRad * kMotorToEncoderOneGearRatio) + encoderOneZeroOffset.in(Radians))
+            % (2.0 * Math.PI);
     encoderTwoPosition =
-        ((positionRad * kMotorToEncoderTwoGearRatio) + encoderTwoPosition) % (2.0 * Math.PI);
+        ((rotorPositionRad * kMotorToEncoderTwoGearRatio) + encoderTwoZeroOffset.in(Radians))
+            % (2.0 * Math.PI);
 
     inputs.connected = true;
-    inputs.rotorPosition = Radians.of(positionRad);
-    inputs.velocityRadPerSec = velocityRadPerSec;
+    inputs.rotorPosition = Radians.of(rotorPositionRad);
+    inputs.turretPosition = Radians.of(turretPositionRad);
+    inputs.velocity = RadiansPerSecond.of(velocityRadPerSec);
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = currentAmps;
     inputs.encoderOnePosition = Radians.of(encoderOnePosition);
@@ -105,10 +111,10 @@ public class TurretIOSim implements TurretIO {
   }
 
   @Override
-  public void setPosition(Rotation2d position) {
+  public void setPosition(Angle position) {
     positionControl = true;
 
-    double targetRad = position.getRadians();
+    double targetRad = position.in(Radians);
     targetRad = MathUtil.clamp(targetRad, kMinAngleRad, kMaxAngleRad);
     targetPositionRad = targetRad;
   }

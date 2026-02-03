@@ -32,7 +32,7 @@ public class VisualizeFuelShot extends Command {
           MotionParams params = new MotionParams();
 
           var latestRobotPose = state.getLatestFieldToRobot();
-          var latestTurretRotation = state.getLatestRobotToTurret();
+          var latestTurretRotation = state.getLatestTurretAngle();
 
           Logger.recordOutput("FuelVisualizer/Inputs/RobotPoseAvailable", latestRobotPose != null);
           Logger.recordOutput(
@@ -44,7 +44,8 @@ public class VisualizeFuelShot extends Command {
           }
 
           Pose2d robotPose = latestRobotPose.getValue();
-          Rotation2d turretRotation = latestTurretRotation.getValue();
+          Rotation2d turretRotation =
+              Rotation2d.fromRadians(latestTurretRotation.getValue().in(Radians));
           turretRotation = robotPose.getRotation().rotateBy(turretRotation);
 
           double hoodAngleRad =

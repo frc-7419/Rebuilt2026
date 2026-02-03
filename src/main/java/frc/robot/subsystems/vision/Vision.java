@@ -265,7 +265,8 @@ public class Vision extends SubsystemBase {
     if (isTurretCamera) {
       Transform2d turretToRobot =
           new Transform2d(
-              kTurretOffset.getTranslation().unaryMinus(), new Rotation2d(robotToTurret.get().unaryMinus().in(Radians)));
+              kTurretOffset.getTranslation().unaryMinus(),
+              new Rotation2d(robotToTurret.get().unaryMinus().in(Radians)));
       return Optional.of(fieldToTurret.transformBy(turretToRobot));
     } else {
       return Optional.of(fieldToTurret);

@@ -7,9 +7,12 @@
 
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Radians;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotState;
@@ -32,7 +35,7 @@ public final class TurretCommands {
   }
 
   /** Hold turret at a specific absolute rotation. */
-  public static Command holdAngle(Turret turret, Rotation2d angle) {
+  public static Command holdAngle(Turret turret, Angle angle) {
     return Commands.runOnce(() -> turret.setAngle(angle), turret).withTimeout(0.0);
   }
 
@@ -96,7 +99,7 @@ public final class TurretCommands {
 
           Logger.recordOutput("TurretCommands/PointAtHub/ChosenAngleRad", bestAngle);
 
-          turret.setAngle(new Rotation2d(bestAngle));
+          turret.setAngle(Radians.of(bestAngle));
         },
         turret);
   }

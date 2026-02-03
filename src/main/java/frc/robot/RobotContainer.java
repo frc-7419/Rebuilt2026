@@ -7,6 +7,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Radians;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,14 +30,9 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.turret.Turret;
-import frc.robot.subsystems.turret.TurretConstants;
 import frc.robot.subsystems.turret.TurretIO;
 import frc.robot.subsystems.turret.TurretIOSim;
 import frc.robot.subsystems.turret.TurretIOTalonFX;
-import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOLimelight;
-import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -47,7 +44,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Vision vision;
+  // private final Vision vision;
   private final Turret turret;
 
   // Controller
@@ -91,8 +88,8 @@ public class RobotContainer {
         // new ModuleIOTalonFXS(TunerConstants.BackRight));
 
         // Real robot, instantiate hardware IO implementations
-        vision = new Vision(new VisionIOLimelight());
-        vision.setDrive(drive);
+        // vision = new Vision(new VisionIOLimelight());
+        // vision.setDrive(drive);
         turret = new Turret(new TurretIOTalonFX());
 
         break;
@@ -106,8 +103,8 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.FrontRight),
                 new ModuleIOSim(TunerConstants.BackLeft),
                 new ModuleIOSim(TunerConstants.BackRight));
-        vision = new Vision(new VisionIOPhotonVisionSim());
-        vision.setDrive(drive);
+        // vision = new Vision(new VisionIOPhotonVisionSim());
+        // vision.setDrive(drive);
         turret = new Turret(new TurretIOSim());
 
         break;
@@ -123,8 +120,8 @@ public class RobotContainer {
                 new ModuleIO() {});
 
         // Replayed robot, disable IO implementations
-        vision = new Vision(new VisionIO() {});
-        vision.setDrive(drive);
+        // vision = new Vision(new VisionIO() {});
+        // vision.setDrive(drive);
         turret = new Turret(new TurretIO() {});
         break;
     }
@@ -166,6 +163,8 @@ public class RobotContainer {
 
     // Default turret manual control on right stick X
     turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
+
     driver
         .rightBumper()
         .onTrue(
@@ -196,7 +195,7 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Reset turret to zero when Y pressed
-    driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Rotation2d.kZero), turret));
+    driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
   }
 
   /**
