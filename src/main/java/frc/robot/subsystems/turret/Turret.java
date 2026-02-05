@@ -1,28 +1,44 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.subsystems.turret;
 
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
+import yams.units.EasyCRT;
+import yams.units.EasyCRTConfig;
 
 /** Turret subsystem implementing position control with IO abstraction. */
 public class Turret extends SubsystemBase {
   private final TurretIO io;
   private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
+  private final EasyCRTConfig config;
+  private boolean seeded;
+
+  private static final double kSeedTimeoutSec = 30.0;
+  private static final double kSeedRetryPeriodSec = 10.0;
+
+  private final double seedStartTimeSec = Timer.getFPGATimestamp();
+  private double lastSeedAttemptSec = -Double.MAX_VALUE;
+  private boolean seedTimedOut = false;
 
   public Turret(TurretIO io) {
     this.io = io;
+    config =
+        new EasyCRTConfig(() -> inputs.encoderOnePosition, () -> inputs.encoderTwoPosition)
+            .withEncoderRatios(
+                TurretConstants.kMotorToTurretGearRatio
+                    / TurretConstants.kMotorToEncoderOneGearRatio,
+                TurretConstants.kMotorToTurretGearRatio
+                    / TurretConstants.kMotorToEncoderTwoGearRatio)
+            .withMechanismRange(TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
+
+    Logger.recordOutput("Turret/SatisfiesRange", config.coverageSatisfiesRange());
   }
 
   @Override
@@ -32,6 +48,21 @@ public class Turret extends SubsystemBase {
 
     double timestamp = Timer.getFPGATimestamp();
     RobotState.getInstance().addTurretUpdates(timestamp, inputs.turretPosition, inputs.velocity);
+
+    if (!seeded && !seedTimedOut) {
+      double elapsed = timestamp - seedStartTimeSec;
+
+      if (elapsed > kSeedTimeoutSec) {
+        seedTimedOut = true;
+        Logger.recordOutput("Turret/CRTSolverStatus", "Seed Timeout");
+      } else if (timestamp - lastSeedAttemptSec >= kSeedRetryPeriodSec) {
+        lastSeedAttemptSec = timestamp;
+        seeded = seed();
+      }
+
+      Logger.recordOutput("Turret/SeedElapsedSec", elapsed);
+      Logger.recordOutput("Turret/Seeded", seeded);
+    }
   }
 
   /** Sets the turret in open loop (volts). Cancels any position hold. */
@@ -44,7 +75,10 @@ public class Turret extends SubsystemBase {
     double normalizedAngle = MathUtil.angleModulus(angleRad);
 
     double wrappedAngle =
-        MathUtil.clamp(normalizedAngle, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
+        MathUtil.clamp(
+            normalizedAngle,
+            TurretConstants.kMinAngle.in(Radians),
+            TurretConstants.kMaxAngle.in(Radians));
     Angle target = Radians.of(wrappedAngle);
 
     Logger.recordOutput("Turret/TurretRequestedRad", wrappedAngle);
@@ -59,5 +93,27 @@ public class Turret extends SubsystemBase {
   /** Returns the most recent turret angle. */
   public Angle getAngle() {
     return inputs.turretPosition;
+  }
+
+  public boolean seed() {
+    if (Constants.currentMode != Constants.Mode.REAL) return true;
+
+    if (inputs.velocity.in(RadiansPerSecond) > 0.1) {
+      Logger.recordOutput("Turret/CRTSolverStatus", "Turret in Motion");
+      return false;
+    }
+
+    EasyCRT easyCrtSolver = new EasyCRT(config);
+
+    easyCrtSolver
+        .getAngleOptional()
+        .ifPresent(
+            angle -> {
+              io.zeroRotor(angle);
+            });
+
+    String status = easyCrtSolver.getLastStatus();
+    Logger.recordOutput("Turret/CRTSolverStatus", status);
+    return easyCrtSolver.getAngleOptional().isPresent();
   }
 }

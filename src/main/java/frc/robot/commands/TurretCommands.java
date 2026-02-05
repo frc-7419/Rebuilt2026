@@ -91,10 +91,10 @@ public final class TurretCommands {
           Logger.recordOutput("TurretCommands/PointAtHub/TargetAngleRad", targetAngleRad);
           Logger.recordOutput("TurretCommands/PointAtHub/WrappedAngle", bestAngle);
 
-          if (bestAngle < TurretConstants.kMinAngleRad) {
-            bestAngle = TurretConstants.kMinAngleRad;
-          } else if (bestAngle > TurretConstants.kMaxAngleRad) {
-            bestAngle = TurretConstants.kMaxAngleRad;
+          if (bestAngle < TurretConstants.kMinAngle.in(Radians)) {
+            bestAngle = TurretConstants.kMinAngle.in(Radians);
+          } else if (bestAngle > TurretConstants.kMaxAngle.in(Radians)) {
+            bestAngle = TurretConstants.kMaxAngle.in(Radians);
           }
 
           Logger.recordOutput("TurretCommands/PointAtHub/ChosenAngleRad", bestAngle);

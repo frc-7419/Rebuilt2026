@@ -163,6 +163,7 @@ public class RobotContainer {
 
     // Default turret manual control on right stick X
     turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+    operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
     driver

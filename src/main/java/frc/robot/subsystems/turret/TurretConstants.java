@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -11,7 +12,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 
 /** Basic turret configuration values. Update IDs and gains for your robot. */
@@ -29,9 +29,9 @@ public final class TurretConstants {
   // Maximum rotation range in degreess
   public static final double kTurretMaxRotations = 720;
 
-  // Allowed motion limits (radians).
-  public static final double kMinAngleRad = Units.degreesToRadians(-kTurretMaxRotations / 2.0);
-  public static final double kMaxAngleRad = Units.degreesToRadians(kTurretMaxRotations / 2.0);
+  // Allowed motion limits.
+  public static final Angle kMinAngle = Degrees.of(-kTurretMaxRotations / 2.0);
+  public static final Angle kMaxAngle = Degrees.of(kTurretMaxRotations / 2.0);
 
   // Small deadband for joystick control
   public static final double kDeadband = 0.05;
@@ -63,9 +63,13 @@ public final class TurretConstants {
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
-    motorFeedbackConfigs.SensorToMechanismRatio = kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
+    motorFeedbackConfigs.SensorToMechanismRatio =
+        kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
     motorFeedbackConfigs.FeedbackRemoteSensorID = kEncoderOneId;
-
+    motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kMaxAngle.in(Rotations);
+    motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = kMinAngle.in(Rotations);
+    motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+    motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
 
     cancoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
     cancoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;

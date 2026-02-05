@@ -55,19 +55,19 @@ public class TurretIOSim implements TurretIO {
       appliedVolts = MathUtil.clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
     }
 
-    if (turretPositionRad <= kMinAngleRad && appliedVolts < 0) {
+    if (turretPositionRad <= kMinAngle.in(Radians) && appliedVolts < 0) {
       appliedVolts = 0.0;
-      motorSim.setState(kMinAngleRad, 0.0);
-    } else if (turretPositionRad >= kMaxAngleRad && appliedVolts > 0) {
+      motorSim.setState(kMinAngle.in(Radians), 0.0);
+    } else if (turretPositionRad >= kMaxAngle.in(Radians) && appliedVolts > 0) {
       appliedVolts = 0.0;
-      motorSim.setState(kMaxAngleRad, 0.0);
+      motorSim.setState(kMaxAngle.in(Radians), 0.0);
     }
 
-    if (turretPositionRad < kMinAngleRad) {
-      turretPositionRad = kMinAngleRad;
+    if (turretPositionRad < kMinAngle.in(Radians)) {
+      turretPositionRad = kMinAngle.in(Radians);
       motorSim.setState(turretPositionRad, 0.0);
-    } else if (turretPositionRad > kMaxAngleRad) {
-      turretPositionRad = kMaxAngleRad;
+    } else if (turretPositionRad > kMaxAngle.in(Radians)) {
+      turretPositionRad = kMaxAngle.in(Radians);
       motorSim.setState(turretPositionRad, 0.0);
     }
 
@@ -121,7 +121,7 @@ public class TurretIOSim implements TurretIO {
     feedforwardVelocityRadPerSec = 0.0;
 
     double targetRad = position.in(Radians);
-    targetRad = MathUtil.clamp(targetRad, kMinAngleRad, kMaxAngleRad);
+    targetRad = MathUtil.clamp(targetRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));
     targetPositionRad = targetRad;
   }
 
@@ -130,7 +130,7 @@ public class TurretIOSim implements TurretIO {
     positionControl = true;
 
     double targetRad = position.in(Radians);
-    targetRad = MathUtil.clamp(targetRad, kMinAngleRad, kMaxAngleRad);
+    targetRad = MathUtil.clamp(targetRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));
     targetPositionRad = targetRad;
     feedforwardVelocityRadPerSec = velocity.in(RadiansPerSecond);
   }
