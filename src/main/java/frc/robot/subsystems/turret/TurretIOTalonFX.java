@@ -7,14 +7,10 @@ import static frc.robot.util.PhoenixUtil.tryUntilOk;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -43,17 +39,9 @@ public class TurretIOTalonFX implements TurretIO {
     encoderOne = new CANcoder(TurretConstants.kEncoderOneId, TunerConstants.kCANBus);
     encoderTwo = new CANcoder(TurretConstants.kEncoderTwoId, TunerConstants.kCANBus);
 
-    var motorConfig = new TalonFXConfiguration();
-    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    tryUntilOk(5, () -> motor.getConfigurator().apply(motorConfig, 0.25));
-
-    var encoderConfig = new CANcoderConfiguration();
-    encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
-    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-    encoderConfig.MagnetSensor.MagnetOffset = 0;
-
-    tryUntilOk(5, () -> encoderOne.getConfigurator().apply(encoderConfig, 0.25));
-    tryUntilOk(5, () -> encoderTwo.getConfigurator().apply(encoderConfig, 0.25));
+    tryUntilOk(5, () -> motor.getConfigurator().apply(TurretConstants.motorConfig, 0.25));
+    tryUntilOk(5, () -> encoderOne.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
+    tryUntilOk(5, () -> encoderTwo.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
 
     motorAppliedVolts = motor.getMotorVoltage();
     motorCurrent = motor.getStatorCurrent();
@@ -91,5 +79,16 @@ public class TurretIOTalonFX implements TurretIO {
   @Override
   public void setPosition(Angle position) {
     motor.setControl(positionVoltageRequest.withPosition(position.in(Rotations)));
+  }
+
+  @Override
+  public void setState(Angle position, AngularVelocity velocity) {
+    motor.setControl(
+        positionVoltageRequest.withPosition(position.in(Rotations)).withVelocity(velocity));
+  }
+
+  @Override
+  public void zeroRotor(Angle offset) {
+    motor.setPosition(offset);
   }
 }

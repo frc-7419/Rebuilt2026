@@ -31,4 +31,10 @@ public interface TurretIO {
 
   /** Run turret to a specific Angle */
   public default void setPosition(Angle position) {}
+
+  /** Run turret to a specific state */
+  public default void setState(Angle position, AngularVelocity velocity) {}
+
+  /** Zero the rotor position to a specific offset. */
+  public default void zeroRotor(Angle offset) {}
 }

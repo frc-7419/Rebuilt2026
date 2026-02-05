@@ -9,6 +9,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** Simulation implementation of TurretIO. */
@@ -16,6 +17,7 @@ public class TurretIOSim implements TurretIO {
   private static final double SIMULATION_DT = 0.02;
   private static final double TURRET_INERTIA = 0.1;
   private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60Foc(1);
+  private static final double kV = 12.0 / MOTOR_MODEL.freeSpeedRadPerSec; // Velocity feedforward
 
   // Motor simulation
   private final DCMotorSim motorSim;
@@ -23,6 +25,7 @@ public class TurretIOSim implements TurretIO {
 
   private boolean positionControl = false;
   private double targetPositionRad = 0.0;
+  private double feedforwardVelocityRadPerSec = 0.0;
   private double appliedVolts = 0.0;
 
   private double rotorPositionRad = 0.0;
@@ -41,14 +44,15 @@ public class TurretIOSim implements TurretIO {
                 MOTOR_MODEL, TURRET_INERTIA, kMotorToTurretGearRatio),
             MOTOR_MODEL);
 
-    positionController = new PIDController(kP, kI, kD);
+    positionController = new PIDController(kSimP, kSimI, kSimD);
   }
 
   @Override
   public void updateInputs(TurretIOInputs inputs) {
     if (positionControl) {
       double pidOutput = positionController.calculate(turretPositionRad, targetPositionRad);
-      appliedVolts = MathUtil.clamp(pidOutput, -kMaxVoltage, kMaxVoltage);
+      double feedforwardVolts = feedforwardVelocityRadPerSec * kV;
+      appliedVolts = MathUtil.clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
     }
 
     if (turretPositionRad <= kMinAngleRad && appliedVolts < 0) {
@@ -106,6 +110,7 @@ public class TurretIOSim implements TurretIO {
   public void setOpenLoop(double volts) {
     positionControl = false;
     positionController.reset();
+    feedforwardVelocityRadPerSec = 0.0;
 
     appliedVolts = MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
   }
@@ -113,9 +118,20 @@ public class TurretIOSim implements TurretIO {
   @Override
   public void setPosition(Angle position) {
     positionControl = true;
+    feedforwardVelocityRadPerSec = 0.0;
 
     double targetRad = position.in(Radians);
     targetRad = MathUtil.clamp(targetRad, kMinAngleRad, kMaxAngleRad);
     targetPositionRad = targetRad;
+  }
+
+  @Override
+  public void setState(Angle position, AngularVelocity velocity) {
+    positionControl = true;
+
+    double targetRad = position.in(Radians);
+    targetRad = MathUtil.clamp(targetRad, kMinAngleRad, kMaxAngleRad);
+    targetPositionRad = targetRad;
+    feedforwardVelocityRadPerSec = velocity.in(RadiansPerSecond);
   }
 }

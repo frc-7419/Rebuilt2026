@@ -2,6 +2,12 @@ package frc.robot.subsystems.turret;
 
 import static edu.wpi.first.units.Units.Rotations;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -12,15 +18,10 @@ import edu.wpi.first.units.measure.Angle;
 public final class TurretConstants {
   private TurretConstants() {}
 
-  // Default CAN ID for turret motor (override to match hardware)
+  // Arbitary CAN IDs
   public static final int kTurretMotorId = 9;
   public static final int kEncoderOneId = 6;
   public static final int kEncoderTwoId = 7;
-
-  // Control gains (software PID for safety). Tune as needed.
-  public static final double kP = 10;
-  public static final double kI = 0.0;
-  public static final double kD = 1;
 
   // Maximum output voltage when using software PID (Volts)
   public static final double kMaxVoltage = 12.0;
@@ -47,6 +48,33 @@ public final class TurretConstants {
 
   public static final Angle encoderOneZeroOffset = Rotations.of(0.2391);
   public static final Angle encoderTwoZeroOffset = Rotations.of(0.8421);
+
+  public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
+  public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
+  public static final FeedbackConfigs motorFeedbackConfigs = motorConfig.Feedback;
+
+  public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+
+  static {
+    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    motorSlot0Configs.kP = 10;
+    motorSlot0Configs.kI = 0;
+    motorSlot0Configs.kD = 1;
+    motorSlot0Configs.kV = 0;
+    motorSlot0Configs.kS = 0;
+    motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
+    motorFeedbackConfigs.SensorToMechanismRatio = kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
+    motorFeedbackConfigs.FeedbackRemoteSensorID = kEncoderOneId;
+
+
+    cancoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+    cancoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+    cancoderConfig.MagnetSensor.MagnetOffset = 0;
+  }
+
+  public static final double kSimP = 10.0;
+  public static final double kSimI = 0.0;
+  public static final double kSimD = 1.0;
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center
