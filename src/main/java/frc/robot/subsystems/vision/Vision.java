@@ -233,12 +233,6 @@ public class Vision extends SubsystemBase {
 
   private void addVisionObservation(RobotState.VisionObservation observation) {
     if (drive != null) {
-      /*   Pose2d adjusted =
-          new Pose2d(
-              observation.visionPose().getX(),
-              observation.visionPose().getY(),
-              observation.visionPose().getRotation().rotateBy(Rotation2d.fromDegrees(180)));
-      Logger.recordOutput("Adjusted Pose", adjusted);*/
       drive.addVisionMeasurement(
           observation.visionPose(), observation.timestamp(), observation.stdDevs());
     }

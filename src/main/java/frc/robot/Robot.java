@@ -7,9 +7,18 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
+
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.simulation.SimulatedRobotState;
+import frc.robot.subsystems.hopper.HopperConstants;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -75,6 +84,7 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    RobotState state = RobotState.getInstance();
     // Optionally switch the thread to high priority to improve loop
     // timing (see the template project documentation for details)
     // Threads.setCurrentThreadPriority(true, 99);
@@ -88,6 +98,38 @@ public class Robot extends LoggedRobot {
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
+    Rotation3d turretYaw =
+        new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));
+
+    Rotation3d hoodPitch =
+        new Rotation3d(0, Math.sin(Timer.getTimestamp()) * 0.3054325 + 0.3054325, 0);
+
+    Pose3d turretPose =
+        Constants.turretBasePose.transformBy(new Transform3d(new Translation3d(), turretYaw));
+
+    Pose3d hoodPose =
+        turretPose
+            .transformBy(Constants.turretToHood)
+            .transformBy(new Transform3d(new Translation3d(), hoodPitch));
+
+    Pose3d hopperPose =
+        Constants.hopperBasePose.transformBy(
+            new Transform3d(
+                new Translation3d(
+                    -(Math.sin(Timer.getTimestamp())
+                            * (HopperConstants.kHopperMaxExtension.in(Meters) / 2)
+                        + HopperConstants.kHopperMaxExtension.in(Meters) / 2),
+                    0,
+                    0),
+                new Rotation3d()));
+
+    Pose3d intakePose =
+        Constants.intakeBasePose.transformBy(
+            new Transform3d(
+                new Translation3d(),
+                new Rotation3d(0, -(Math.sin(Timer.getTimestamp()) * 1 + 1), 0)));
+    Logger.recordOutput(
+        "ComponentPoses", new Pose3d[] {turretPose, hoodPose, intakePose, hopperPose});
   }
 
   /** This function is called once when the robot is disabled. */

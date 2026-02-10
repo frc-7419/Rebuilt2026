@@ -10,6 +10,7 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -36,9 +37,13 @@ public class RobotState {
 
   private final TimeInterpolatableBuffer<Pose2d> fieldToRobot =
       TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
-  private final TimeInterpolatableBuffer<Rotation2d> robotToTurret =
-      TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> turretAngle =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> turretAngularVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> hoodPosition =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> shooterVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final Matrix<N3, N1> qStdDevs = new Matrix<>(Nat.N3(), Nat.N1());
 
@@ -56,8 +61,10 @@ public class RobotState {
       qStdDevs.set(i, 0, Math.pow(odometryStateStdDevs.get(i, 0), 2));
     }
     fieldToRobot.addSample(0.0, Pose2d.kZero);
-    robotToTurret.addSample(0.0, Rotation2d.kZero);
+    turretAngle.addSample(0.0, 0.0);
     turretAngularVelocity.addSample(0.0, 0.0);
+    hoodPosition.addSample(0.0, 0.0);
+    shooterVelocity.addSample(0.0, 0.0);
   }
 
   public void resetPose(Pose2d pose) {
@@ -149,24 +156,46 @@ public class RobotState {
   }
 
   public void addTurretUpdates(
-      double timestamp, Rotation2d turretRotation, AngularVelocity turretAngularVelocityMeasure) {
-    robotToTurret.addSample(timestamp, turretRotation);
+      double timestamp, Angle turretRotation, AngularVelocity turretAngularVelocityMeasure) {
+    turretAngle.addSample(timestamp, turretRotation.in(Radians));
     turretAngularVelocity.addSample(timestamp, turretAngularVelocityMeasure.baseUnitMagnitude());
   }
 
-  public Optional<Rotation2d> getRobotToTurret(double timestamp) {
-    return robotToTurret.getSample(timestamp);
+  public Optional<Angle> getTurretAngle(double timestamp) {
+    return turretAngle.getSample(timestamp).map(Radians::of);
   }
 
-  public Map.Entry<Double, Rotation2d> getLatestRobotToTurret() {
-    var buffer = robotToTurret.getInternalBuffer();
-    return buffer.isEmpty() ? null : buffer.lastEntry();
+  public Map.Entry<Double, Angle> getLatestTurretAngle() {
+    var buffer = turretAngle.getInternalBuffer();
+    if (buffer.isEmpty()) return null;
+    var last = buffer.lastEntry();
+    return Map.entry(last.getKey(), Radians.of(last.getValue()));
   }
 
   public AngularVelocity getLatestTurretAngularVelocity() {
     var buffer = turretAngularVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
     return RadiansPerSecond.of(value);
+  }
+
+  public void addShooterUpdates(
+      double timestamp, Angle hoodPositionMeasure, AngularVelocity shooterVelocityMeasure) {
+    hoodPosition.addSample(timestamp, hoodPositionMeasure.baseUnitMagnitude());
+    shooterVelocity.addSample(timestamp, shooterVelocityMeasure.baseUnitMagnitude());
+  }
+
+  public Angle getCurrentHoodPosition() {
+    var buffer = hoodPosition.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    // return Radians.of(value);
+    return Degrees.of(60);
+  }
+
+  public AngularVelocity getCurrentShooterVelocity() {
+    var buffer = shooterVelocity.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    // return RadiansPerSecond.of(value);
+    return RotationsPerSecond.of(50);
   }
 
   public boolean isRedAlliance() {

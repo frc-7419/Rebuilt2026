@@ -11,14 +11,11 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.RobotState;
 import frc.robot.util.LimelightHelpers;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class VisionIOLimelight implements VisionIO {
   private final NetworkTable limelightFourTable;
   private final NetworkTable limelightThreeTable;
   private final RobotState robotState;
-  private final AtomicReference<VisionIOInputs> cachedInputs =
-      new AtomicReference<>(new VisionIOInputs());
 
   public VisionIOLimelight() {
     limelightFourTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
@@ -90,7 +87,6 @@ public class VisionIOLimelight implements VisionIO {
       inputs.limelightThreePose = null;
     }
 
-    cachedInputs.set(inputs);
     updateRobotOrientation();
   }
 }
