@@ -136,10 +136,7 @@ public class Robot extends LoggedRobot {
 
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {
-    // Start seeding
-    LimelightHelpers.SetIMUMode(VisionConstants.kSupplementaryCameraTable, 1);
-  }
+  public void disabledInit() {}
 
   /** This function is called periodically when disabled. */
   @Override
@@ -148,8 +145,6 @@ public class Robot extends LoggedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    // Switch to internal IMU
-    LimelightHelpers.SetIMUMode(VisionConstants.kSupplementaryCameraTable, 2);
     autonomousCommand = robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)

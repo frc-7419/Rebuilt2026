@@ -15,29 +15,26 @@ public class VisionConstants {
   public static AprilTagFieldLayout aprilTagLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
-  public static String kTurretCameraTable = "limelight-turret";
-  public static String kSupplementaryCameraTable = "limelight-supplementary";
+  public static String kLimelightFourTable = "limelight-four";
+  public static String kLimelightThreeTable = "limelight-three";
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
-  public static final double kTurretCameraHeightM = 0.2;
-  public static final double kTurretCameraPitchDeg = -15;
-  public static final double[] kTurretCameraPose = {
-    0.33, 0.0, kTurretCameraHeightM, 0.0, kTurretCameraPitchDeg, 0.0
+  public static final double kLimelightFourCameraHeightM = 0.2;
+  public static final double kLimelightFourCameraPitchDeg = 0;
+  public static final double kLimelightFourCameraYawDeg = 90;
+  public static final double[] kLimelightFourCameraPose = {
+    0, 0, kLimelightFourCameraHeightM, 0, kLimelightFourCameraPitchDeg, kLimelightFourCameraYawDeg
   };
 
-  public static final double kSupplementaryCameraHeightM = 0.3;
-  public static final double kSupplementaryCameraPitchDeg = -10.0;
-  public static final double kSupplementaryCameraRollDeg = 0.0;
-  public static final double[] kSupplementaryCameraPose = {
-    -0.33,
-    0.0,
-    kSupplementaryCameraHeightM,
-    kSupplementaryCameraRollDeg,
-    kSupplementaryCameraPitchDeg,
-    180.0
+  public static final double kLimelightThreeCameraHeightM = 0.2;
+  public static final double kLimelightThreeCameraPitchDeg = 0;
+  public static final double kLimelightThreeCameraYawDeg = -90;
+  public static final double[] kLimelightThreeCameraPose = {
+    0,
+    0,
+    kLimelightThreeCameraHeightM,
+    0,
+    kLimelightThreeCameraPitchDeg,
+    kLimelightThreeCameraYawDeg
   };
-
-  // Use MegaTag1 when hub tags are seen on turret camera (avoids yaw lag on
-  // moving turret)
-  public static final boolean kUseMegatag1ForHubTagsOnTurret = false;
 }
