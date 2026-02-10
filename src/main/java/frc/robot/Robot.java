@@ -19,8 +19,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.hopper.HopperConstants;
-import frc.robot.subsystems.vision.VisionConstants;
-import frc.robot.util.LimelightHelpers;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;

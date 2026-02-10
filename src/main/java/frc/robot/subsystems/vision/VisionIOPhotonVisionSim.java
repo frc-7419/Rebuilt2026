@@ -5,8 +5,6 @@
 
 package frc.robot.subsystems.vision;
 
-import static edu.wpi.first.units.Units.Radians;
-import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.aprilTagLayout;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourTable;
@@ -115,17 +113,14 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     NetworkTable leftTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
     NetworkTable rightTable = NetworkTableInstance.getDefault().getTable(kLimelightThreeTable);
 
-    writeToTable(leftCamera.getAllUnreadResults(), leftTable, leftCameraSim);
-    writeToTable(rightCamera.getAllUnreadResults(), rightTable, rightCameraSim);
+    writeToTable(leftCamera.getAllUnreadResults(), leftTable);
+    writeToTable(rightCamera.getAllUnreadResults(), rightTable);
 
     super.updateInputs(inputs);
   }
 
   private List<Double> getBotpose(
-      Transform3d fieldToCamera,
-      int numTags,
-      PhotonPipelineResult result,
-      PhotonCameraSim cameraSim) {
+      Transform3d fieldToCamera, int numTags, PhotonPipelineResult result) {
     if (result == null || result.targets.isEmpty()) {
       return null;
     }
@@ -166,15 +161,14 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     return poseData;
   }
 
-  private void writeToTable(
-      List<PhotonPipelineResult> results, NetworkTable table, PhotonCameraSim cameraSim) {
+  private void writeToTable(List<PhotonPipelineResult> results, NetworkTable table) {
     boolean seesTarget = false;
     for (var result : results) {
       List<Double> poseData = null;
       if (result.getMultiTagResult().isPresent()) {
         var multiTagResult = result.getMultiTagResult().get();
         Transform3d best = multiTagResult.estimatedPose.best;
-        poseData = getBotpose(best, multiTagResult.fiducialIDsUsed.size(), result, cameraSim);
+        poseData = getBotpose(best, multiTagResult.fiducialIDsUsed.size(), result);
       } else if (result.hasTargets()) {
         var bestTarget = result.getBestTarget();
         Optional<Pose3d> tagPose = aprilTagLayout.getTagPose(bestTarget.getFiducialId());
@@ -184,7 +178,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
                       tagPose.get().getTranslation().minus(new Translation3d()),
                       tagPose.get().getRotation())
                   .plus(bestTarget.bestCameraToTarget.inverse());
-          poseData = getBotpose(best, 1, result, cameraSim);
+          poseData = getBotpose(best, 1, result);
         }
       }
 

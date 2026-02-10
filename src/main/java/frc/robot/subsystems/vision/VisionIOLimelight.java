@@ -6,22 +6,16 @@ import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraP
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeTable;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.RobotState;
 import frc.robot.util.LimelightHelpers;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class VisionIOLimelight implements VisionIO {
   private final NetworkTable limelightFourTable;
   private final NetworkTable limelightThreeTable;
   private final RobotState robotState;
-  private final AtomicReference<VisionIOInputs> cachedInputs =
-      new AtomicReference<>(new VisionIOInputs());
 
   public VisionIOLimelight() {
     limelightFourTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
@@ -93,8 +87,6 @@ public class VisionIOLimelight implements VisionIO {
       inputs.limelightThreePose = null;
     }
 
-    cachedInputs.set(inputs);
     updateRobotOrientation();
-    updateTurretCameraPose();
   }
 }

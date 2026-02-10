@@ -102,6 +102,7 @@ public class Drive extends SubsystemBase {
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
   private SwerveDriveOdometry odometryOnly =
       new SwerveDriveOdometry(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+  private ChassisSpeeds desiredFieldRelativeSpeeds = new ChassisSpeeds();
 
   public Drive(
       GyroIO gyroIO,
