@@ -5,13 +5,11 @@
 
 package frc.robot.subsystems.vision;
 
-import static edu.wpi.first.units.Units.Radians;
-import static frc.robot.subsystems.turret.TurretConstants.kTurretOffset;
 import static frc.robot.subsystems.vision.VisionConstants.aprilTagLayout;
-import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraPose;
-import static frc.robot.subsystems.vision.VisionConstants.kSupplementaryCameraTable;
-import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraPose;
-import static frc.robot.subsystems.vision.VisionConstants.kTurretCameraTable;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourTable;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeTable;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -22,7 +20,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import frc.robot.RobotState;
 import frc.robot.simulation.SimulatedRobotState;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,23 +36,20 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
   private static VisionSystemSim visionSim;
   private static boolean visionSimInitialized = false;
   private static boolean camerasInitialized = false;
-  private static PhotonCamera turretCamera;
-  private static PhotonCamera supplementaryCamera;
-  private static PhotonCameraSim turretCameraSim;
-  private static PhotonCameraSim supplementaryCameraSim;
-  private static Transform3d baseTurretToCamera; // Base transform from turret center to camera
+  private static PhotonCamera leftCamera;
+  private static PhotonCamera rightCamera;
+  private static PhotonCameraSim leftCameraSim;
+  private static PhotonCameraSim rightCameraSim;
 
-  private final RobotState robotState;
   private final SimulatedRobotState simulatedRobotState;
 
   public VisionIOPhotonVisionSim() {
     super();
-    robotState = RobotState.getInstance();
     simulatedRobotState = SimulatedRobotState.getInstance();
 
     if (!camerasInitialized) {
-      turretCamera = new PhotonCamera(kTurretCameraTable);
-      supplementaryCamera = new PhotonCamera(kSupplementaryCameraTable);
+      leftCamera = new PhotonCamera(kLimelightFourTable);
+      rightCamera = new PhotonCamera(kLimelightThreeTable);
 
       SimCameraProperties cameraProps = new SimCameraProperties();
       cameraProps.setCalibration(1280, 800, Rotation2d.fromDegrees(82));
@@ -63,35 +57,36 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
       cameraProps.setAvgLatencyMs(20);
       cameraProps.setLatencyStdDevMs(5);
 
-      turretCameraSim = new PhotonCameraSim(turretCamera, cameraProps);
-      supplementaryCameraSim = new PhotonCameraSim(supplementaryCamera, cameraProps);
+      leftCameraSim = new PhotonCameraSim(leftCamera, cameraProps);
+      rightCameraSim = new PhotonCameraSim(rightCamera, cameraProps);
 
-      baseTurretToCamera =
+      Transform3d leftCameraOffset =
           new Transform3d(
-              kTurretCameraPose[0],
-              kTurretCameraPose[1],
-              kTurretCameraPose[2],
+              kLimelightFourCameraPose[0],
+              kLimelightFourCameraPose[1],
+              kLimelightFourCameraPose[2],
               new Rotation3d(
-                  Units.degreesToRadians(kTurretCameraPose[3]),
-                  Units.degreesToRadians(kTurretCameraPose[4]),
-                  Units.degreesToRadians(kTurretCameraPose[5])));
+                  Units.degreesToRadians(kLimelightFourCameraPose[3]),
+                  Units.degreesToRadians(kLimelightFourCameraPose[4]),
+                  Units.degreesToRadians(kLimelightFourCameraPose[5])));
 
-      Transform3d supplementaryCameraOffset =
+      Transform3d rightCameraOffset =
           new Transform3d(
-              kSupplementaryCameraPose[0],
-              kSupplementaryCameraPose[1],
-              kSupplementaryCameraPose[2],
+              kLimelightThreeCameraPose[0],
+              kLimelightThreeCameraPose[1],
+              kLimelightThreeCameraPose[2],
               new Rotation3d(
-                  Units.degreesToRadians(kSupplementaryCameraPose[3]),
-                  Units.degreesToRadians(kSupplementaryCameraPose[4]),
-                  Units.degreesToRadians(kSupplementaryCameraPose[5])));
-      turretCameraSim.enableProcessedStream(true);
-      turretCameraSim.enableRawStream(true);
-      supplementaryCameraSim.enableProcessedStream(true);
-      supplementaryCameraSim.enableRawStream(true);
+                  Units.degreesToRadians(kLimelightThreeCameraPose[3]),
+                  Units.degreesToRadians(kLimelightThreeCameraPose[4]),
+                  Units.degreesToRadians(kLimelightThreeCameraPose[5])));
 
-      turretCameraSim.enableDrawWireframe(true);
-      supplementaryCameraSim.enableDrawWireframe(true);
+      leftCameraSim.enableProcessedStream(true);
+      leftCameraSim.enableRawStream(true);
+      rightCameraSim.enableProcessedStream(true);
+      rightCameraSim.enableRawStream(true);
+
+      leftCameraSim.enableDrawWireframe(true);
+      rightCameraSim.enableDrawWireframe(true);
 
       if (!visionSimInitialized) {
         visionSim = new VisionSystemSim("main");
@@ -99,71 +94,33 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
         visionSimInitialized = true;
       }
 
-      Transform3d initialRobotToTurret =
-          new Transform3d(
-              new Translation3d(
-                  kTurretOffset.getTranslation().getX(),
-                  kTurretOffset.getTranslation().getY(),
-                  0.0),
-              new Rotation3d());
-      Transform3d initialRobotToCamera = initialRobotToTurret.plus(baseTurretToCamera);
-      visionSim.addCamera(turretCameraSim, initialRobotToCamera);
-      visionSim.addCamera(supplementaryCameraSim, supplementaryCameraOffset);
+      visionSim.addCamera(leftCameraSim, leftCameraOffset);
+      visionSim.addCamera(rightCameraSim, rightCameraOffset);
       camerasInitialized = true;
     }
   }
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    // Avioid feedback loops by using simulated robot state instead of RobotState
+    // Avoid feedback loops by using simulated robot state instead of RobotState
     Pose2d robotPose = simulatedRobotState.getLatestFieldToRobot();
     if (robotPose == null) {
       robotPose = Pose2d.kZero;
     }
 
-    var latestTurretRotation = robotState.getLatestTurretAngle();
-    if (latestTurretRotation != null && baseTurretToCamera != null) {
-      Transform3d robotToTurret =
-          new Transform3d(
-              new Translation3d(
-                  kTurretOffset.getTranslation().getX(),
-                  kTurretOffset.getTranslation().getY(),
-                  0.0),
-              new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians)));
-
-      Rotation3d turretRot = new Rotation3d(0.0, 0.0, latestTurretRotation.getValue().in(Radians));
-      Transform3d rotatedTurretToCamera =
-          new Transform3d(
-              baseTurretToCamera.getTranslation().rotateBy(turretRot),
-              baseTurretToCamera.getRotation().rotateBy(turretRot));
-
-      Transform3d dynamicRobotToCamera = robotToTurret.plus(rotatedTurretToCamera);
-
-      visionSim.adjustCamera(turretCameraSim, dynamicRobotToCamera);
-    }
-
     visionSim.update(robotPose);
 
-    NetworkTable turretTable = NetworkTableInstance.getDefault().getTable(kTurretCameraTable);
-    NetworkTable supplementaryTable =
-        NetworkTableInstance.getDefault().getTable(kSupplementaryCameraTable);
+    NetworkTable leftTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
+    NetworkTable rightTable = NetworkTableInstance.getDefault().getTable(kLimelightThreeTable);
 
-    writeToTable(turretCamera.getAllUnreadResults(), turretTable, turretCameraSim, true);
-    writeToTable(
-        supplementaryCamera.getAllUnreadResults(),
-        supplementaryTable,
-        supplementaryCameraSim,
-        false);
+    writeToTable(leftCamera.getAllUnreadResults(), leftTable);
+    writeToTable(rightCamera.getAllUnreadResults(), rightTable);
 
     super.updateInputs(inputs);
   }
 
   private List<Double> getBotpose(
-      Transform3d fieldToCamera,
-      int numTags,
-      PhotonPipelineResult result,
-      PhotonCameraSim cameraSim,
-      boolean isTurretCamera) {
+      Transform3d fieldToCamera, int numTags, PhotonPipelineResult result) {
     if (result == null || result.targets.isEmpty()) {
       return null;
     }
@@ -204,20 +161,14 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     return poseData;
   }
 
-  private void writeToTable(
-      List<PhotonPipelineResult> results,
-      NetworkTable table,
-      PhotonCameraSim cameraSim,
-      boolean isTurretCamera) {
+  private void writeToTable(List<PhotonPipelineResult> results, NetworkTable table) {
     boolean seesTarget = false;
     for (var result : results) {
       List<Double> poseData = null;
       if (result.getMultiTagResult().isPresent()) {
         var multiTagResult = result.getMultiTagResult().get();
         Transform3d best = multiTagResult.estimatedPose.best;
-        poseData =
-            getBotpose(
-                best, multiTagResult.fiducialIDsUsed.size(), result, cameraSim, isTurretCamera);
+        poseData = getBotpose(best, multiTagResult.fiducialIDsUsed.size(), result);
       } else if (result.hasTargets()) {
         var bestTarget = result.getBestTarget();
         Optional<Pose3d> tagPose = aprilTagLayout.getTagPose(bestTarget.getFiducialId());
@@ -227,7 +178,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
                       tagPose.get().getTranslation().minus(new Translation3d()),
                       tagPose.get().getRotation())
                   .plus(bestTarget.bestCameraToTarget.inverse());
-          poseData = getBotpose(best, 1, result, cameraSim, isTurretCamera);
+          poseData = getBotpose(best, 1, result);
         }
       }
 

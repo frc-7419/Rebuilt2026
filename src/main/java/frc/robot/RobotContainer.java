@@ -68,7 +68,6 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.FrontRight),
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
-
         // The ModuleIOTalonFXS implementation provides an example implementation for
         // TalonFXS controller connected to a CANdi with a PWM encoder. The
         // implementations
@@ -87,7 +86,6 @@ public class RobotContainer {
         // new ModuleIOTalonFXS(TunerConstants.BackLeft),
         // new ModuleIOTalonFXS(TunerConstants.BackRight));
 
-        // Real robot, instantiate hardware IO implementations
         // vision = new Vision(new VisionIOLimelight());
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOTalonFX());
@@ -119,7 +117,6 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
 
-        // Replayed robot, disable IO implementations
         // vision = new Vision(new VisionIO() {});
         // vision.setDrive(drive);
         turret = new Turret(new TurretIO() {});
