@@ -46,6 +46,8 @@ public class RobotState {
   private final TimeInterpolatableBuffer<Double> shooterVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final Matrix<N3, N1> qStdDevs = new Matrix<>(Nat.N3(), Nat.N1());
+  private final TimeInterpolatableBuffer<Double> shooterRotorVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
 
   private final AtomicReference<ChassisSpeeds> measuredRobotRelativeChassisSpeeds =
       new AtomicReference<>(new ChassisSpeeds());
@@ -65,6 +67,7 @@ public class RobotState {
     turretAngularVelocity.addSample(0.0, 0.0);
     hoodPosition.addSample(0.0, 0.0);
     shooterVelocity.addSample(0.0, 0.0);
+    shooterRotorVelocity.addSample(0.0, 0.0);
   }
 
   public void resetPose(Pose2d pose) {
@@ -159,6 +162,13 @@ public class RobotState {
       double timestamp, Angle turretRotation, AngularVelocity turretAngularVelocityMeasure) {
     turretAngle.addSample(timestamp, turretRotation.in(Radians));
     turretAngularVelocity.addSample(timestamp, turretAngularVelocityMeasure.baseUnitMagnitude());
+  }
+
+  public void addShooterUpdates(
+      double timestamp, AngularVelocity shooterWheelVelocity, AngularVelocity rotorVelocity) {
+    // Store in base units (rad/s) so it’s consistent regardless of the caller using RPM, RPS, etc.
+    shooterVelocity.addSample(timestamp, shooterWheelVelocity.baseUnitMagnitude());
+    shooterRotorVelocity.addSample(timestamp, rotorVelocity.baseUnitMagnitude());
   }
 
   public Optional<Angle> getTurretAngle(double timestamp) {

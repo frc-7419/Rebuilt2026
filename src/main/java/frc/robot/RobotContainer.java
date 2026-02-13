@@ -29,6 +29,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretIO;
 import frc.robot.subsystems.turret.TurretIOSim;
@@ -46,6 +50,8 @@ public class RobotContainer {
   private final Drive drive;
   // private final Vision vision;
   private final Turret turret;
+
+  private final Shooter shooter;
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -90,6 +96,8 @@ public class RobotContainer {
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOTalonFX());
 
+        shooter = new Shooter(new ShooterIOTalonFX());
+
         break;
 
       case SIM:
@@ -104,6 +112,7 @@ public class RobotContainer {
         // vision = new Vision(new VisionIOPhotonVisionSim());
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOSim());
+        shooter = new Shooter(new ShooterIOSim());
 
         break;
 
@@ -120,6 +129,8 @@ public class RobotContainer {
         // vision = new Vision(new VisionIO() {});
         // vision.setDrive(drive);
         turret = new Turret(new TurretIO() {});
+
+        shooter = new Shooter(new ShooterIO() {});
         break;
     }
 

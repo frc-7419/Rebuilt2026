@@ -1,33 +1,61 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.RPM;
 
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 
-public class ShooterConstants {
+public final class ShooterConstants {
+  private ShooterConstants() {}
+
+  public static final int kShooterMotorId = 9;
+  public static final int kShooterFollowerMotorId = 10;
+
+  public static final double kMaxVoltage = 12.0;
+
+  public static final AngularVelocity kMinVelocity = RPM.of(0.0);
+  public static final AngularVelocity kMaxVelocity = RPM.of(6000.0);
+
+  public static final double kDeadband = 0.05;
+
+  public static final double kMotorToShooterGearRatio = (20.0 / 12.0);
+
+  public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
+  public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
+  public static final FeedbackConfigs motorFeedbackConfigs = motorConfig.Feedback;
+
+  public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+
+  static {
+    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+    motorSlot0Configs.kP = 10;
+    motorSlot0Configs.kI = 0;
+    motorSlot0Configs.kD = 1;
+    motorSlot0Configs.kV = 0;
+    motorSlot0Configs.kS = 0;
+  }
+
+  public static final double kSimP = 1.0;
+  public static final double kSimI = 0.0;
+  public static final double kSimD = 0.0;
+
   public static final Angle kHoodZeroed = Degrees.of(0.0);
 
-  // Fuel launch velocity per wheel rotation per second (m/s per rot/s)
-  // Replace with experiment
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.287;
+  public static final Translation3d kRobotToShooterRelease = new Translation3d(0.0, 0.0, 0.0);
 
-  public static final Distance kShooterWheelRadius = Inches.of(2.0);
-  // Spin transfer efficiency from wheel to fuel (0.0 to 1.0)
-  public static final double kSpinTransfer = 0.6;
+  public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
-  // Shooter release point relative to robot center (forward, left, up in meters)
-  public static final Transform3d kRobotToShooterRelease =
-      new Transform3d(new Translation3d(0.0, 0.0, 0.5), new Rotation3d(0.0, 0.0, 0.0));
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 10.0;
+
+  public static final double kSpinTransfer = 0.5;
 }
