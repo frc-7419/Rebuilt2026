@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Radians;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -59,6 +57,7 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private TurretCommands turretCommands;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -165,12 +164,13 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+    // drive.setDefaultCommand(
+    // DriveCommands.joystickDrive(
+    //     drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
 
     // Default turret manual control on right stick X
     turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+
     operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
@@ -183,14 +183,15 @@ public class RobotContainer {
                         .schedule(VisualizeFuelShot.visualizeFuelShot())));
 
     // Lock to 0 when A button is held
-    driver
-        .a()
-        .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> Rotation2d.kZero));
+    // driver
+    //     .a()
+    //     .whileTrue(
+    //         DriveCommands.joystickDriveAtAngle(
+    //             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () ->
+    // Rotation2d.kZero));
 
     // Switch to X pattern when X button is pressed
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0 when B button is pressed
     driver
@@ -204,7 +205,9 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Reset turret to zero when Y pressed
-    driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
+    // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
+
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, operator.getLeftY()));
   }
 
   /**

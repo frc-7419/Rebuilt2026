@@ -19,7 +19,7 @@ public final class TurretConstants {
   private TurretConstants() {}
 
   // Arbitary CAN IDs
-  public static final int kTurretMotorId = 9;
+  public static final int kTurretMotorId = 31;
   public static final int kEncoderOneId = 6;
   public static final int kEncoderTwoId = 7;
 
