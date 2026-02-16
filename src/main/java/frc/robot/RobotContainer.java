@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.ShooterCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
@@ -164,14 +165,14 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    // drive.setDefaultCommand(
-    // DriveCommands.joystickDrive(
-    //     drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+    drive.setDefaultCommand(
+        DriveCommands.joystickDrive(
+            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
 
     // Default turret manual control on right stick X
-    turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+    //   turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
 
-    operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
+    //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
     driver
@@ -207,7 +208,8 @@ public class RobotContainer {
     // Reset turret to zero when Y pressed
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
-    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, operator.getLeftY()));
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () -> operator.getLeftY()));
   }
 
   /**

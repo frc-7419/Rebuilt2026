@@ -18,16 +18,17 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotState;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretConstants;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public final class TurretCommands {
   private TurretCommands() {}
 
   /** Manual joystick turret control. Expects input in [-1, 1]. */
-  public static Command joystickTurret(Turret turret, double input) {
+  public static Command joystickTurret(Turret turret, DoubleSupplier input) {
     return Commands.run(
         () -> {
-          double val = MathUtil.applyDeadband(input, 0.05);
+          double val = MathUtil.applyDeadband(input.getAsDouble(), 0.05);
           turret.setOpenLoop(val * 12.0); // scale to volts
         },
         turret);

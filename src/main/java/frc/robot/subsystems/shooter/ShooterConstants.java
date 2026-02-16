@@ -17,8 +17,8 @@ import edu.wpi.first.units.measure.Distance;
 public final class ShooterConstants {
   private ShooterConstants() {}
 
-  public static final int kShooterMotorId = 9;
-  public static final int kShooterFollowerMotorId = 10;
+  public static final int kShooterMotorId = 40;
+  public static final int kShooterFollowerMotorId = 38;
 
   public static final double kMaxVoltage = 12.0;
 

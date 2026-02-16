@@ -14,7 +14,6 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.generated.TunerConstants;
 
 public class ShooterIOTalonFX implements ShooterIO {
   private final TalonFX motor;
@@ -28,8 +27,8 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final VelocityVoltage velocityVoltageRequest = new VelocityVoltage(0.0);
 
   public ShooterIOTalonFX() {
-    motor = new TalonFX(ShooterConstants.kShooterMotorId, TunerConstants.kCANBus);
-    followerMotor = new TalonFX(ShooterConstants.kShooterFollowerMotorId, TunerConstants.kCANBus);
+    motor = new TalonFX(ShooterConstants.kShooterMotorId);
+    followerMotor = new TalonFX(ShooterConstants.kShooterFollowerMotorId);
 
     tryUntilOk(5, () -> motor.getConfigurator().apply(ShooterConstants.motorConfig, 0.25));
     tryUntilOk(5, () -> followerMotor.getConfigurator().apply(ShooterConstants.motorConfig, 0.25));

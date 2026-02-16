@@ -20,8 +20,6 @@ public final class TurretConstants {
 
   // Arbitary CAN IDs
   public static final int kTurretMotorId = 31;
-  public static final int kEncoderOneId = 6;
-  public static final int kEncoderTwoId = 7;
 
   // Maximum output voltage when using software PID (Volts)
   public static final double kMaxVoltage = 12.0;
@@ -65,7 +63,6 @@ public final class TurretConstants {
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio =
         kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
-    motorFeedbackConfigs.FeedbackRemoteSensorID = kEncoderOneId;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kMaxAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = kMinAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
