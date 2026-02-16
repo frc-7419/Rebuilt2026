@@ -25,7 +25,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kTurretMaxRotations = 720;
+  public static final double kTurretMaxRotations = 1200;
 
   // Allowed motion limits.
   public static final Angle kMinAngle = Degrees.of(-kTurretMaxRotations / 2.0);
@@ -57,7 +57,7 @@ public final class TurretConstants {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorSlot0Configs.kP = 10;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 1;
+    motorSlot0Configs.kD = 0.1;
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
@@ -75,7 +75,7 @@ public final class TurretConstants {
 
   public static final double kSimP = 10.0;
   public static final double kSimI = 0.0;
-  public static final double kSimD = 1.0;
+  public static final double kSimD = 0.1;
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center

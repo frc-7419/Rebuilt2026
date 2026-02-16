@@ -40,7 +40,7 @@ public final class ShooterConstants {
 
     motorSlot0Configs.kP = 10;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 1;
+    motorSlot0Configs.kD = 0.1;
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
   }

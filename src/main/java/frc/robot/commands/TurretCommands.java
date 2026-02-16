@@ -39,6 +39,11 @@ public final class TurretCommands {
     return Commands.runOnce(() -> turret.setAngle(angle), turret).withTimeout(0.0);
   }
 
+  public static void toTurretPosition(Turret turret, Angle position) {
+
+    turret.setAngle(position);
+  }
+
   /**
    * Points the turret towards the hub. Blue alliance target: (4.620, 4.030). Red alliance target is
    * calculated as the symmetric point on the field.

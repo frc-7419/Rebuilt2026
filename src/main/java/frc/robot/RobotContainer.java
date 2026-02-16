@@ -7,6 +7,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -210,6 +212,17 @@ public class RobotContainer {
 
     turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
     shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () -> operator.getLeftY()));
+
+    operator
+        .povDown()
+        .onTrue(
+            Commands.runOnce(() -> TurretCommands.toTurretPosition(turret, Degrees.of(0.0)))
+                .ignoringDisable(true));
+    operator
+        .povUp()
+        .onTrue(
+            Commands.runOnce(() -> TurretCommands.toTurretPosition(turret, Degrees.of(360)))
+                .ignoringDisable(true));
   }
 
   /**
