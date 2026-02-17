@@ -18,13 +18,8 @@ public final class HoodConstants {
 
   public static final double kMotorToHoodGearRatio = (50.0 / 8.0) * (144.0 / 10.0);
 
-  public static final double kInitialAngleOffsetDeg = 64.0;
-
   public static final Angle kMinAngle = Degrees.of(25.0);
   public static final Angle kMaxAngle = Degrees.of(64.0);
-
-  /** Hood degrees per motor rotation: 360 / gear ratio. */
-  public static final double kDegreesPerMotorRotation = 360.0 / kMotorToHoodGearRatio;
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;

@@ -1,7 +1,7 @@
 package frc.robot.subsystems.hood;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.hood.HoodConstants.*;
 
 import edu.wpi.first.math.MathUtil;
@@ -21,7 +21,7 @@ public class HoodIOSim implements HoodIO {
   private final PIDController positionController;
 
   private boolean positionControl = false;
-  private double targetAngleDeg = kInitialAngleOffsetDeg;
+  private Angle targetAngle = kMaxAngle;
   private double appliedVolts = 0.0;
 
   public HoodIOSim() {
@@ -30,57 +30,43 @@ public class HoodIOSim implements HoodIO {
             LinearSystemId.createDCMotorSystem(MOTOR_MODEL, HOOD_INERTIA, kMotorToHoodGearRatio),
             MOTOR_MODEL);
     positionController = new PIDController(kSimP, kSimI, kSimD);
-    motorSim.setState(0.0, 0.0);
+    motorSim.setState(kMaxAngle.in(Radians), 0.0);
   }
 
   @Override
   public void updateInputs(HoodIOInputs inputs) {
-    double motorRad = motorSim.getAngularPositionRad();
-    double mechanismRad = motorRad / kMotorToHoodGearRatio;
-    double hoodAngleDeg = kInitialAngleOffsetDeg - Math.toDegrees(mechanismRad);
-    double hoodVelocityRadPerSec = -motorSim.getAngularVelocityRadPerSec() / kMotorToHoodGearRatio;
+    double mechanismRad = motorSim.getAngularPositionRad();
+    double rotorRad = mechanismRad * kMotorToHoodGearRatio;
 
     if (positionControl) {
-      double targetRad = Math.toRadians(targetAngleDeg);
-      double currentRad = Math.toRadians(hoodAngleDeg);
-      // Positive motor rotation decreases hood angle (65° -> 25°), so negate PID output
+      double targetRad = targetAngle.in(Radians);
+      double currentRad = mechanismRad;
+
       double pidOutput = positionController.calculate(currentRad, targetRad);
       appliedVolts = MathUtil.clamp(-pidOutput, -kMaxVoltage, kMaxVoltage);
     }
 
-    hoodAngleDeg = MathUtil.clamp(hoodAngleDeg, kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
-    // At 25° block positive voltage (would drive further down); at 65° block negative (would drive
-    // up)
-    if (hoodAngleDeg <= kMinAngle.in(Degrees) && appliedVolts > 0) appliedVolts = 0.0;
-    if (hoodAngleDeg >= kMaxAngle.in(Degrees) && appliedVolts < 0) appliedVolts = 0.0;
+    mechanismRad = MathUtil.clamp(mechanismRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));
+
+    if (mechanismRad <= kMinAngle.in(Radians) && appliedVolts < 0) {
+      appliedVolts = 0.0;
+      motorSim.setState(kMinAngle.in(Radians), 0.0);
+    }
+    if (mechanismRad >= kMaxAngle.in(Radians) && appliedVolts > 0) {
+      appliedVolts = 0.0;
+      motorSim.setState(kMaxAngle.in(Radians), 0.0);
+    }
 
     motorSim.setInputVoltage(appliedVolts);
     motorSim.update(SIMULATION_DT);
 
-    motorRad = motorSim.getAngularPositionRad();
-    mechanismRad = motorRad / kMotorToHoodGearRatio;
-    hoodAngleDeg = kInitialAngleOffsetDeg - Math.toDegrees(mechanismRad);
-    hoodVelocityRadPerSec = -motorSim.getAngularVelocityRadPerSec() / kMotorToHoodGearRatio;
-
-    // Hard stop at limits
-    double minDeg = kMinAngle.in(Degrees);
-    double maxDeg = kMaxAngle.in(Degrees);
-    if (hoodAngleDeg < minDeg) {
-      motorSim.setState(
-          (kInitialAngleOffsetDeg - minDeg) * (Math.PI / 180.0) * kMotorToHoodGearRatio, 0.0);
-    } else if (hoodAngleDeg > maxDeg) {
-      motorSim.setState(
-          (kInitialAngleOffsetDeg - maxDeg) * (Math.PI / 180.0) * kMotorToHoodGearRatio, 0.0);
-    }
-
-    motorRad = motorSim.getAngularPositionRad();
-    mechanismRad = motorRad / kMotorToHoodGearRatio;
-    hoodAngleDeg = kInitialAngleOffsetDeg - Math.toDegrees(mechanismRad);
-    hoodVelocityRadPerSec = -motorSim.getAngularVelocityRadPerSec() / kMotorToHoodGearRatio;
+    rotorRad = motorSim.getAngularPositionRad();
+    mechanismRad = rotorRad / kMotorToHoodGearRatio;
 
     inputs.connected = true;
-    inputs.position = Degrees.of(hoodAngleDeg);
-    inputs.velocity = RadiansPerSecond.of(hoodVelocityRadPerSec);
+    inputs.position = motorSim.getAngularPosition();
+    inputs.rotorPosition = Radians.of(rotorRad);
+    inputs.velocity = motorSim.getAngularVelocity();
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = Math.abs(motorSim.getCurrentDrawAmps());
   }
@@ -95,8 +81,9 @@ public class HoodIOSim implements HoodIO {
   @Override
   public void setPosition(Angle position) {
     positionControl = true;
-    targetAngleDeg = position.in(Degrees);
-    targetAngleDeg = MathUtil.clamp(targetAngleDeg, kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
+    double positionDeg =
+        MathUtil.clamp(position.in(Degrees), kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
+    targetAngle = Degrees.of(positionDeg);
   }
 
   @Override

@@ -102,7 +102,8 @@ public class Robot extends LoggedRobot {
         new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));
 
     Rotation3d hoodPitch =
-        new Rotation3d(0, (Math.PI / 2) - state.getLatestHoodPosition().getValue().in(Radians), 0);
+        new Rotation3d(
+            0, (Math.PI / 2) - state.getLatestHoodPosition().getValue().in(Radians) - 0.3054325, 0);
 
     Pose3d turretPose =
         Constants.turretBasePose.transformBy(new Transform3d(new Translation3d(), turretYaw));
@@ -116,7 +117,7 @@ public class Robot extends LoggedRobot {
         Constants.hopperBasePose.transformBy(
             new Transform3d(
                 new Translation3d(
-                    -(Math.sin(Timer.getTimestamp())
+                    -(Math.sin(Timer.getTimestamp() * 10)
                             * (HopperConstants.kHopperMaxExtension.in(Meters) / 2)
                         + HopperConstants.kHopperMaxExtension.in(Meters) / 2),
                     0,
@@ -127,7 +128,7 @@ public class Robot extends LoggedRobot {
         Constants.intakeBasePose.transformBy(
             new Transform3d(
                 new Translation3d(),
-                new Rotation3d(0, -(Math.sin(Timer.getTimestamp()) * 1 + 1), 0)));
+                new Rotation3d(0, -(Math.sin(Timer.getTimestamp() * 10) * 1 + 1), 0)));
     Logger.recordOutput(
         "ComponentPoses", new Pose3d[] {turretPose, hoodPose, intakePose, hopperPose});
   }
