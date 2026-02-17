@@ -23,8 +23,6 @@ public class Shooter extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
 
-    // Keep the same pattern of pushing updates into RobotState (rename the method on your side if
-    // needed).
     double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
     RobotState.getInstance()
         .addShooterUpdates(timestamp, inputs.shooterVelocity, inputs.rotorVelocity);

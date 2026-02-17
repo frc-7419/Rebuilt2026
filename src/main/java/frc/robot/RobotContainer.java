@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.ShooterCommands;
+import frc.robot.commands.HoodCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
@@ -30,6 +30,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.hood.Hood;
+import frc.robot.subsystems.hood.HoodIO;
+import frc.robot.subsystems.hood.HoodIOSim;
+import frc.robot.subsystems.hood.HoodIOTalonFX;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOSim;
@@ -53,6 +57,8 @@ public class RobotContainer {
   private final Turret turret;
 
   private final Shooter shooter;
+
+  private final Hood hood;
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -100,6 +106,8 @@ public class RobotContainer {
 
         shooter = new Shooter(new ShooterIOTalonFX());
 
+        hood = new Hood(new HoodIOTalonFX());
+
         break;
 
       case SIM:
@@ -115,6 +123,7 @@ public class RobotContainer {
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOSim());
         shooter = new Shooter(new ShooterIOSim());
+        hood = new Hood(new HoodIOSim());
 
         break;
 
@@ -133,6 +142,7 @@ public class RobotContainer {
         turret = new Turret(new TurretIO() {});
 
         shooter = new Shooter(new ShooterIO() {});
+        hood = new Hood(new HoodIO() {});
         break;
     }
 
@@ -211,7 +221,9 @@ public class RobotContainer {
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
     turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
-    shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () -> operator.getLeftY()));
+    // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
+    // operator.getLeftY()));
+    hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
 
     operator
         .povDown()

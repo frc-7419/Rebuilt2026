@@ -61,8 +61,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    motor.setControl(
-        velocityVoltageRequest.withVelocity(velocity.times(1 / kMotorToShooterGearRatio)));
+    motor.setControl(velocityVoltageRequest.withVelocity(velocity.div(kMotorToShooterGearRatio)));
   }
 
   @Override

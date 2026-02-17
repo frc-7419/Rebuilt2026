@@ -4,8 +4,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -31,9 +29,6 @@ public final class ShooterConstants {
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
-  public static final FeedbackConfigs motorFeedbackConfigs = motorConfig.Feedback;
-
-  public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;

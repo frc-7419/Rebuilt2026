@@ -188,24 +188,22 @@ public class RobotState {
     return RadiansPerSecond.of(value);
   }
 
-  public void addShooterUpdates(
-      double timestamp, Angle hoodPositionMeasure, AngularVelocity shooterVelocityMeasure) {
+  public void addHoodUpdates(double timestamp, Angle hoodPositionMeasure) {
     hoodPosition.addSample(timestamp, hoodPositionMeasure.baseUnitMagnitude());
-    shooterVelocity.addSample(timestamp, shooterVelocityMeasure.baseUnitMagnitude());
   }
 
-  public Angle getCurrentHoodPosition() {
+  public Map.Entry<Double, Angle> getLatestHoodPosition() {
     var buffer = hoodPosition.getInternalBuffer();
-    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
-    // return Radians.of(value);
-    return Degrees.of(60);
+    if (buffer.isEmpty()) return null;
+    var last = buffer.lastEntry();
+    return Map.entry(last.getKey(), Radians.of(last.getValue()));
   }
 
-  public AngularVelocity getCurrentShooterVelocity() {
+  public AngularVelocity getLatestShooterVelocity() {
     var buffer = shooterVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
-    // return RadiansPerSecond.of(value);
-    return RotationsPerSecond.of(50);
+    return RadiansPerSecond.of(value);
+    // return RotationsPerSecond.of(50);
   }
 
   public boolean isRedAlliance() {
