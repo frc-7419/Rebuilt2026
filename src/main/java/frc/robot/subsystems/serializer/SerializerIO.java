@@ -1,5 +1,7 @@
 package frc.robot.subsystems.serializer;
 
+import static edu.wpi.first.units.Units.RPM;
+
 import edu.wpi.first.units.measure.AngularVelocity;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -8,13 +10,13 @@ public interface SerializerIO {
   public static class SerializerIOInputs {
     // Serializer wheel (main mechanism)
     public boolean serializerConnected = false;
-    public AngularVelocity serializerVelocity = edu.wpi.first.units.Units.RPM.of(0.0);
+    public AngularVelocity serializerVelocity = RPM.of(0.0);
     public double serializerAppliedVolts = 0.0;
     public double serializerCurrentAmps = 0.0;
 
     // Feeder rollers (separate motor)
     public boolean feederConnected = false;
-    public AngularVelocity feederVelocity = edu.wpi.first.units.Units.RPM.of(0.0);
+    public AngularVelocity feederVelocity = RPM.of(0.0);
     public double feederAppliedVolts = 0.0;
     public double feederCurrentAmps = 0.0;
   }

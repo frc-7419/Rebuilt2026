@@ -72,15 +72,15 @@ public class IntakeIOTalonFX implements IntakeIO {
     inputs.wheelConnected = wheelStatus.equals(StatusCode.OK);
     inputs.wheelAppliedVolts = wheelAppliedVolts.getValueAsDouble();
     inputs.wheelCurrentAmps = wheelCurrent.getValueAsDouble();
-    inputs.wheelVelocity = wheelVelocity.getValue();
+    inputs.wheelVelocity = wheelVelocity.getValue().div(kWheelMotorToWheelGearRatio);
 
     var wristStatus =
         BaseStatusSignal.refreshAll(wristAppliedVolts, wristCurrent, wristPosition, wristVelocity);
     inputs.wristConnected = wristStatus.equals(StatusCode.OK);
     inputs.wristAppliedVolts = wristAppliedVolts.getValueAsDouble();
     inputs.wristCurrentAmps = wristCurrent.getValueAsDouble();
-    inputs.wristPosition = wristPosition.getValue();
-    inputs.wristVelocity = wristVelocity.getValue();
+    inputs.wristPosition = wristPosition.getValue().div(kWristMotorToWristGearRatio);
+    inputs.wristVelocity = wristVelocity.getValue().div(kWristMotorToWristGearRatio);
   }
 
   @Override
@@ -91,7 +91,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   @Override
   public void setWheelVelocity(AngularVelocity velocity) {
     wheelMotor.setControl(
-        wheelVelocityRequest.withVelocity(velocity.div(kWheelMotorToWheelGearRatio)));
+        wheelVelocityRequest.withVelocity(velocity.times(kWheelMotorToWheelGearRatio)));
   }
 
   @Override
@@ -102,7 +102,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   @Override
   public void setWristPosition(Angle angle) {
     wristMotor.setControl(
-        wristPositionRequest.withPosition(angle.div(kWristMotorToWristGearRatio)));
+        wristPositionRequest.withPosition(angle.times(kWristMotorToWristGearRatio)));
   }
 
   @Override

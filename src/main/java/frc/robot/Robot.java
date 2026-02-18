@@ -14,11 +14,10 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.simulation.SimulatedRobotState;
-import frc.robot.subsystems.serializer.SerializerConstants;
+import frc.robot.subsystems.intake.IntakeConstants;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -113,24 +112,24 @@ public class Robot extends LoggedRobot {
             .transformBy(Constants.turretToHood)
             .transformBy(new Transform3d(new Translation3d(), hoodPitch));
 
-    Pose3d serializerPose =
-        Constants.serializerBasePose.transformBy(
+    double intakePercentage =
+        state.getLatestIntakeWristPosition().getValue().in(Radians)
+            / IntakeConstants.kMaxWristAngle.in(Radians);
+    Pose3d hopperPose =
+        Constants.hopperBasePose.transformBy(
             new Transform3d(
                 new Translation3d(
-                    -(Math.sin(Timer.getTimestamp() * 10)
-                            * (SerializerConstants.kSerializerMaxExtension.in(Meters) / 2)
-                        + SerializerConstants.kSerializerMaxExtension.in(Meters) / 2),
-                    0,
-                    0),
+                    -(intakePercentage * Constants.kSerializerMaxExtension.in(Meters)), 0, 0),
                 new Rotation3d()));
 
     Pose3d intakePose =
         Constants.intakeBasePose.transformBy(
             new Transform3d(
                 new Translation3d(),
-                new Rotation3d(0, -(Math.sin(Timer.getTimestamp() * 10) * 1 + 1), 0)));
+                new Rotation3d(
+                    0, -state.getLatestIntakeWristPosition().getValue().in(Radians), 0)));
     Logger.recordOutput(
-        "ComponentPoses", new Pose3d[] {turretPose, hoodPose, intakePose, serializerPose});
+        "ComponentPoses", new Pose3d[] {turretPose, hoodPose, intakePose, hopperPose});
   }
 
   /** This function is called once when the robot is disabled. */

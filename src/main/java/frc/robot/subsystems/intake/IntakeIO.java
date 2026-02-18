@@ -1,5 +1,9 @@
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.RPM;
+
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import org.littletonrobotics.junction.AutoLog;
@@ -9,14 +13,14 @@ public interface IntakeIO {
   public static class IntakeIOInputs {
     // Wheel motor inputs
     public boolean wheelConnected = false;
-    public AngularVelocity wheelVelocity = edu.wpi.first.units.Units.RPM.of(0.0);
+    public AngularVelocity wheelVelocity = RPM.of(0.0);
     public double wheelAppliedVolts = 0.0;
     public double wheelCurrentAmps = 0.0;
 
     // Wrist motor inputs
     public boolean wristConnected = false;
-    public Angle wristPosition = edu.wpi.first.units.Units.Degrees.of(0.0);
-    public AngularVelocity wristVelocity = edu.wpi.first.units.Units.DegreesPerSecond.of(0.0);
+    public Angle wristPosition = Degrees.of(0.0);
+    public AngularVelocity wristVelocity = DegreesPerSecond.of(0.0);
     public double wristAppliedVolts = 0.0;
     public double wristCurrentAmps = 0.0;
   }

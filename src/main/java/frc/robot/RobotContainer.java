@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
 import frc.robot.subsystems.drive.Drive;
@@ -236,7 +235,8 @@ public class RobotContainer {
     // Reset turret to zero when Y pressed
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
-    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
     // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
     // operator.getLeftY()));
     hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
