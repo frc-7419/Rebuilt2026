@@ -1,10 +1,10 @@
 package frc.robot.subsystems.hood;
 
+import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.hood.HoodConstants.*;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -43,10 +43,10 @@ public class HoodIOSim implements HoodIO {
       double currentRad = mechanismRad;
 
       double pidOutput = positionController.calculate(currentRad, targetRad);
-      appliedVolts = MathUtil.clamp(-pidOutput, -kMaxVoltage, kMaxVoltage);
+      appliedVolts = clamp(-pidOutput, -kMaxVoltage, kMaxVoltage);
     }
 
-    mechanismRad = MathUtil.clamp(mechanismRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));
+    mechanismRad = clamp(mechanismRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));
 
     if (mechanismRad <= kMinAngle.in(Radians) && appliedVolts < 0) {
       appliedVolts = 0.0;
@@ -75,14 +75,13 @@ public class HoodIOSim implements HoodIO {
   public void setOpenLoop(double volts) {
     positionControl = false;
     positionController.reset();
-    appliedVolts = MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
+    appliedVolts = clamp(volts, -kMaxVoltage, kMaxVoltage);
   }
 
   @Override
   public void setPosition(Angle position) {
     positionControl = true;
-    double positionDeg =
-        MathUtil.clamp(position.in(Degrees), kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
+    double positionDeg = clamp(position.in(Degrees), kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
     targetAngle = Degrees.of(positionDeg);
   }
 

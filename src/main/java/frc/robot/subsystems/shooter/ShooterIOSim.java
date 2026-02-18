@@ -1,9 +1,9 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -53,7 +53,7 @@ public class ShooterIOSim implements ShooterIO {
       double pidOutput =
           velocityController.calculate(shooterVelocityRadPerSec, targetShooterVelocityRadPerSec);
       double feedforwardVolts = feedforwardVelocityRadPerSec * kV;
-      appliedVolts = MathUtil.clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
+      appliedVolts = clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
     }
 
     motorSim.setInputVoltage(appliedVolts);
@@ -88,7 +88,7 @@ public class ShooterIOSim implements ShooterIO {
     velocityControl = false;
     velocityController.reset();
     feedforwardVelocityRadPerSec = 0.0;
-    appliedVolts = MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
+    appliedVolts = clamp(volts, -kMaxVoltage, kMaxVoltage);
   }
 
   @Override
@@ -98,7 +98,7 @@ public class ShooterIOSim implements ShooterIO {
 
     double targetRadPerSec = velocity.in(RadiansPerSecond);
     targetRadPerSec =
-        MathUtil.clamp(
+        clamp(
             targetRadPerSec, kMinVelocity.in(RadiansPerSecond), kMaxVelocity.in(RadiansPerSecond));
     targetShooterVelocityRadPerSec = targetRadPerSec;
   }

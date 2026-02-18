@@ -1,9 +1,10 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
@@ -23,7 +24,7 @@ public class Shooter extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
 
-    double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+    double timestamp = getFPGATimestamp();
     RobotState.getInstance()
         .addShooterUpdates(timestamp, inputs.shooterVelocity, inputs.rotorVelocity);
   }
@@ -38,7 +39,7 @@ public class Shooter extends SubsystemBase {
     double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
 
     double clamped =
-        MathUtil.clamp(
+        clamp(
             targetRadPerSec,
             ShooterConstants.kMinVelocity.in(RadiansPerSecond),
             ShooterConstants.kMaxVelocity.in(RadiansPerSecond));

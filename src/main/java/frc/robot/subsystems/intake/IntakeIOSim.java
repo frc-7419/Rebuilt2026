@@ -1,6 +1,8 @@
 package frc.robot.subsystems.intake;
 
-import edu.wpi.first.math.MathUtil;
+import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
@@ -44,7 +46,7 @@ public class IntakeIOSim implements IntakeIO {
     inputs.wheelConnected = true;
     inputs.wheelAppliedVolts = wheelAppliedVolts;
     inputs.wheelCurrentAmps = wheelMotorSim.getCurrentDrawAmps();
-    inputs.wheelVelocity = edu.wpi.first.units.Units.RPM.of(wheelMotorSim.getAngularVelocityRPM());
+    inputs.wheelVelocity = RPM.of(wheelMotorSim.getAngularVelocityRPM());
 
     // Wrist motor inputs with position clamping
     inputs.wristConnected = true;
@@ -53,27 +55,26 @@ public class IntakeIOSim implements IntakeIO {
 
     // Clamp wrist position to mechanical limits
     wristPosition =
-        MathUtil.clamp(
+        clamp(
             wristPosition,
-            IntakeConstants.kMinWristAngle.in(edu.wpi.first.units.Units.Degrees),
-            IntakeConstants.kMaxWristAngle.in(edu.wpi.first.units.Units.Degrees));
+            IntakeConstants.kMinWristAngle.in(Degrees),
+            IntakeConstants.kMaxWristAngle.in(Degrees));
 
-    inputs.wristPosition = edu.wpi.first.units.Units.Degrees.of(wristPosition);
+    inputs.wristPosition = Degrees.of(wristPosition);
     inputs.wristVelocity =
-        edu.wpi.first.units.Units.DegreesPerSecond.of(
-            wristMotorSim.getAngularVelocityRadPerSec() * (180.0 / Math.PI));
+        DegreesPerSecond.of(wristMotorSim.getAngularVelocityRadPerSec() * (180.0 / Math.PI));
   }
 
   @Override
   public void setWheelOpenLoop(double volts) {
-    wheelAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    wheelAppliedVolts = clamp(volts, -12.0, 12.0);
     wheelMotorSim.setInputVoltage(wheelAppliedVolts);
   }
 
   @Override
   public void setWheelVelocity(AngularVelocity velocity) {
     // Simple proportional control for simulation
-    double targetRPM = velocity.in(edu.wpi.first.units.Units.RPM);
+    double targetRPM = velocity.in(RPM);
     double currentRPM = wheelMotorSim.getAngularVelocityRPM();
     double error = targetRPM - currentRPM;
     double volts = error * IntakeConstants.kSimP;
@@ -82,7 +83,7 @@ public class IntakeIOSim implements IntakeIO {
 
   @Override
   public void setWristOpenLoop(double volts) {
-    wristAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    wristAppliedVolts = clamp(volts, -12.0, 12.0);
     wristMotorSim.setInputVoltage(wristAppliedVolts);
 
     // Update wrist position
@@ -95,7 +96,7 @@ public class IntakeIOSim implements IntakeIO {
   @Override
   public void setWristPosition(Angle angle) {
     // Simple proportional control for simulation
-    double targetDeg = angle.in(edu.wpi.first.units.Units.Degrees);
+    double targetDeg = angle.in(Degrees);
     double error = targetDeg - wristPosition;
     double volts = error * IntakeConstants.kSimP;
     setWristOpenLoop(volts);

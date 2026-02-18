@@ -1,8 +1,9 @@
 package frc.robot.subsystems.hood;
 
+import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -23,7 +24,7 @@ public class Hood extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Hood", inputs);
 
-    double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+    double timestamp = getFPGATimestamp();
     RobotState.getInstance().addHoodUpdates(timestamp, inputs.position);
   }
 
@@ -36,8 +37,7 @@ public class Hood extends SubsystemBase {
   public void setAngle(Angle angle) {
     double deg = angle.in(Degrees);
     double clamped =
-        MathUtil.clamp(
-            deg, HoodConstants.kMinAngle.in(Degrees), HoodConstants.kMaxAngle.in(Degrees));
+        clamp(deg, HoodConstants.kMinAngle.in(Degrees), HoodConstants.kMaxAngle.in(Degrees));
     Logger.recordOutput("Hood/RequestedDeg", clamped);
     io.setPosition(Degrees.of(clamped));
   }
