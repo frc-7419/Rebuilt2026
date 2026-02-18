@@ -29,9 +29,9 @@ public final class HoodConstants {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorConfig.CurrentLimits.StatorCurrentLimit = 6;
 
-    motorSlot0Configs.kP = 1.0;
+    motorSlot0Configs.kP = 2.0;
     motorSlot0Configs.kI = 0.0;
-    motorSlot0Configs.kD = 0.5;
+    motorSlot0Configs.kD = 0.0;
     motorSlot0Configs.kV = 0.0;
     motorSlot0Configs.kS = 0.0;
 
