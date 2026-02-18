@@ -92,7 +92,7 @@ public class SerializerIOTalonFX implements SerializerIO {
   @Override
   public void setVelocity(AngularVelocity velocity) {
     serializerMotor.setControl(
-        velocityVoltageRequest.withVelocity(velocity.div(kMotorToSerializerGearRatio)));
+        velocityVoltageRequest.withVelocity(velocity.times(kMotorToSerializerGearRatio)));
   }
 
   @Override
@@ -103,6 +103,6 @@ public class SerializerIOTalonFX implements SerializerIO {
   @Override
   public void setFeederVelocity(AngularVelocity velocity) {
     feederMotor.setControl(
-        feederVelocityVoltageRequest.withVelocity(velocity.div(kMotorToFeederGearRatio)));
+        feederVelocityVoltageRequest.withVelocity(velocity.times(kMotorToFeederGearRatio)));
   }
 }

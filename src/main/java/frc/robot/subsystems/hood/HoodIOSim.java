@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 public class HoodIOSim implements HoodIO {
   private static final double SIMULATION_DT = 0.02;
   private static final double HOOD_INERTIA = 0.05;
-  private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60Foc(1);
+  private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60(1);
 
   private final DCMotorSim motorSim;
   private final PIDController positionController;

@@ -1,21 +1,30 @@
 package frc.robot.subsystems.serializer;
 
-import edu.wpi.first.math.MathUtil;
+import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.units.Units.*;
+import static frc.robot.subsystems.serializer.SerializerConstants.*;
+
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
-/** Simulation implementation of SerializerIO. */
+/** Simulation implementation of SerializerIO: velocity control for serializer and feeder. */
 public class SerializerIOSim implements SerializerIO {
-  private static final double LOOP_PERIOD_SECS = 0.02;
-
+  private static final double SIMULATION_DT = 0.02;
   private static final double SERIALIZER_INERTIA = 0.001;
-  private static final DCMotor MOTOR_MODEL = DCMotor.getFalcon500(1);
+  private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX44(1);
 
   private final DCMotorSim serializerMotorSim;
   private final DCMotorSim feederMotorSim;
+  private final PIDController serializerVelocityController;
+  private final PIDController feederVelocityController;
 
+  private boolean serializerVelocityControl = false;
+  private boolean feederVelocityControl = false;
+  private AngularVelocity targetSerializerVelocity = RPM.of(0.0);
+  private AngularVelocity targetFeederVelocity = RPM.of(0.0);
   private double serializerAppliedVolts = 0.0;
   private double feederAppliedVolts = 0.0;
 
@@ -23,62 +32,76 @@ public class SerializerIOSim implements SerializerIO {
     serializerMotorSim =
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                MOTOR_MODEL, SERIALIZER_INERTIA, SerializerConstants.kMotorToSerializerGearRatio),
+                MOTOR_MODEL, SERIALIZER_INERTIA, kMotorToSerializerGearRatio),
             MOTOR_MODEL);
     feederMotorSim =
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                MOTOR_MODEL, SERIALIZER_INERTIA, SerializerConstants.kMotorToFeederGearRatio),
+                MOTOR_MODEL, SERIALIZER_INERTIA, kMotorToFeederGearRatio),
             MOTOR_MODEL);
+    serializerVelocityController = new PIDController(kSimP, kSimI, kSimD);
+    feederVelocityController = new PIDController(kSimP, kSimI, kSimD);
   }
 
   @Override
   public void updateInputs(SerializerIOInputs inputs) {
-    serializerMotorSim.update(LOOP_PERIOD_SECS);
-    feederMotorSim.update(LOOP_PERIOD_SECS);
+    if (serializerVelocityControl) {
+      double targetRadPerSec = targetSerializerVelocity.in(RadiansPerSecond);
+      double currentRadPerSec = serializerMotorSim.getAngularVelocityRadPerSec();
+      serializerAppliedVolts =
+          clamp(
+              serializerVelocityController.calculate(currentRadPerSec, targetRadPerSec),
+              -12.0,
+              12.0);
+    }
+
+    if (feederVelocityControl) {
+      double targetRadPerSec = targetFeederVelocity.in(RadiansPerSecond);
+      double currentRadPerSec = feederMotorSim.getAngularVelocityRadPerSec();
+      feederAppliedVolts =
+          clamp(
+              feederVelocityController.calculate(currentRadPerSec, targetRadPerSec), -12.0, 12.0);
+    }
+
+    serializerMotorSim.setInputVoltage(serializerAppliedVolts);
+    feederMotorSim.setInputVoltage(feederAppliedVolts);
+    serializerMotorSim.update(SIMULATION_DT);
+    feederMotorSim.update(SIMULATION_DT);
 
     inputs.serializerConnected = true;
     inputs.serializerAppliedVolts = serializerAppliedVolts;
-    inputs.serializerCurrentAmps = serializerMotorSim.getCurrentDrawAmps();
-    inputs.serializerVelocity =
-        edu.wpi.first.units.Units.RPM.of(serializerMotorSim.getAngularVelocityRPM());
+    inputs.serializerCurrentAmps = Math.abs(serializerMotorSim.getCurrentDrawAmps());
+    inputs.serializerVelocity = serializerMotorSim.getAngularVelocity();
 
     inputs.feederConnected = true;
     inputs.feederAppliedVolts = feederAppliedVolts;
-    inputs.feederCurrentAmps = feederMotorSim.getCurrentDrawAmps();
-    inputs.feederVelocity =
-        edu.wpi.first.units.Units.RPM.of(feederMotorSim.getAngularVelocityRPM());
+    inputs.feederCurrentAmps = Math.abs(feederMotorSim.getCurrentDrawAmps());
+    inputs.feederVelocity = feederMotorSim.getAngularVelocity();
   }
 
   @Override
   public void setOpenLoop(double volts) {
-    serializerAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
-    serializerMotorSim.setInputVoltage(serializerAppliedVolts);
+    serializerVelocityControl = false;
+    serializerVelocityController.reset();
+    serializerAppliedVolts = clamp(volts, -12.0, 12.0);
   }
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    // Simple proportional control for simulation
-    double targetRPM = velocity.in(edu.wpi.first.units.Units.RPM);
-    double currentRPM = serializerMotorSim.getAngularVelocityRPM();
-    double error = targetRPM - currentRPM;
-    double volts = error * SerializerConstants.kSimP;
-    setOpenLoop(volts);
+    serializerVelocityControl = true;
+    targetSerializerVelocity = velocity;
   }
 
   @Override
   public void setFeederOpenLoop(double volts) {
-    feederAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
-    feederMotorSim.setInputVoltage(feederAppliedVolts);
+    feederVelocityControl = false;
+    feederVelocityController.reset();
+    feederAppliedVolts = clamp(volts, -12.0, 12.0);
   }
 
   @Override
   public void setFeederVelocity(AngularVelocity velocity) {
-    // Simple proportional control for simulation
-    double targetRPM = velocity.in(edu.wpi.first.units.Units.RPM);
-    double currentRPM = feederMotorSim.getAngularVelocityRPM();
-    double error = targetRPM - currentRPM;
-    double volts = error * SerializerConstants.kSimP;
-    setFeederOpenLoop(volts);
+    feederVelocityControl = true;
+    targetFeederVelocity = velocity;
   }
 }
