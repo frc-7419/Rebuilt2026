@@ -25,7 +25,8 @@ public final class ShooterConstants {
 
   public static final double kDeadband = 0.05;
 
-  public static final double kMotorToShooterGearRatio = (20.0 / 12.0);
+  // Main/Secondary flywheels: 20:36 reduction
+  public static final double kMotorToShooterGearRatio = (20.0 / 36.0);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;

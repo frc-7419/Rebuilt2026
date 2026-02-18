@@ -40,5 +40,5 @@ public final class Constants {
           new Rotation3d());
   public static Pose3d hoodBasePose = new Pose3d(0.252158, 0.1546565, 0.431800, new Rotation3d());
   public static Pose3d intakeBasePose = new Pose3d(-0.294640, 0.0, 0.193312, new Rotation3d());
-  public static Pose3d hopperBasePose = new Pose3d(-0.317817, 0.0, 0.427038, new Rotation3d());
+  public static Pose3d serializerBasePose = new Pose3d(-0.317817, 0.0, 0.427038, new Rotation3d());
 }

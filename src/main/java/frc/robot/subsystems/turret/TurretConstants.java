@@ -34,15 +34,15 @@ public final class TurretConstants {
   // Small deadband for joystick control
   public static final double kDeadband = 0.05;
 
-  // Arbitary gear ratios
-  public static final double kMotorToEncoderOneGearRatio = (52.0 / 16.0);
-  public static final double kEncoderOneToEncoderTwoGearRatio = (9.0 / 1.0);
-  public static final double kEncoderTwoToTurretGearRatio = (20.0 / 12.0);
+  // Gear ratios: Motor -> 60:12 reduction -> 130:10 reduction to turret
+  // Through Bore Encoder 1: 30:17, Encoder 2: 30:16 (opposite direction)
+  public static final double kMotorToEncoderOneGearRatio = (30.0 / 17.0);
+  public static final double kMotorToEncoderTwoGearRatio = (30.0 / 16.0);
+  public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
   public static final double kMotorToEncoderTwoGearRatio =
       kMotorToEncoderOneGearRatio * kEncoderOneToEncoderTwoGearRatio;
-  public static final double kMotorToTurretGearRatio =
-      kMotorToEncoderTwoGearRatio * kEncoderTwoToTurretGearRatio;
+
 
   public static final Angle encoderOneZeroOffset = Rotations.of(0.2391);
   public static final Angle encoderTwoZeroOffset = Rotations.of(0.8421);

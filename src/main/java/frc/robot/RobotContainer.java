@@ -34,10 +34,10 @@ import frc.robot.subsystems.hood.Hood;
 import frc.robot.subsystems.hood.HoodIO;
 import frc.robot.subsystems.hood.HoodIOSim;
 import frc.robot.subsystems.hood.HoodIOTalonFX;
-import frc.robot.subsystems.hopper.Hopper;
-import frc.robot.subsystems.hopper.HopperIO;
-import frc.robot.subsystems.hopper.HopperIOSim;
-import frc.robot.subsystems.hopper.HopperIOTalonFX;
+import frc.robot.subsystems.serializer.Serializer;
+import frc.robot.subsystems.serializer.SerializerIO;
+import frc.robot.subsystems.serializer.SerializerIOSim;
+import frc.robot.subsystems.serializer.SerializerIOTalonFX;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOSim;
@@ -66,7 +66,7 @@ public class RobotContainer {
   private final Shooter shooter;
   private final Hood hood;
   private final Intake intake;
-  private final Hopper hopper;
+  private final Serializer serializer;
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -117,7 +117,7 @@ public class RobotContainer {
 
         intake = new Intake(new IntakeIOTalonFX());
 
-        hopper = new Hopper(new HopperIOTalonFX());
+        serializer = new Serializer(new SerializerIOTalonFX());
 
         break;
 
@@ -136,7 +136,7 @@ public class RobotContainer {
         shooter = new Shooter(new ShooterIOSim());
         hood = new Hood(new HoodIOSim());
         intake = new Intake(new IntakeIOSim());
-        hopper = new Hopper(new HopperIOSim());
+        serializer = new Serializer(new SerializerIOSim());
 
         break;
 
@@ -157,7 +157,7 @@ public class RobotContainer {
         shooter = new Shooter(new ShooterIO() {});
         hood = new Hood(new HoodIO() {});
         intake = new Intake(new IntakeIO() {});
-        hopper = new Hopper(new HopperIO() {});
+        serializer = new Serializer(new SerializerIO() {});
         break;
     }
 
