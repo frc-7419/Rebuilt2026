@@ -8,7 +8,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
-/** Serializer subsystem containing the serializer wheel and feeder rollers for feeding fuel into the turret. */
+/**
+ * Serializer subsystem containing the serializer wheel and feeder rollers for feeding fuel into the
+ * turret.
+ */
 public class Serializer extends SubsystemBase {
   private final SerializerIO io;
   private final SerializerIOInputsAutoLogged inputs = new SerializerIOInputsAutoLogged();

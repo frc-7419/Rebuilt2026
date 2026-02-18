@@ -40,7 +40,8 @@ public class SerializerIOSim implements SerializerIO {
     inputs.serializerConnected = true;
     inputs.serializerAppliedVolts = serializerAppliedVolts;
     inputs.serializerCurrentAmps = serializerMotorSim.getCurrentDrawAmps();
-    inputs.serializerVelocity = edu.wpi.first.units.Units.RPM.of(serializerMotorSim.getAngularVelocityRPM());
+    inputs.serializerVelocity =
+        edu.wpi.first.units.Units.RPM.of(serializerMotorSim.getAngularVelocityRPM());
 
     inputs.feederConnected = true;
     inputs.feederAppliedVolts = feederAppliedVolts;

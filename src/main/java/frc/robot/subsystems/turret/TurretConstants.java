@@ -40,10 +40,6 @@ public final class TurretConstants {
   public static final double kMotorToEncoderTwoGearRatio = (30.0 / 16.0);
   public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
-  public static final double kMotorToEncoderTwoGearRatio =
-      kMotorToEncoderOneGearRatio * kEncoderOneToEncoderTwoGearRatio;
-
-
   public static final Angle encoderOneZeroOffset = Rotations.of(0.2391);
   public static final Angle encoderTwoZeroOffset = Rotations.of(0.8421);
 

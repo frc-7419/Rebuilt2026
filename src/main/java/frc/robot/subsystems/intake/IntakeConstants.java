@@ -23,7 +23,8 @@ public final class IntakeConstants {
   // Intake wheel rollers: 2:1 front roller -> 4:3 back roller reduction
   public static final double kWheelMotorToWheelGearRatio = (2.0 / 1.0) * (4.0 / 3.0);
   // Intake pivot/wrist: 40:8 -> 40:20 -> 36:10 reductions
-  public static final double kWristMotorToWristGearRatio = (40.0 / 8.0) * (40.0 / 20.0) * (36.0 / 10.0);
+  public static final double kWristMotorToWristGearRatio =
+      (40.0 / 8.0) * (40.0 / 20.0) * (36.0 / 10.0);
 
   // Voltage limits
   public static final double kMaxVoltage = 12.0;

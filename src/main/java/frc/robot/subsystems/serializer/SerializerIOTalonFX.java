@@ -35,7 +35,12 @@ public class SerializerIOTalonFX implements SerializerIO {
     serializerMotor = new TalonFX(SerializerConstants.kSerializerMotorId);
     feederMotor = new TalonFX(SerializerConstants.kFeederMotorId);
 
-    tryUntilOk(5, () -> serializerMotor.getConfigurator().apply(SerializerConstants.serializerMotorConfig, 0.25));
+    tryUntilOk(
+        5,
+        () ->
+            serializerMotor
+                .getConfigurator()
+                .apply(SerializerConstants.serializerMotorConfig, 0.25));
     tryUntilOk(
         5, () -> feederMotor.getConfigurator().apply(SerializerConstants.feederMotorConfig, 0.25));
 
@@ -48,15 +53,24 @@ public class SerializerIOTalonFX implements SerializerIO {
     feederVelocity = feederMotor.getVelocity();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, serializerAppliedVolts, serializerCurrent, serializerVelocity, feederAppliedVolts,
-        feederCurrent, feederVelocity);
+        50.0,
+        serializerAppliedVolts,
+        serializerCurrent,
+        serializerVelocity,
+        feederAppliedVolts,
+        feederCurrent,
+        feederVelocity);
   }
 
   @Override
   public void updateInputs(SerializerIOInputs inputs) {
     var status =
         BaseStatusSignal.refreshAll(
-            serializerAppliedVolts, serializerCurrent, serializerVelocity, feederAppliedVolts, feederCurrent,
+            serializerAppliedVolts,
+            serializerCurrent,
+            serializerVelocity,
+            feederAppliedVolts,
+            feederCurrent,
             feederVelocity);
     inputs.serializerConnected = status.equals(StatusCode.OK);
     inputs.feederConnected = status.equals(StatusCode.OK);
@@ -67,8 +81,7 @@ public class SerializerIOTalonFX implements SerializerIO {
 
     inputs.feederAppliedVolts = feederAppliedVolts.getValueAsDouble();
     inputs.feederCurrentAmps = feederCurrent.getValueAsDouble();
-    inputs.feederVelocity =
-        feederVelocity.getValue().div(kMotorToFeederGearRatio);
+    inputs.feederVelocity = feederVelocity.getValue().div(kMotorToFeederGearRatio);
   }
 
   @Override
@@ -79,8 +92,7 @@ public class SerializerIOTalonFX implements SerializerIO {
   @Override
   public void setVelocity(AngularVelocity velocity) {
     serializerMotor.setControl(
-        velocityVoltageRequest.withVelocity(
-            velocity.div(kMotorToSerializerGearRatio)));
+        velocityVoltageRequest.withVelocity(velocity.div(kMotorToSerializerGearRatio)));
   }
 
   @Override
@@ -91,7 +103,6 @@ public class SerializerIOTalonFX implements SerializerIO {
   @Override
   public void setFeederVelocity(AngularVelocity velocity) {
     feederMotor.setControl(
-        feederVelocityVoltageRequest.withVelocity(
-            velocity.div(kMotorToFeederGearRatio)));
+        feederVelocityVoltageRequest.withVelocity(velocity.div(kMotorToFeederGearRatio)));
   }
 }
