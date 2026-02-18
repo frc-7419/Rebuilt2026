@@ -49,6 +49,16 @@ public class RobotState {
   private final TimeInterpolatableBuffer<Double> shooterRotorVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
 
+  // Intake buffers
+  private final TimeInterpolatableBuffer<Double> intakeWristPosition =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> intakeWristVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+
+  // Hopper buffers
+  private final TimeInterpolatableBuffer<Double> hopperVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+
   private final AtomicReference<ChassisSpeeds> measuredRobotRelativeChassisSpeeds =
       new AtomicReference<>(new ChassisSpeeds());
   private final AtomicReference<ChassisSpeeds> measuredFieldRelativeChassisSpeeds =
@@ -68,6 +78,9 @@ public class RobotState {
     hoodPosition.addSample(0.0, 0.0);
     shooterVelocity.addSample(0.0, 0.0);
     shooterRotorVelocity.addSample(0.0, 0.0);
+    intakeWristPosition.addSample(0.0, 0.0);
+    intakeWristVelocity.addSample(0.0, 0.0);
+    hopperVelocity.addSample(0.0, 0.0);
   }
 
   public void resetPose(Pose2d pose) {
@@ -270,6 +283,43 @@ public class RobotState {
     boolean inactiveIsRed = inactiveAlliance == 'R';
 
     return isRed == inactiveIsRed;
+  }
+
+  public void addIntakeUpdates(
+      double timestamp, Angle wristPosition, AngularVelocity wristVelocity) {
+    intakeWristPosition.addSample(timestamp, wristPosition.baseUnitMagnitude());
+    intakeWristVelocity.addSample(timestamp, wristVelocity.baseUnitMagnitude());
+  }
+
+  public Optional<Angle> getIntakeWristPosition(double timestamp) {
+    return intakeWristPosition.getSample(timestamp).map(Radians::of);
+  }
+
+  public Map.Entry<Double, Angle> getLatestIntakeWristPosition() {
+    var buffer = intakeWristPosition.getInternalBuffer();
+    if (buffer.isEmpty()) return null;
+    var last = buffer.lastEntry();
+    return Map.entry(last.getKey(), Radians.of(last.getValue()));
+  }
+
+  public AngularVelocity getLatestIntakeWristVelocity() {
+    var buffer = intakeWristVelocity.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    return RadiansPerSecond.of(value);
+  }
+
+  public void addHopperUpdates(double timestamp, AngularVelocity velocity) {
+    hopperVelocity.addSample(timestamp, velocity.baseUnitMagnitude());
+  }
+
+  public Optional<AngularVelocity> getHopperVelocity(double timestamp) {
+    return hopperVelocity.getSample(timestamp).map(RadiansPerSecond::of);
+  }
+
+  public AngularVelocity getLatestHopperVelocity() {
+    var buffer = hopperVelocity.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    return RadiansPerSecond.of(value);
   }
 
   public record VisionObservation(double timestamp, Pose2d visionPose, Matrix<N3, N1> stdDevs) {}

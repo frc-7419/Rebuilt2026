@@ -11,7 +11,7 @@ import edu.wpi.first.units.measure.Angle;
 public final class HoodConstants {
   private HoodConstants() {}
 
-  public static final int kHoodMotorId = 39;
+  public static final int kHoodMotorId = 22;
 
   public static final double kMaxVoltage = 12.0;
   public static final double kDeadband = 0.05;
@@ -32,6 +32,7 @@ public final class HoodConstants {
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    motorConfig.CurrentLimits.StatorCurrentLimit = 6;
 
     motorSlot0Configs.kP = 1.0;
     motorSlot0Configs.kI = 0.0;

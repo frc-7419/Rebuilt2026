@@ -34,6 +34,14 @@ import frc.robot.subsystems.hood.Hood;
 import frc.robot.subsystems.hood.HoodIO;
 import frc.robot.subsystems.hood.HoodIOSim;
 import frc.robot.subsystems.hood.HoodIOTalonFX;
+import frc.robot.subsystems.hopper.Hopper;
+import frc.robot.subsystems.hopper.HopperIO;
+import frc.robot.subsystems.hopper.HopperIOSim;
+import frc.robot.subsystems.hopper.HopperIOTalonFX;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOSim;
@@ -55,10 +63,10 @@ public class RobotContainer {
   private final Drive drive;
   // private final Vision vision;
   private final Turret turret;
-
   private final Shooter shooter;
-
   private final Hood hood;
+  private final Intake intake;
+  private final Hopper hopper;
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -66,7 +74,6 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-  private TurretCommands turretCommands;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -108,6 +115,10 @@ public class RobotContainer {
 
         hood = new Hood(new HoodIOTalonFX());
 
+        intake = new Intake(new IntakeIOTalonFX());
+
+        hopper = new Hopper(new HopperIOTalonFX());
+
         break;
 
       case SIM:
@@ -124,6 +135,8 @@ public class RobotContainer {
         turret = new Turret(new TurretIOSim());
         shooter = new Shooter(new ShooterIOSim());
         hood = new Hood(new HoodIOSim());
+        intake = new Intake(new IntakeIOSim());
+        hopper = new Hopper(new HopperIOSim());
 
         break;
 
@@ -143,6 +156,8 @@ public class RobotContainer {
 
         shooter = new Shooter(new ShooterIO() {});
         hood = new Hood(new HoodIO() {});
+        intake = new Intake(new IntakeIO() {});
+        hopper = new Hopper(new HopperIO() {});
         break;
     }
 

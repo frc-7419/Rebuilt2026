@@ -1,3 +1,59 @@
 package frc.robot.subsystems.intake;
 
-public class IntakeConstants {}
+import static edu.wpi.first.units.Units.Degrees;
+
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.units.measure.Angle;
+
+public final class IntakeConstants {
+  private IntakeConstants() {}
+
+  // Motor IDs
+  public static final int kIntakeWheelMotorId = 11;
+  public static final int kIntakeWristMotorId = 12;
+
+  // Wrist configuration
+  public static final Angle kMinWristAngle = Degrees.of(0.0);
+  public static final Angle kMaxWristAngle = Degrees.of(120.0);
+  public static final Angle kHomeWristAngle = Degrees.of(0.0);
+
+  // Gear ratios
+  public static final double kWheelMotorToWheelGearRatio = 1.0; // needs to be checked
+  public static final double kWristMotorToWristGearRatio = (50.0 / 12.0); // needs to be replaced
+
+  // Voltage limits
+  public static final double kMaxVoltage = 12.0;
+
+  // Wheel motor configuration
+  public static final TalonFXConfiguration wheelMotorConfig = new TalonFXConfiguration();
+  public static final Slot0Configs wheelSlot0Configs = wheelMotorConfig.Slot0;
+
+  static {
+    wheelMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    wheelSlot0Configs.kP = 0.0;
+    wheelSlot0Configs.kI = 0.0;
+    wheelSlot0Configs.kD = 0.0;
+    wheelSlot0Configs.kV = 0.0;
+    wheelSlot0Configs.kS = 0.0;
+  }
+
+  // Wrist motor configuration
+  public static final TalonFXConfiguration wristMotorConfig = new TalonFXConfiguration();
+  public static final Slot0Configs wristSlot0Configs = wristMotorConfig.Slot0;
+
+  static {
+    wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    wristSlot0Configs.kP = 10.0;
+    wristSlot0Configs.kI = 0.0;
+    wristSlot0Configs.kD = 0.1;
+    wristSlot0Configs.kV = 0.0;
+    wristSlot0Configs.kS = 0.0;
+  }
+
+  // Simulation PID gains
+  public static final double kSimP = 1.0;
+  public static final double kSimI = 0.0;
+  public static final double kSimD = 0.0;
+}
