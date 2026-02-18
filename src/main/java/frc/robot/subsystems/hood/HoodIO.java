@@ -12,6 +12,7 @@ public interface HoodIO {
   public static class HoodIOInputs {
     public boolean connected = false;
 
+    public Angle rotorPosition = Degrees.of(0.0);
     public Angle position = Degrees.of(0.0);
     public AngularVelocity velocity = RadiansPerSecond.of(0.0);
     public double appliedVolts = 0.0;

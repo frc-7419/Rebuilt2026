@@ -14,7 +14,7 @@ public final class HoodCommands {
     return Commands.run(
         () -> {
           double val = MathUtil.applyDeadband(input.getAsDouble(), 0.05);
-          hood.setOpenLoop(val * 1); // scale to volts
+          hood.setOpenLoop(val * 3); // scale to volts
         },
         hood);
   }

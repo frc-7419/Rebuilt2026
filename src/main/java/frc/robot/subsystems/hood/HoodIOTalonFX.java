@@ -1,12 +1,7 @@
 package frc.robot.subsystems.hood;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static frc.robot.subsystems.hood.HoodConstants.kDegreesPerMotorRotation;
-import static frc.robot.subsystems.hood.HoodConstants.kInitialAngleOffsetDeg;
 import static frc.robot.subsystems.hood.HoodConstants.kMotorToHoodGearRatio;
+import static frc.robot.subsystems.turret.TurretConstants.kMaxAngle;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -53,14 +48,10 @@ public class HoodIOTalonFX implements HoodIO {
     inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
     inputs.currentAmps = motorCurrent.getValueAsDouble();
 
-    double rotorRot = motorPosition.getValue().in(Rotations);
-    double rotorRotPerSec = motorVelocity.getValue().in(RotationsPerSecond);
+    inputs.position = kMaxAngle.minus(motorPosition.getValue().div(kMotorToHoodGearRatio));
+    inputs.rotorPosition = motorPosition.getValue();
 
-    double positionDeg = kInitialAngleOffsetDeg - rotorRot * kDegreesPerMotorRotation;
-    inputs.position = Degrees.of(positionDeg);
-
-    double hoodRadPerSec = -rotorRotPerSec * (2.0 * Math.PI / kMotorToHoodGearRatio);
-    inputs.velocity = RadiansPerSecond.of(hoodRadPerSec);
+    inputs.velocity = motorVelocity.getValue().div(kMotorToHoodGearRatio);
   }
 
   @Override
@@ -70,9 +61,7 @@ public class HoodIOTalonFX implements HoodIO {
 
   @Override
   public void setPosition(Angle position) {
-    double targetDeg = position.in(Degrees);
-    double targetRotorRot = (kInitialAngleOffsetDeg - targetDeg) / kDegreesPerMotorRotation;
-    motor.setControl(motionMagicRequest.withPosition(targetRotorRot));
+    motor.setControl(motionMagicRequest.withPosition(position.times(kMotorToHoodGearRatio)));
   }
 
   @Override
