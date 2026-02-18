@@ -11,7 +11,9 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
-/** Simulation implementation of IntakeIO: position control for wrist, velocity control for wheel. */
+/**
+ * Simulation implementation of IntakeIO: position control for wrist, velocity control for wheel.
+ */
 public class IntakeIOSim implements IntakeIO {
   private static final double SIMULATION_DT = 0.02;
 
@@ -35,11 +37,13 @@ public class IntakeIOSim implements IntakeIO {
   public IntakeIOSim() {
     wheelMotorSim =
         new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(WHEEL_MOTOR, WHEEL_INERTIA, kWheelMotorToWheelGearRatio),
+            LinearSystemId.createDCMotorSystem(
+                WHEEL_MOTOR, WHEEL_INERTIA, kWheelMotorToWheelGearRatio),
             WHEEL_MOTOR);
     wristMotorSim =
         new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(WRIST_MOTOR, WRIST_INERTIA, kWristMotorToWristGearRatio),
+            LinearSystemId.createDCMotorSystem(
+                WRIST_MOTOR, WRIST_INERTIA, kWristMotorToWristGearRatio),
             WRIST_MOTOR);
     wheelVelocityController = new PIDController(kSimP, kSimI, kSimD);
     wristPositionController = new PIDController(kSimP, kSimI, kSimD);
@@ -63,10 +67,7 @@ public class IntakeIOSim implements IntakeIO {
     if (wristPositionControl) {
       double targetRad = targetWristAngle.in(Radians);
       wristAppliedVolts =
-          clamp(
-              wristPositionController.calculate(wristRad, targetRad),
-              -kMaxVoltage,
-              kMaxVoltage);
+          clamp(wristPositionController.calculate(wristRad, targetRad), -kMaxVoltage, kMaxVoltage);
     }
 
     // Wrist boundary enforcement
@@ -93,7 +94,7 @@ public class IntakeIOSim implements IntakeIO {
     inputs.wristConnected = true;
     inputs.wristAppliedVolts = wristAppliedVolts;
     inputs.wristCurrentAmps = Math.abs(wristMotorSim.getCurrentDrawAmps());
-    inputs.wristPosition = wristMotorSim.getAngularPosition();
+    inputs.wristPosition = Radians.of(wristRad);
     inputs.wristVelocity = wristMotorSim.getAngularVelocity();
   }
 

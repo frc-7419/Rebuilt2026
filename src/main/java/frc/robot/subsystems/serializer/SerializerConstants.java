@@ -1,19 +1,14 @@
 package frc.robot.subsystems.serializer;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Distance;
 
 public class SerializerConstants {
   private SerializerConstants() {}
-
-  public static final Distance kSerializerMaxExtension = Meters.of(0.301625);
-
   // Motor IDs
   public static final int kSerializerMotorId = 13;
   public static final int kFeederMotorId = 14;

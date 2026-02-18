@@ -59,8 +59,7 @@ public class SerializerIOSim implements SerializerIO {
       double targetRadPerSec = targetFeederVelocity.in(RadiansPerSecond);
       double currentRadPerSec = feederMotorSim.getAngularVelocityRadPerSec();
       feederAppliedVolts =
-          clamp(
-              feederVelocityController.calculate(currentRadPerSec, targetRadPerSec), -12.0, 12.0);
+          clamp(feederVelocityController.calculate(currentRadPerSec, targetRadPerSec), -12.0, 12.0);
     }
 
     serializerMotorSim.setInputVoltage(serializerAppliedVolts);
