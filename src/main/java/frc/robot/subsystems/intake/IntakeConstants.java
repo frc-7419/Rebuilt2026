@@ -11,8 +11,8 @@ public final class IntakeConstants {
   private IntakeConstants() {}
 
   // Motor IDs
-  public static final int kIntakeWheelMotorId = 11;
-  public static final int kIntakeWristMotorId = 12;
+  public static final int kIntakeWheelMotorId = 25;
+  public static final int kIntakeWristMotorId = 23;
 
   // Wrist configuration
   public static final Angle kMinWristAngle = Degrees.of(0.0);

@@ -32,9 +32,9 @@ public final class TurretCommands {
     return runOnce(() -> turret.setAngle(angle), turret).withTimeout(0.0);
   }
 
-  public static void toTurretPosition(Turret turret, Angle position) {
+  public static Command toTurretPosition(Turret turret, Angle position) {
 
-    turret.setAngle(position);
+    return runOnce(() -> turret.setAngle(position), turret);
   }
 
   /**

@@ -1,7 +1,7 @@
 package frc.robot.subsystems.hood;
 
+import static frc.robot.subsystems.hood.HoodConstants.kMaxAngle;
 import static frc.robot.subsystems.hood.HoodConstants.kMotorToHoodGearRatio;
-import static frc.robot.subsystems.turret.TurretConstants.kMaxAngle;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -35,6 +35,8 @@ public class HoodIOTalonFX implements HoodIO {
     motorCurrent = motor.getStatorCurrent();
     motorVelocity = motor.getVelocity();
     motorPosition = motor.getPosition();
+
+    zeroRotor();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);

@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
@@ -71,6 +72,7 @@ public class Turret extends SubsystemBase {
   }
 
   public void setAngle(Angle angle) {
+    Logger.recordOutput("Turret/TurretRequestedRadRaw", angle.in(Degrees));
     double angleRad = angle.in(Radians);
     double normalizedAngle = MathUtil.angleModulus(angleRad);
 

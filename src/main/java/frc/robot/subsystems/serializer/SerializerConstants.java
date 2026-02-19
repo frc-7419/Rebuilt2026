@@ -10,8 +10,8 @@ import edu.wpi.first.units.measure.AngularVelocity;
 public class SerializerConstants {
   private SerializerConstants() {}
   // Motor IDs
-  public static final int kSerializerMotorId = 13;
-  public static final int kFeederMotorId = 14;
+  public static final int kSerializerMotorId = 35;
+  public static final int kFeederMotorId = 30;
 
   // Gear ratios
   // Serializer wheel: 3:1 -> 40:20 reductions (total 6.0x)

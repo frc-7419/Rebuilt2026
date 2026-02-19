@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HoodCommands;
-import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
 import frc.robot.subsystems.drive.Drive;
@@ -235,8 +235,8 @@ public class RobotContainer {
     // Reset turret to zero when Y pressed
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
-    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
-    intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
     // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
     // operator.getLeftY()));
     hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
@@ -244,29 +244,31 @@ public class RobotContainer {
     // ==================== OPERATOR BUTTON BINDINGS ====================
 
     // A button: Intake down (0°)
-    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    //  operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
     // B button: Intake up (120°)
-    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
 
+    operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
+    operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
     // Y button: Auto-aim turret towards hub
     // TODO: Implement after auto-aim logic is finalized
     // operator.y().whileTrue(TurretCommands.pointAtHub(turret));
 
     // X button: Toggle serializer and feeder motors on/off
-    operator
-        .x()
-        .onTrue(
-            Commands.startEnd(
-                () -> {
-                  serializer.setRPM(2000); // Serializer wheel
-                  serializer.setFeederRPM(2000); // Feeder rollers
-                },
-                () -> {
-                  serializer.stop();
-                  serializer.stopFeeder();
-                },
-                serializer));
+    /*  operator
+    .x()
+    .onTrue(
+        Commands.startEnd(
+            () -> {
+              serializer.setRPM(2000); // Serializer wheel
+              serializer.setFeederRPM(2000); // Feeder rollers
+            },
+            () -> {
+              serializer.stop();
+              serializer.stopFeeder();
+            },
+            serializer));*/
 
     // Right trigger: Shoot balls (hold to shoot, release to stop)
     operator

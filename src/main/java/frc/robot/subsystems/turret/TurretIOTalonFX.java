@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 import static frc.robot.subsystems.turret.TurretConstants.kMotorToTurretGearRatio;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -37,6 +38,8 @@ public class TurretIOTalonFX implements TurretIO {
     motorVelocity = motor.getVelocity();
     motorPosition = motor.getPosition();
 
+    zeroRotor(Degrees.of(0));
+
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
   }
@@ -50,7 +53,8 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.currentAmps = motorCurrent.getValueAsDouble();
     inputs.velocity = motorVelocity.getValue().div(kMotorToTurretGearRatio);
     inputs.rotorPosition = motorPosition.getValue();
-    inputs.turretPosition = motorPosition.getValue().div(kMotorToTurretGearRatio);
+    inputs.turretPosition =
+        motorPosition.getValue(); // conversion done from talonfx for fusedcancoder
   }
 
   @Override
