@@ -1,0 +1,55 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StartLeftToTroughLeft"
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": []
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StrafeLtoRAlliance"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "AllianceToNeutralRight"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "IntakeRightToLeft"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "NeutralLeftToAlliance"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StrafeLtoRAlliance"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
