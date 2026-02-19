@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HoodCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
@@ -235,8 +236,13 @@ public class RobotContainer {
     // Reset turret to zero when Y pressed
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
-    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
-    // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    operator
+        .b()
+        .whileTrue(IntakeCommands.runWheel(intake, 2))
+        .onFalse(IntakeCommands.runWheel(intake, 0));
+
     // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
     // operator.getLeftY()));
     hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
@@ -244,7 +250,7 @@ public class RobotContainer {
     // ==================== OPERATOR BUTTON BINDINGS ====================
 
     // A button: Intake down (0°)
-    //  operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    // operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
     // B button: Intake up (120°)
     // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));

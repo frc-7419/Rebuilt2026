@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 
@@ -48,6 +49,7 @@ public final class IntakeConstants {
 
   static {
     wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    wristMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     wristSlot0Configs.kP = 10.0;
     wristSlot0Configs.kI = 0.0;
     wristSlot0Configs.kD = 0.1;

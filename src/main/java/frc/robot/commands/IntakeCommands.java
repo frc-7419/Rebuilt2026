@@ -26,7 +26,7 @@ public final class IntakeCommands {
     return run(
         () -> {
           double val = applyDeadband(input.getAsDouble(), 0.05);
-          intake.setWristOpenLoop(val * 12.0); // scale to volts
+          intake.setWristOpenLoop(val * 4.0); // scale to volts
         },
         intake);
   }
