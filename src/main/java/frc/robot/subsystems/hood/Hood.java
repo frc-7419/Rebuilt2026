@@ -1,0 +1,64 @@
+package frc.robot.subsystems.hood;
+
+import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
+
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.RobotState;
+import org.littletonrobotics.junction.Logger;
+
+/** Hood subsystem */
+public class Hood extends SubsystemBase {
+  private final HoodIO io;
+  private final HoodIOInputsAutoLogged inputs = new HoodIOInputsAutoLogged();
+
+  public Hood(HoodIO io) {
+    this.io = io;
+  }
+
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    Logger.processInputs("Hood", inputs);
+
+    double timestamp = getFPGATimestamp();
+    RobotState.getInstance().addHoodUpdates(timestamp, inputs.position);
+  }
+
+  /** Sets the hood in open loop (volts). Cancels any position hold. */
+  public void setOpenLoop(double volts) {
+    io.setOpenLoop(volts);
+  }
+
+  /** Set hood target angle */
+  public void setAngle(Angle angle) {
+    double deg = angle.in(Degrees);
+    double clamped =
+        clamp(deg, HoodConstants.kMinAngle.in(Degrees), HoodConstants.kMaxAngle.in(Degrees));
+    Logger.recordOutput("Hood/RequestedDeg", clamped);
+    io.setPosition(Degrees.of(clamped));
+  }
+
+  /** Cancels position hold and stops the motor. */
+  public void stop() {
+    io.setOpenLoop(0.0);
+  }
+
+  /** Returns the current hood angle (0 = horizontal). */
+  public Angle getAngle() {
+    return inputs.position;
+  }
+
+  /** Returns the current hood angular velocity. */
+  public AngularVelocity getVelocity() {
+    return inputs.velocity;
+  }
+
+  /** Zero the rotor so current physical angle is treated as the initial offset */
+  public void zeroRotor() {
+    io.zeroRotor();
+  }
+}

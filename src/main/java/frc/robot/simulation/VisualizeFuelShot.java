@@ -49,13 +49,14 @@ public class VisualizeFuelShot extends Command {
           turretRotation = robotPose.getRotation().rotateBy(turretRotation);
 
           double hoodAngleRad =
-              state.getCurrentHoodPosition().in(Radians) - ShooterConstants.kHoodZeroed.in(Radians);
+              state.getLatestHoodPosition().getValue().in(Radians)
+                  - ShooterConstants.kHoodZeroed.in(Radians);
 
           double hoodAngleUncertaintyDeg = 0.25 + random.nextDouble() * (1.0 - 0.25);
           double hoodAngleUncertaintySign = random.nextBoolean() ? 1.0 : -1.0;
           hoodAngleRad += Math.toRadians(hoodAngleUncertaintyDeg * hoodAngleUncertaintySign);
 
-          double wheelRotPerSec = state.getCurrentShooterVelocity().in(RotationsPerSecond);
+          double wheelRotPerSec = state.getLatestShooterVelocity().in(RotationsPerSecond);
 
           Logger.recordOutput("FuelVisualizer/Inputs/RobotPoseX", robotPose.getX());
           Logger.recordOutput("FuelVisualizer/Inputs/RobotPoseY", robotPose.getY());

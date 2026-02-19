@@ -7,10 +7,13 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotBase;
 
 /**
@@ -41,4 +44,5 @@ public final class Constants {
   public static Pose3d hoodBasePose = new Pose3d(0.252158, 0.1546565, 0.431800, new Rotation3d());
   public static Pose3d intakeBasePose = new Pose3d(-0.294640, 0.0, 0.193312, new Rotation3d());
   public static Pose3d hopperBasePose = new Pose3d(-0.317817, 0.0, 0.427038, new Rotation3d());
+  public static final Distance kSerializerMaxExtension = Meters.of(0.301625);
 }

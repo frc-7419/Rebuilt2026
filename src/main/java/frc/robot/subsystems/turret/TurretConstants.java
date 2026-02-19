@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,15 +20,13 @@ public final class TurretConstants {
   private TurretConstants() {}
 
   // Arbitary CAN IDs
-  public static final int kTurretMotorId = 9;
-  public static final int kEncoderOneId = 6;
-  public static final int kEncoderTwoId = 7;
+  public static final int kTurretMotorId = 31;
 
   // Maximum output voltage when using software PID (Volts)
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kTurretMaxRotations = 720;
+  public static final double kTurretMaxRotations = 1200;
 
   // Allowed motion limits.
   public static final Angle kMinAngle = Degrees.of(-kTurretMaxRotations / 2.0);
@@ -36,15 +35,14 @@ public final class TurretConstants {
   // Small deadband for joystick control
   public static final double kDeadband = 0.05;
 
-  // Arbitary gear ratios
-  public static final double kMotorToEncoderOneGearRatio = (52.0 / 16.0);
-  public static final double kEncoderOneToEncoderTwoGearRatio = (9.0 / 1.0);
-  public static final double kEncoderTwoToTurretGearRatio = (20.0 / 12.0);
+  // Gear ratios: Motor -> 60:12 reduction -> 130:10 reduction to turret
+  // Through Bore Encoder 1: 30:17, Encoder 2: 30:16 (opposite direction)
+  public static final double kMotorToEncoderOneGearRatio = (30.0 / 17.0);
+  public static final double kMotorToEncoderTwoGearRatio = (30.0 / 16.0);
+  public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
-  public static final double kMotorToEncoderTwoGearRatio =
-      kMotorToEncoderOneGearRatio * kEncoderOneToEncoderTwoGearRatio;
-  public static final double kMotorToTurretGearRatio =
-      kMotorToEncoderTwoGearRatio * kEncoderTwoToTurretGearRatio;
+  public static final int kEncoderOneId = 6;
+  public static final int kEncoderTwoId = 7;
 
   public static final Angle encoderOneZeroOffset = Rotations.of(0.2391);
   public static final Angle encoderTwoZeroOffset = Rotations.of(0.8421);
@@ -57,15 +55,15 @@ public final class TurretConstants {
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     motorSlot0Configs.kP = 10;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 1;
+    motorSlot0Configs.kD = 0.1;
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio =
         kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
-    motorFeedbackConfigs.FeedbackRemoteSensorID = kEncoderOneId;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kMaxAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = kMinAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
@@ -78,7 +76,7 @@ public final class TurretConstants {
 
   public static final double kSimP = 10.0;
   public static final double kSimI = 0.0;
-  public static final double kSimD = 1.0;
+  public static final double kSimD = 0.1;
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center

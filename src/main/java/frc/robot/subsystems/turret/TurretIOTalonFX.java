@@ -35,7 +35,7 @@ public class TurretIOTalonFX implements TurretIO {
   private final PositionVoltage positionVoltageRequest = new PositionVoltage(0.0);
 
   public TurretIOTalonFX() {
-    motor = new TalonFX(TurretConstants.kTurretMotorId, TunerConstants.kCANBus);
+    motor = new TalonFX(TurretConstants.kTurretMotorId);
     encoderOne = new CANcoder(TurretConstants.kEncoderOneId, TunerConstants.kCANBus);
     encoderTwo = new CANcoder(TurretConstants.kEncoderTwoId, TunerConstants.kCANBus);
 

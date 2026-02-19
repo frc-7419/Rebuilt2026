@@ -7,7 +7,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Degrees;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.HoodCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.VisualizeFuelShot;
@@ -29,6 +31,22 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.hood.Hood;
+import frc.robot.subsystems.hood.HoodIO;
+import frc.robot.subsystems.hood.HoodIOSim;
+import frc.robot.subsystems.hood.HoodIOTalonFX;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.serializer.Serializer;
+import frc.robot.subsystems.serializer.SerializerIO;
+import frc.robot.subsystems.serializer.SerializerIOSim;
+import frc.robot.subsystems.serializer.SerializerIOTalonFX;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretIO;
 import frc.robot.subsystems.turret.TurretIOSim;
@@ -46,6 +64,10 @@ public class RobotContainer {
   private final Drive drive;
   // private final Vision vision;
   private final Turret turret;
+  private final Shooter shooter;
+  private final Hood hood;
+  private final Intake intake;
+  private final Serializer serializer;
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
@@ -90,6 +112,14 @@ public class RobotContainer {
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOTalonFX());
 
+        shooter = new Shooter(new ShooterIOTalonFX());
+
+        hood = new Hood(new HoodIOTalonFX());
+
+        intake = new Intake(new IntakeIOTalonFX());
+
+        serializer = new Serializer(new SerializerIOTalonFX());
+
         break;
 
       case SIM:
@@ -104,6 +134,10 @@ public class RobotContainer {
         // vision = new Vision(new VisionIOPhotonVisionSim());
         // vision.setDrive(drive);
         turret = new Turret(new TurretIOSim());
+        shooter = new Shooter(new ShooterIOSim());
+        hood = new Hood(new HoodIOSim());
+        intake = new Intake(new IntakeIOSim());
+        serializer = new Serializer(new SerializerIOSim());
 
         break;
 
@@ -120,6 +154,11 @@ public class RobotContainer {
         // vision = new Vision(new VisionIO() {});
         // vision.setDrive(drive);
         turret = new Turret(new TurretIO() {});
+
+        shooter = new Shooter(new ShooterIO() {});
+        hood = new Hood(new HoodIO() {});
+        intake = new Intake(new IntakeIO() {});
+        serializer = new Serializer(new SerializerIO() {});
         break;
     }
 
@@ -159,8 +198,9 @@ public class RobotContainer {
             drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -operator.getLeftX()));
 
     // Default turret manual control on right stick X
-    turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
-    operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
+    //   turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+
+    //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
     driver
@@ -172,14 +212,15 @@ public class RobotContainer {
                         .schedule(VisualizeFuelShot.visualizeFuelShot())));
 
     // Lock to 0 when A button is held
-    driver
-        .a()
-        .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> Rotation2d.kZero));
+    // driver
+    //     .a()
+    //     .whileTrue(
+    //         DriveCommands.joystickDriveAtAngle(
+    //             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () ->
+    // Rotation2d.kZero));
 
     // Switch to X pattern when X button is pressed
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0 when B button is pressed
     driver
@@ -193,7 +234,56 @@ public class RobotContainer {
                 .ignoringDisable(true));
 
     // Reset turret to zero when Y pressed
-    driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
+    // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
+
+    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    operator
+        .b()
+        .whileTrue(IntakeCommands.runWheel(intake, 2))
+        .onFalse(IntakeCommands.runWheel(intake, 0));
+
+    // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
+    // operator.getLeftY()));
+    hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
+
+    // ==================== OPERATOR BUTTON BINDINGS ====================
+
+    // A button: Intake down (0°)
+    // operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+
+    // B button: Intake up (120°)
+    // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+
+    operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
+    operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
+    // Y button: Auto-aim turret towards hub
+    // TODO: Implement after auto-aim logic is finalized
+    // operator.y().whileTrue(TurretCommands.pointAtHub(turret));
+
+    // X button: Toggle serializer and feeder motors on/off
+    /*  operator
+    .x()
+    .onTrue(
+        Commands.startEnd(
+            () -> {
+              serializer.setRPM(2000); // Serializer wheel
+              serializer.setFeederRPM(2000); // Feeder rollers
+            },
+            () -> {
+              serializer.stop();
+              serializer.stopFeeder();
+            },
+            serializer));*/
+
+    // Right trigger: Shoot balls (hold to shoot, release to stop)
+    operator
+        .rightTrigger()
+        .onTrue(
+            Commands.run(
+                () -> shooter.setOpenLoop(10.0), // 10V while held
+                shooter))
+        .onFalse(Commands.runOnce(shooter::stop, shooter));
   }
 
   /**

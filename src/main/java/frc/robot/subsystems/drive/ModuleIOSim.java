@@ -7,15 +7,16 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.math.util.Units.*;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
@@ -31,7 +32,7 @@ public class ModuleIOSim implements ModuleIO {
   private static final double DRIVE_KS = 0.0;
   private static final double DRIVE_KV_ROT =
       0.91035; // Same units as TunerConstants: (volt * secs) / rotation
-  private static final double DRIVE_KV = 1.0 / Units.rotationsToRadians(1.0 / DRIVE_KV_ROT);
+  private static final double DRIVE_KV = 1.0 / rotationsToRadians(1.0 / DRIVE_KV_ROT);
   private static final double TURN_KP = 8.0;
   private static final double TURN_KD = 0.0;
   private static final DCMotor DRIVE_GEARBOX = DCMotor.getKrakenX60Foc(1);
@@ -83,8 +84,8 @@ public class ModuleIOSim implements ModuleIO {
     }
 
     // Update simulation state
-    driveSim.setInputVoltage(MathUtil.clamp(driveAppliedVolts, -12.0, 12.0));
-    turnSim.setInputVoltage(MathUtil.clamp(turnAppliedVolts, -12.0, 12.0));
+    driveSim.setInputVoltage(clamp(driveAppliedVolts, -12.0, 12.0));
+    turnSim.setInputVoltage(clamp(turnAppliedVolts, -12.0, 12.0));
     driveSim.update(0.02);
     turnSim.update(0.02);
 

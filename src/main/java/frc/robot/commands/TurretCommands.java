@@ -1,13 +1,8 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.commands;
 
+import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -16,7 +11,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotState;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretConstants;
@@ -31,9 +25,9 @@ public final class TurretCommands {
 
   /** Manual joystick turret control. Expects input in [-1, 1]. */
   public static Command joystickTurret(Turret turret, DoubleSupplier input) {
-    return Commands.run(
+    return run(
         () -> {
-          double val = MathUtil.applyDeadband(input.getAsDouble(), 0.05);
+          double val = applyDeadband(input.getAsDouble(), 0.05);
           turret.setOpenLoop(val * 12.0); // scale to volts
         },
         turret);
@@ -41,7 +35,12 @@ public final class TurretCommands {
 
   /** Hold turret at a specific absolute rotation. */
   public static Command holdAngle(Turret turret, Angle angle) {
-    return Commands.runOnce(() -> turret.setAngle(angle), turret).withTimeout(0.0);
+    return runOnce(() -> turret.setAngle(angle), turret).withTimeout(0.0);
+  }
+
+  public static Command toTurretPosition(Turret turret, Angle position) {
+
+    return runOnce(() -> turret.setAngle(position), turret);
   }
 
   /**
@@ -49,7 +48,7 @@ public final class TurretCommands {
    * calculated as the symmetric point on the field.
    */
   public static Command pointAtHub(Turret turret) {
-    return Commands.run(
+    return run(
         () -> {
           RobotState state = RobotState.getInstance();
           var latestRobotPose = state.getLatestFieldToRobot();

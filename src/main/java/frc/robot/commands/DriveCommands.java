@@ -1,13 +1,9 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot.commands;
 
-import edu.wpi.first.math.MathUtil;
+import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.math.util.Units.*;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
+
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -16,12 +12,10 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -45,7 +39,7 @@ public class DriveCommands {
 
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
-    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), DEADBAND);
+    double linearMagnitude = applyDeadband(Math.hypot(x, y), DEADBAND);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
 
     // Square magnitude for more precise control
@@ -65,14 +59,14 @@ public class DriveCommands {
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier,
       DoubleSupplier omegaSupplier) {
-    return Commands.run(
+    return run(
         () -> {
           // Get linear velocity
           Translation2d linearVelocity =
               getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
           // Apply rotation deadband
-          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
+          double omega = applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
 
           // Square rotation value for more precise control
           omega = Math.copySign(omega * omega, omega);
@@ -117,7 +111,7 @@ public class DriveCommands {
     angleController.enableContinuousInput(-Math.PI, Math.PI);
 
     // Construct command
-    return Commands.run(
+    return run(
             () -> {
               // Get linear velocity
               Translation2d linearVelocity =
@@ -160,16 +154,16 @@ public class DriveCommands {
     List<Double> voltageSamples = new LinkedList<>();
     Timer timer = new Timer();
 
-    return Commands.sequence(
+    return sequence(
         // Reset data
-        Commands.runOnce(
+        runOnce(
             () -> {
               velocitySamples.clear();
               voltageSamples.clear();
             }),
 
         // Allow modules to orient
-        Commands.run(
+        run(
                 () -> {
                   drive.runCharacterization(0.0);
                 },
@@ -177,10 +171,10 @@ public class DriveCommands {
             .withTimeout(FF_START_DELAY),
 
         // Start timer
-        Commands.runOnce(timer::restart),
+        runOnce(timer::restart),
 
         // Accelerate and gather data
-        Commands.run(
+        run(
                 () -> {
                   double voltage = timer.get() * FF_RAMP_RATE;
                   drive.runCharacterization(voltage);
@@ -218,17 +212,17 @@ public class DriveCommands {
     SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
     WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
-    return Commands.parallel(
+    return parallel(
         // Drive control sequence
-        Commands.sequence(
+        sequence(
             // Reset acceleration limiter
-            Commands.runOnce(
+            runOnce(
                 () -> {
                   limiter.reset(0.0);
                 }),
 
             // Turn in place, accelerating up to full speed
-            Commands.run(
+            run(
                 () -> {
                   double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
                   drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
@@ -236,12 +230,12 @@ public class DriveCommands {
                 drive)),
 
         // Measurement sequence
-        Commands.sequence(
+        sequence(
             // Wait for modules to fully orient before starting measurement
-            Commands.waitSeconds(1.0),
+            waitSeconds(1.0),
 
             // Record starting measurement
-            Commands.runOnce(
+            runOnce(
                 () -> {
                   state.positions = drive.getWheelRadiusCharacterizationPositions();
                   state.lastAngle = drive.getRotation();
@@ -249,12 +243,11 @@ public class DriveCommands {
                 }),
 
             // Update gyro delta
-            Commands.run(
-                    () -> {
-                      var rotation = drive.getRotation();
-                      state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
-                      state.lastAngle = rotation;
-                    })
+            run(() -> {
+                  var rotation = drive.getRotation();
+                  state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
+                  state.lastAngle = rotation;
+                })
 
                 // When cancelled, calculate and print results
                 .finallyDo(
@@ -277,7 +270,7 @@ public class DriveCommands {
                           "\tWheel Radius: "
                               + formatter.format(wheelRadius)
                               + " meters, "
-                              + formatter.format(Units.metersToInches(wheelRadius))
+                              + formatter.format(metersToInches(wheelRadius))
                               + " inches");
                     })));
   }
