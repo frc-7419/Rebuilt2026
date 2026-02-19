@@ -195,7 +195,7 @@ public class RobotContainer {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -operator.getLeftX()));
 
     // Default turret manual control on right stick X
     //   turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
