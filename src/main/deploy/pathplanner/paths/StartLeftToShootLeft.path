@@ -3,45 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.888731336805556,
+        "x": 3.560279152199075,
         "y": 7.385729890046297
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.443910404038641,
-        "y": 6.349785301474597
+        "x": 3.7760009157852745,
+        "y": 7.512079091528775
       },
       "isLocked": false,
-      "linkedName": "TroughLeftNeutral"
+      "linkedName": "StartLeft"
     },
     {
       "anchor": {
-        "x": 7.840841507523148,
-        "y": 4.014201461226852
+        "x": 2.6112884114583337,
+        "y": 5.540564887152778
       },
       "prevControl": {
-        "x": 7.863664873647384,
-        "y": 4.577613659198644
-      },
-      "nextControl": {
-        "x": 7.80831902972885,
-        "y": 3.211359295096199
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 5.969891565393519,
-        "y": 0.7005415219907412
-      },
-      "prevControl": {
-        "x": 6.445465693534853,
-        "y": 1.5401574788230938
+        "x": 2.409146753821598,
+        "y": 5.194722612379569
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "TroughRightNeutral"
+      "linkedName": "ShootLeft"
     }
   ],
   "rotationTargets": [],
@@ -61,10 +45,10 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Intake",
+  "folder": "Start",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -0.2578823601809767
   },
   "useDefaultConstraints": true
 }

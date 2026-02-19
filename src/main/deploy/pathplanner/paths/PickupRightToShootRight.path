@@ -3,45 +3,45 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.888731336805556,
-        "y": 7.385729890046297
+        "x": 7.783,
+        "y": 1.1286502459490748
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.443910404038641,
-        "y": 6.349785301474597
+        "x": 7.004372829861112,
+        "y": 0.7594597800925933
       },
       "isLocked": false,
-      "linkedName": "TroughLeftNeutral"
+      "linkedName": "PickupRight"
     },
     {
       "anchor": {
-        "x": 7.840841507523148,
-        "y": 4.014201461226852
+        "x": 4.616018229166667,
+        "y": 0.6443789062500003
       },
       "prevControl": {
-        "x": 7.863664873647384,
-        "y": 4.577613659198644
+        "x": 6.1996306242766215,
+        "y": 0.6250196985315397
       },
       "nextControl": {
-        "x": 7.80831902972885,
-        "y": 3.211359295096199
+        "x": 3.0324058340567133,
+        "y": 0.663738113968461
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.969891565393519,
-        "y": 0.7005415219907412
+        "x": 2.5839944299768525,
+        "y": 2.026727213541667
       },
       "prevControl": {
-        "x": 6.445465693534853,
-        "y": 1.5401574788230938
+        "x": 2.736735749421297,
+        "y": 0.9325403645833341
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "TroughRightNeutral"
+      "linkedName": "ShootRight"
     }
   ],
   "rotationTargets": [],
@@ -61,10 +61,10 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Intake",
+  "folder": "Trough",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 90.54422895365391
   },
   "useDefaultConstraints": true
 }

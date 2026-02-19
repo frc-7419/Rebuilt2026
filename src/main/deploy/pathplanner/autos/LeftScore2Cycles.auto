@@ -5,45 +5,72 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "StartLeftToTroughLeft"
-          }
-        },
-        {
-          "type": "sequential",
-          "data": {
-            "commands": []
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "StrafeLtoRAlliance"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "AllianceToNeutralRight"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartLeftToShootLeft"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "pointAtHub"
+                }
+              }
+            ]
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "IntakeRightToLeft"
+            "pathName": "LeftShootToPickupLeft"
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "NeutralLeftToAlliance"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "intakeLower"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "PickupLeftToPickupRight"
+                }
+              }
+            ]
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "StrafeLtoRAlliance"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "intakeRaise"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "PickupRightToShootRight"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "pointAtHub"
+                }
+              }
+            ]
           }
         }
       ]
