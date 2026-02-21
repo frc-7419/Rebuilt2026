@@ -37,7 +37,7 @@ public final class TurretConstants {
 
   // Gear ratios: Motor -> 60:12 reduction -> 130:10 reduction to turret
   // Through Bore Encoder 1: 30:17, Encoder 2: 30:16 (opposite direction)
-  public static final double kMotorToRightEncoderGearRatio = (30.0 / 17.0);
+  public static final double kMotorToRightEncoderGearRatio = 1;
   public static final double kMotorToLeftEncoderGearRatio = (30.0 / 16.0);
   public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 

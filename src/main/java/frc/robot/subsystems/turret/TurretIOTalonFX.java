@@ -66,7 +66,7 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.currentAmps = motorCurrent.getValueAsDouble();
     inputs.velocity = motorVelocity.getValue().div(kMotorToTurretGearRatio);
     inputs.rotorPosition = motorPosition.getValue();
-    inputs.turretPosition = motorPosition.getValue().div(kMotorToTurretGearRatio);
+    inputs.turretPosition = motorPosition.getValue();
     inputs.rightEncoderPosition = rightEncoderPosition.getValue();
     inputs.leftEncoderPosition = leftEncoderPosition.getValue();
   }
