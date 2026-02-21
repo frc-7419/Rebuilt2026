@@ -195,10 +195,10 @@ public class RobotContainer {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -operator.getLeftX()));
+            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -driver.getRightX()));
 
     // Default turret manual control on right stick X
-    //   turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+    turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
 
     //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
@@ -237,7 +237,7 @@ public class RobotContainer {
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
     // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
-    intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
     operator
         .b()
         .whileTrue(IntakeCommands.runWheel(intake, 2))

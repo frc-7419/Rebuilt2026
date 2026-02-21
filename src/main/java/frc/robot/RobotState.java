@@ -215,8 +215,8 @@ public class RobotState {
   public AngularVelocity getLatestShooterVelocity() {
     var buffer = shooterVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
-    return RadiansPerSecond.of(value);
-    // return RotationsPerSecond.of(50);
+    // return RadiansPerSecond.of(value);
+    return RotationsPerSecond.of(5);
   }
 
   public boolean isRedAlliance() {

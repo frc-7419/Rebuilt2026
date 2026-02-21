@@ -33,8 +33,8 @@ public class TurretIOSim implements TurretIO {
   private double velocityRadPerSec = 0.0;
   private double currentAmps = 0.0;
 
-  private double encoderOnePosition = 0.0;
-  private double encoderTwoPosition = 0.0;
+  private double rightEncoderPosition = 0.0;
+  private double leftEncoderPosition = 0.0;
 
   /** Creates a new TurretIOSim. */
   public TurretIOSim() {
@@ -89,11 +89,11 @@ public class TurretIOSim implements TurretIO {
 
     currentAmps = Math.abs(motorSim.getCurrentDrawAmps());
 
-    encoderOnePosition =
-        ((rotorPositionRad * kMotorToEncoderOneGearRatio) + encoderOneZeroOffset.in(Radians))
+    rightEncoderPosition =
+        ((rotorPositionRad * kMotorToRightEncoderGearRatio) + rightEncoderZeroOffset.in(Radians))
             % (2.0 * Math.PI);
-    encoderTwoPosition =
-        ((rotorPositionRad * kMotorToEncoderTwoGearRatio) + encoderTwoZeroOffset.in(Radians))
+    leftEncoderPosition =
+        ((rotorPositionRad * kMotorToLeftEncoderGearRatio) + leftEncoderZeroOffset.in(Radians))
             % (2.0 * Math.PI);
 
     inputs.connected = true;
@@ -102,8 +102,8 @@ public class TurretIOSim implements TurretIO {
     inputs.velocity = RadiansPerSecond.of(velocityRadPerSec);
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = currentAmps;
-    inputs.encoderOnePosition = Radians.of(encoderOnePosition);
-    inputs.encoderTwoPosition = Radians.of(encoderTwoPosition);
+    inputs.rightEncoderPosition = Radians.of(rightEncoderPosition);
+    inputs.leftEncoderPosition = Radians.of(leftEncoderPosition);
   }
 
   @Override

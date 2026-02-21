@@ -37,15 +37,15 @@ public final class TurretConstants {
 
   // Gear ratios: Motor -> 60:12 reduction -> 130:10 reduction to turret
   // Through Bore Encoder 1: 30:17, Encoder 2: 30:16 (opposite direction)
-  public static final double kMotorToEncoderOneGearRatio = (30.0 / 17.0);
-  public static final double kMotorToEncoderTwoGearRatio = (30.0 / 16.0);
+  public static final double kMotorToRightEncoderGearRatio = (30.0 / 17.0);
+  public static final double kMotorToLeftEncoderGearRatio = (30.0 / 16.0);
   public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
-  public static final int kEncoderOneId = 6;
-  public static final int kEncoderTwoId = 7;
+  public static final int kEncoderRightId = 6;
+  public static final int kEncoderLeftId = 7;
 
-  public static final Angle encoderOneZeroOffset = Rotations.of(0.2391);
-  public static final Angle encoderTwoZeroOffset = Rotations.of(0.8421);
+  public static final Angle rightEncoderZeroOffset = Rotations.of(0.2391);
+  public static final Angle leftEncoderZeroOffset = Rotations.of(0.8421);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
@@ -61,9 +61,9 @@ public final class TurretConstants {
     motorSlot0Configs.kD = 0.1;
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
-    motorFeedbackConfigs.RotorToSensorRatio = kMotorToEncoderOneGearRatio;
+    motorFeedbackConfigs.RotorToSensorRatio = kMotorToRightEncoderGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio =
-        kMotorToTurretGearRatio / kMotorToEncoderOneGearRatio;
+        kMotorToTurretGearRatio / kMotorToRightEncoderGearRatio;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kMaxAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = kMinAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;

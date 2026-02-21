@@ -20,15 +20,15 @@ import frc.robot.generated.TunerConstants;
 /** TalonFX implementation of TurretIO. */
 public class TurretIOTalonFX implements TurretIO {
   private final TalonFX motor;
-  private final CANcoder encoderOne;
-  private final CANcoder encoderTwo;
+  private final CANcoder rightEncoder;
+  private final CANcoder leftEncoder;
 
   private final StatusSignal<Voltage> motorAppliedVolts;
   private final StatusSignal<Current> motorCurrent;
   private final StatusSignal<AngularVelocity> motorVelocity;
   private final StatusSignal<Angle> motorPosition;
-  private final StatusSignal<Angle> encoderOnePosition;
-  private final StatusSignal<Angle> encoderTwoPosition;
+  private final StatusSignal<Angle> rightEncoderPosition;
+  private final StatusSignal<Angle> leftEncoderPosition;
 
   // Control requests
   private final VoltageOut voltageRequest = new VoltageOut(0);
@@ -36,25 +36,25 @@ public class TurretIOTalonFX implements TurretIO {
 
   public TurretIOTalonFX() {
     motor = new TalonFX(TurretConstants.kTurretMotorId);
-    encoderOne = new CANcoder(TurretConstants.kEncoderOneId, TunerConstants.kCANBus);
-    encoderTwo = new CANcoder(TurretConstants.kEncoderTwoId, TunerConstants.kCANBus);
+    rightEncoder = new CANcoder(TurretConstants.kEncoderRightId, TunerConstants.kCANBus);
+    leftEncoder = new CANcoder(TurretConstants.kEncoderLeftId, TunerConstants.kCANBus);
 
     tryUntilOk(5, () -> motor.getConfigurator().apply(TurretConstants.motorConfig, 0.25));
-    tryUntilOk(5, () -> encoderOne.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
-    tryUntilOk(5, () -> encoderTwo.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
+    tryUntilOk(5, () -> rightEncoder.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
+    tryUntilOk(5, () -> leftEncoder.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
 
     motorAppliedVolts = motor.getMotorVoltage();
     motorCurrent = motor.getStatorCurrent();
     motorVelocity = motor.getVelocity();
     motorPosition = motor.getPosition();
 
-    encoderOnePosition = encoderOne.getAbsolutePosition();
-    encoderTwoPosition = encoderTwo.getAbsolutePosition();
+    rightEncoderPosition = rightEncoder.getAbsolutePosition();
+    leftEncoderPosition = leftEncoder.getAbsolutePosition();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(200.0, encoderOnePosition, encoderTwoPosition);
+    BaseStatusSignal.setUpdateFrequencyForAll(200.0, rightEncoderPosition, leftEncoderPosition);
   }
 
   @Override
@@ -67,8 +67,8 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.velocity = motorVelocity.getValue().div(kMotorToTurretGearRatio);
     inputs.rotorPosition = motorPosition.getValue();
     inputs.turretPosition = motorPosition.getValue().div(kMotorToTurretGearRatio);
-    inputs.encoderOnePosition = encoderOnePosition.getValue();
-    inputs.encoderTwoPosition = encoderTwoPosition.getValue();
+    inputs.rightEncoderPosition = rightEncoderPosition.getValue();
+    inputs.leftEncoderPosition = leftEncoderPosition.getValue();
   }
 
   @Override

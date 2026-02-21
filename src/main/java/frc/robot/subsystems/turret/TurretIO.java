@@ -14,10 +14,10 @@ public interface TurretIO {
     public boolean connected = false;
     public Angle rotorPosition = Degrees.of(0.0);
     public Angle turretPosition = Degrees.of(0.0);
-    public Angle encoderOnePosition = Degrees.of(0.0);
-    public Angle encoderTwoPosition = Degrees.of(0.0);
-    public Angle encoderOneZeroOffset = Rotations.of(0);
-    public Angle encoderTwoZeroOffset = Rotations.of(0);
+    public Angle rightEncoderPosition = Degrees.of(0.0);
+    public Angle leftEncoderPosition = Degrees.of(0.0);
+    public Angle rightEncoderZeroOffset = Rotations.of(0);
+    public Angle leftEncoderZeroOffset = Rotations.of(0);
     public AngularVelocity velocity = RadiansPerSecond.of(0.0);
     public double appliedVolts = 0.0;
     public double currentAmps = 0.0;

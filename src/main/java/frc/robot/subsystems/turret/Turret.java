@@ -31,12 +31,12 @@ public class Turret extends SubsystemBase {
   public Turret(TurretIO io) {
     this.io = io;
     config =
-        new EasyCRTConfig(() -> inputs.encoderOnePosition, () -> inputs.encoderTwoPosition)
+        new EasyCRTConfig(() -> inputs.rightEncoderPosition, () -> inputs.leftEncoderPosition)
             .withEncoderRatios(
                 TurretConstants.kMotorToTurretGearRatio
-                    / TurretConstants.kMotorToEncoderOneGearRatio,
+                    / TurretConstants.kMotorToRightEncoderGearRatio,
                 TurretConstants.kMotorToTurretGearRatio
-                    / TurretConstants.kMotorToEncoderTwoGearRatio)
+                    / TurretConstants.kMotorToLeftEncoderGearRatio)
             .withMechanismRange(TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
 
     Logger.recordOutput("Turret/SatisfiesRange", config.coverageSatisfiesRange());
