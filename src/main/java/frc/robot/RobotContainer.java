@@ -7,13 +7,12 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -22,7 +21,6 @@ import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
-import frc.robot.simulation.VisualizeFuelShot;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -191,9 +189,10 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -driver.getRightX()));
+    // drive.setDefaultCommand(
+    //     DriveCommands.joystickDrive(
+    //         drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () ->
+    // -driver.getRightX()));
 
     // Default turret manual control on right stick X
     // turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
@@ -201,13 +200,13 @@ public class RobotContainer {
     //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
     turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
-    driver
-        .rightBumper()
-        .onTrue(
-            Commands.runOnce(
-                () ->
-                    CommandScheduler.getInstance()
-                        .schedule(VisualizeFuelShot.visualizeFuelShot())));
+    // driver
+    //     .rightBumper()
+    //     .onTrue(
+    //         Commands.runOnce(
+    //             () ->
+    //                 CommandScheduler.getInstance()
+    //                     .schedule(VisualizeFuelShot.visualizeFuelShot())));
 
     // Lock to 0 when A button is held
     // driver
@@ -221,20 +220,20 @@ public class RobotContainer {
     // driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro to 0 when B button is pressed
-    driver
-        .b()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-                    drive)
-                .ignoringDisable(true));
+    // driver
+    //     .b()
+    //     .onTrue(
+    //         Commands.runOnce(
+    //                 () ->
+    //                     drive.setPose(
+    //                         new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+    //                 drive)
+    //             .ignoringDisable(true));
 
     // Reset turret to zero when Y pressed
     // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
 
-    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
     // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
     operator
         .b()
@@ -248,10 +247,10 @@ public class RobotContainer {
     // ==================== OPERATOR BUTTON BINDINGS ====================
 
     // A button: Intake down (0°)
-    // operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
     // B button: Intake up (120°)
-    // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
 
     // operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
     // operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
@@ -261,29 +260,28 @@ public class RobotContainer {
 
     operator
         .x()
-        .onTrue(
-            Commands.run(
-                () -> {
-                  serializer.setOpenLoop(5);
-                  serializer.setFeederOpenLoop(7); // Feeder rollers
-                },
-                serializer))
-        .onFalse(
-            Commands.run(
-                () -> {
-                  serializer.setOpenLoop(0);
-                  serializer.setFeederOpenLoop(0); // Feeder rollers
-                },
-                serializer));
+        .onTrue(Commands.run(() -> serializer.setOpenLoop(5), serializer))
+        .onFalse(Commands.runOnce(() -> serializer.setOpenLoop(0), serializer));
 
     // Right trigger: Shoot balls (hold to shoot, release to stop)
     operator
         .rightTrigger()
         .onTrue(
             Commands.run(
-                () -> shooter.setOpenLoop(2.0), // 10V while held
-                shooter))
-        .onFalse(Commands.runOnce(shooter::stop, shooter));
+                () -> {
+                  shooter.setOpenLoop(2.0); // 10V while held
+                  serializer.setFeederOpenLoop(7); // Feeder rollers
+                },
+                shooter,
+                serializer))
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  shooter.stop();
+                  serializer.stopFeeder();
+                },
+                shooter,
+                serializer));
   }
 
   /**

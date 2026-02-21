@@ -54,7 +54,7 @@ public class TurretIOTalonFX implements TurretIO {
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(200.0, rightEncoderPosition, leftEncoderPosition);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, rightEncoderPosition, leftEncoderPosition);
   }
 
   @Override
@@ -66,7 +66,7 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.currentAmps = motorCurrent.getValueAsDouble();
     inputs.velocity = motorVelocity.getValue().div(kMotorToTurretGearRatio);
     inputs.rotorPosition = motorPosition.getValue();
-    inputs.turretPosition = motorPosition.getValue();
+    inputs.turretPosition = rightEncoderPosition.getValue();
     inputs.rightEncoderPosition = rightEncoderPosition.getValue();
     inputs.leftEncoderPosition = leftEncoderPosition.getValue();
   }

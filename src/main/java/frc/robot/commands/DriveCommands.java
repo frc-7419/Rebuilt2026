@@ -61,12 +61,22 @@ public class DriveCommands {
       DoubleSupplier omegaSupplier) {
     return run(
         () -> {
+          // Get joystick inputs
+          double x = xSupplier.getAsDouble();
+          double y = ySupplier.getAsDouble();
+          double omegaRaw = omegaSupplier.getAsDouble();
+
+          // Safety check: if any value is NaN or infinite, stop the robot
+          if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(omegaRaw)) {
+            drive.runVelocity(new ChassisSpeeds());
+            return;
+          }
+
           // Get linear velocity
-          Translation2d linearVelocity =
-              getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
+          Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
 
           // Apply rotation deadband
-          double omega = applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
+          double omega = applyDeadband(omegaRaw, DEADBAND);
 
           // Square rotation value for more precise control
           omega = Math.copySign(omega * omega, omega);
