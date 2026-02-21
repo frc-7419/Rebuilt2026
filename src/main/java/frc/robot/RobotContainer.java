@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -201,7 +199,7 @@ public class RobotContainer {
     // turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
 
     //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
-    // turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
+    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
 
     driver
         .rightBumper()
@@ -255,33 +253,35 @@ public class RobotContainer {
     // B button: Intake up (120°)
     // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
 
-    operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
-    operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
+    // operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
+    // operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
     // Y button: Auto-aim turret towards hub
     // TODO: Implement after auto-aim logic is finalized
     // operator.y().whileTrue(TurretCommands.pointAtHub(turret));
 
-    // X button: Toggle serializer and feeder motors on/off
-    /*  operator
-    .x()
-    .onTrue(
-        Commands.startEnd(
-            () -> {
-              serializer.setRPM(2000); // Serializer wheel
-              serializer.setFeederRPM(2000); // Feeder rollers
-            },
-            () -> {
-              serializer.stop();
-              serializer.stopFeeder();
-            },
-            serializer));*/
+    operator
+        .x()
+        .onTrue(
+            Commands.run(
+                () -> {
+                  serializer.setOpenLoop(5);
+                  serializer.setFeederOpenLoop(7); // Feeder rollers
+                },
+                serializer))
+        .onFalse(
+            Commands.run(
+                () -> {
+                  serializer.setOpenLoop(0);
+                  serializer.setFeederOpenLoop(0); // Feeder rollers
+                },
+                serializer));
 
     // Right trigger: Shoot balls (hold to shoot, release to stop)
     operator
         .rightTrigger()
         .onTrue(
             Commands.run(
-                () -> shooter.setOpenLoop(10.0), // 10V while held
+                () -> shooter.setOpenLoop(2.0), // 10V while held
                 shooter))
         .onFalse(Commands.runOnce(shooter::stop, shooter));
   }
