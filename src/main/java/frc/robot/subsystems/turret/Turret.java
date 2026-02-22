@@ -1,11 +1,11 @@
 package frc.robot.subsystems.turret;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -76,17 +76,23 @@ public class Turret extends SubsystemBase {
   }
 
   public void setAngle(Angle angle) {
-    Logger.recordOutput("Turret/TurretRequestedDeg", angle.in(Degrees));
-    double angleRad = angle.in(Radians);
+    setAngleWithVelocity(angle, RadiansPerSecond.of(0.0));
+  }
 
+  /**
+   * Sets turret angle with velocity feedforward
+   */
+  public void setAngleWithVelocity(Angle angle, AngularVelocity velocityRadPerSec) {
+    double angleRad = angle.in(Radians);
     angleRad =
         MathUtil.clamp(
             angleRad,
             TurretConstants.kAbsoluteMinAngle.in(Radians),
             TurretConstants.kAbsoluteMaxAngle.in(Radians));
-
-    Logger.recordOutput("Turret/TurretRequestedRad", angleRad);
-    io.setPosition(Radians.of(angleRad));
+    Logger.recordOutput("Turret/TurretRequestedDeg", angleRad * 180.0 / Math.PI);
+    Logger.recordOutput(
+        "Turret/TurretRequestedVelRadPerSec", velocityRadPerSec.baseUnitMagnitude());
+    io.setState(Radians.of(angleRad), velocityRadPerSec);
   }
 
   /** Cancels any position hold and stops the motor. */

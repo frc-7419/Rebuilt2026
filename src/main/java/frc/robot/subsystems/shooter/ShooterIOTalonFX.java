@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
@@ -52,6 +53,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     inputs.rotorVelocity = motorVelocity.getValue();
     inputs.shooterVelocity = motorVelocity.getValue().div(kMotorToShooterGearRatio);
+    inputs.requestedVelocity = RadiansPerSecond.of(velocityVoltageRequest.Velocity);
   }
 
   @Override

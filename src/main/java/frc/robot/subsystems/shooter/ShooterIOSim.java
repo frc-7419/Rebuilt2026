@@ -14,10 +14,10 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 public class ShooterIOSim implements ShooterIO {
   private static final double SIMULATION_DT = 0.02;
 
-  // Keep the same pattern as your turret sim: simple motor plant + PID + kV feedforward.
   private static final double SHOOTER_INERTIA = 0.1;
-  private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60Foc(1);
-  private static final double kV = 12.0 / MOTOR_MODEL.freeSpeedRadPerSec; // Velocity feedforward
+  private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60Foc(2);
+  private static final double kV =
+      12.0 / (MOTOR_MODEL.freeSpeedRadPerSec / kMotorToShooterGearRatio); // Velocity feedforward
 
   private final DCMotorSim motorSim;
   private final PIDController velocityController;
@@ -79,6 +79,7 @@ public class ShooterIOSim implements ShooterIO {
     inputs.connected = true;
     inputs.rotorVelocity = RadiansPerSecond.of(rotorVelocityRadPerSec);
     inputs.shooterVelocity = RadiansPerSecond.of(shooterVelocityRadPerSec);
+    inputs.requestedVelocity = RadiansPerSecond.of(targetShooterVelocityRadPerSec);
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = currentAmps;
   }
@@ -105,7 +106,6 @@ public class ShooterIOSim implements ShooterIO {
 
   @Override
   public void zeroRotor() {
-    // Optional: reset sim state.
     motorSim.setState(0.0, 0.0);
     targetShooterVelocityRadPerSec = 0.0;
     feedforwardVelocityRadPerSec = 0.0;

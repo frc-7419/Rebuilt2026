@@ -97,6 +97,12 @@ public class Robot extends LoggedRobot {
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
+
+    // Show in sim and replay simulation
+    if (Constants.currentMode != Constants.Mode.REAL) {
+      robotContainer.updateShooterTrajectoryVisualization();
+    }
+
     Rotation3d turretYaw =
         new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));
 
@@ -119,7 +125,7 @@ public class Robot extends LoggedRobot {
         Constants.hopperBasePose.transformBy(
             new Transform3d(
                 new Translation3d(
-                    -(intakePercentage * Constants.kSerializerMaxExtension.in(Meters)), 0, 0),
+                    -(intakePercentage * Constants.kHopperMaxExtension.in(Meters)), 0, 0),
                 new Rotation3d()));
 
     Pose3d intakePose =
@@ -195,6 +201,10 @@ public class Robot extends LoggedRobot {
       if (drive != null) {
         var groundTruthPose = drive.getOdometryOnlyPose();
         simulatedRobotState.addFieldToRobot(groundTruthPose);
+      }
+      var fuelSim = robotContainer.getFuelSim();
+      if (fuelSim != null) {
+        fuelSim.updateSim();
       }
     }
   }

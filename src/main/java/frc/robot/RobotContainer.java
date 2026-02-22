@@ -8,19 +8,31 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
+import frc.robot.simulation.FuelSim;
+import frc.robot.simulation.FuelSimLaunch;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -47,6 +59,8 @@ import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretIO;
 import frc.robot.subsystems.turret.TurretIOSim;
 import frc.robot.subsystems.turret.TurretIOTalonFX;
+import frc.robot.util.KinematicsHelper;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -68,6 +82,13 @@ public class RobotContainer {
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController operator = new CommandXboxController(1);
+
+  /** true = hub mode, false = passing mode. */
+  private boolean hubMode = true;
+  private boolean autoAim = true;
+
+  /** Fuel physics sim (SIM only). Null when not in SIM. */
+  private FuelSim fuelSim;
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -177,8 +198,37 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
-    // Configure the button bindings
     configureButtonBindings();
+
+    if (Constants.currentMode == Constants.Mode.SIM) {
+      fuelSim = new FuelSim("FuelSim");
+      // fuelSim.spawnStartingFuel();
+      fuelSim.registerRobot(
+          Meters.of(0.8749),
+          Meters.of(0.8749),
+          Meters.of(0.532194),
+          drive::getPose,
+          () -> {
+            ChassisSpeeds s =
+                RobotState.getInstance().getLatestMeasuredFieldRelativeChassisSpeeds();
+            return s != null ? s : new ChassisSpeeds();
+          });
+      fuelSim.registerIntake(
+          Meters.of(-0.43745),
+          Meters.of(-0.739075),
+          Meters.of(-0.43745),
+          Meters.of(0.43745),
+          () ->
+              intake.getWristAngle().in(Degrees) > 115
+                  && Math.abs(intake.getWheelVelocity().in(RPM)) > 10);
+      fuelSim.start();
+      scheduleSimFuelLaunch();
+    }
+
+    Logger.recordOutput("ControlStatus/hubMode", hubMode);
+    Logger.recordOutput("ControlStatus/hubModeStatus", hubMode ? "hub" : "passing");
+    Logger.recordOutput("ControlStatus/pointAtHub", autoAim);
+    Logger.recordOutput("ControlStatus/pointAtHubStatus", autoAim ? "pointAtHub" : "manual");
   }
 
   /**
@@ -188,100 +238,140 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Default command, normal field-relative drive
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDrive(
-    //         drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () ->
-    // -driver.getRightX()));
+    // -------- Driver --------
+    drive.setDefaultCommand(
+        DriveCommands.joystickDrive(
+            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -driver.getRightX()));
 
-    // Default turret manual control on right stick X
-    // turret.setDefaultCommand(TurretCommands.pointAtHub(turret));
+    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
-    //  operator.start().onTrue(Commands.runOnce(() -> turret.seed(), turret));
-    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> -operator.getRightX()));
+    driver
+        .leftBumper()
+        .onTrue(
+            Commands.runOnce(
+                    () ->
+                        drive.setPose(
+                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+                    drive)
+                .ignoringDisable(true));
 
-    // driver
-    //     .rightBumper()
-    //     .onTrue(
-    //         Commands.runOnce(
-    //             () ->
-    //                 CommandScheduler.getInstance()
-    //                     .schedule(VisualizeFuelShot.visualizeFuelShot())));
+    turret.setDefaultCommand(
+        Commands.run(
+            () -> {
+              if (autoAim) {
+                AutoAim.updateAutoAim(turret, shooter, hood, hubMode);
+              } else {
+                double v = MathUtil.applyDeadband(operator.getRightX(), 0.05);
+                turret.setOpenLoop(v * 12.0);
+              }
+            },
+            turret));
 
-    // Lock to 0 when A button is held
-    // driver
-    //     .a()
-    //     .whileTrue(
-    //         DriveCommands.joystickDriveAtAngle(
-    //             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () ->
-    // Rotation2d.kZero));
+    hood.setDefaultCommand(
+        Commands.run(
+            () -> {
+              if (!autoAim) {
+                double v = MathUtil.applyDeadband(operator.getLeftY(), 0.05);
+                hood.setOpenLoop(v * 3.0);
+              }
+            },
+            hood));
 
-    // Switch to X pattern when X button is pressed
-    // driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-
-    // Reset gyro to 0 when B button is pressed
-    // driver
-    //     .b()
-    //     .onTrue(
-    //         Commands.runOnce(
-    //                 () ->
-    //                     drive.setPose(
-    //                         new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-    //                 drive)
-    //             .ignoringDisable(true));
-
-    // Reset turret to zero when Y pressed
-    // driver.y().onTrue(Commands.runOnce(() -> turret.setAngle(Radians.of(0)), turret));
-
-    turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
-    // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
+    // -------- Operator: mode toggles (log status) --------
     operator
-        .b()
-        .whileTrue(IntakeCommands.runWheel(intake, 2))
-        .onFalse(IntakeCommands.runWheel(intake, 0));
-
-    // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
-    // operator.getLeftY()));
-    hood.setDefaultCommand(HoodCommands.joystickHood(hood, () -> operator.getLeftY()));
-
-    // ==================== OPERATOR BUTTON BINDINGS ====================
-
-    // A button: Intake down (0°)
-    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-
-    // B button: Intake up (120°)
-    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
-
-    // operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
-    // operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
-    // Y button: Auto-aim turret towards hub
-    // TODO: Implement after auto-aim logic is finalized
-    // operator.y().whileTrue(TurretCommands.pointAtHub(turret));
+        .start()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  hubMode = !hubMode;
+                  Logger.recordOutput("ControlStatus/hubMode", hubMode);
+                  Logger.recordOutput("ControlStatus/hubModeStatus", hubMode ? "hub" : "passing");
+                }));
 
     operator
         .x()
-        .onTrue(Commands.run(() -> serializer.setOpenLoop(5), serializer))
-        .onFalse(Commands.runOnce(() -> serializer.setOpenLoop(0), serializer));
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  autoAim = !autoAim;
+                  Logger.recordOutput("ControlStatus/autoAim", autoAim);
+                  Logger.recordOutput(
+                      "ControlStatus/autoAimStatus", autoAim ? "autoAim" : "manual");
+                }));
 
-    // Right trigger: Shoot balls (hold to shoot, release to stop)
+    // -------- Operator: intake & index --------
+    operator
+        .leftBumper()
+        .whileTrue(IntakeCommands.runWheel(intake, 10))
+        .onFalse(IntakeCommands.runWheel(intake, 0));
+
     operator
         .rightTrigger()
-        .onTrue(
+        .whileTrue(
             Commands.run(
                 () -> {
-                  shooter.setOpenLoop(2.0); // 10V while held
-                  serializer.setFeederOpenLoop(7); // Feeder rollers
+                  serializer.setOpenLoop(5);
+                  serializer.setFeederOpenLoop(7);
                 },
-                shooter,
                 serializer))
         .onFalse(
             Commands.runOnce(
                 () -> {
-                  shooter.stop();
+                  serializer.setOpenLoop(0);
                   serializer.stopFeeder();
                 },
-                shooter,
                 serializer));
+
+    operator
+        .leftTrigger()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  serializer.setOpenLoop(-5);
+                  serializer.setFeederOpenLoop(-7);
+                },
+                serializer))
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  serializer.setOpenLoop(0);
+                  serializer.stopFeeder();
+                },
+                serializer));
+
+    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+
+    operator
+        .povUp()
+        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
+        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+
+    operator
+        .povDown()
+        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
+        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+  }
+
+  private void scheduleSimFuelLaunch() {
+    final double intervalSec = 0.2;
+    final double minRpm = 100.0;
+    final double[] lastShotTime = {Timer.getFPGATimestamp()};
+
+    CommandScheduler.getInstance()
+        .schedule(
+            Commands.run(
+                    () -> {
+                      double now = Timer.getFPGATimestamp();
+                      if (now - lastShotTime[0] >= intervalSec
+                          && shooter.getRPM() > minRpm
+                          && Math.abs(serializer.getRPM()) > minRpm
+                          && Math.abs(serializer.getFeederRPM()) > minRpm) {
+                        FuelSimLaunch.launchFromShooter(fuelSim, drive, shooter, hood, turret);
+                        lastShotTime[0] = now;
+                      }
+                    })
+                .ignoringDisable(true));
   }
 
   /**
@@ -294,11 +384,51 @@ public class RobotContainer {
   }
 
   /**
+   * Updates shooter trajectory visualization (real trajectory from current state). Call in
+   * SIM/REPLAY only.
+   */
+  public void updateShooterTrajectoryVisualization() {
+    var state = RobotState.getInstance();
+    var latestPose = state.getLatestFieldToRobot();
+    if (latestPose == null) return;
+
+    Pose2d robotPose = latestPose.getValue();
+    double hoodRad = hood.getAngle().in(Radians);
+    double turretRad = turret.getAngle().in(Radians);
+    double velConstant = AutoAim.getLaunchVelConstant();
+    double launchSpeedMps = (shooter.getRPM() / 60.0) * velConstant;
+
+    Translation2d turretPivotField = KinematicsHelper.getTurretPivotTranslation(robotPose);
+    Translation2d pivotOffset = turretPivotField.minus(robotPose.getTranslation());
+    var fieldSpeeds = state.getLatestMeasuredFieldRelativeChassisSpeeds();
+    double robotVx = fieldSpeeds.vxMetersPerSecond;
+    double robotVy = fieldSpeeds.vyMetersPerSecond;
+    double robotOmega = fieldSpeeds.omegaRadiansPerSecond;
+    double pivotVx = robotVx - robotOmega * pivotOffset.getY();
+    double pivotVy = robotVy + robotOmega * pivotOffset.getX();
+
+    Translation3d[] traj =
+        AutoAim.buildTrajectoryFromState(
+            robotPose, hoodRad, turretRad, pivotVx, pivotVy, launchSpeedMps);
+    Logger.recordOutput("ShooterTrajectory/Trajectory", traj);
+    Logger.recordOutput("ShooterTrajectory/LaunchSpeedMps", launchSpeedMps);
+  }
+
+  /**
    * Gets the drive subsystem. Used for simulation updates.
    *
    * @return the drive subsystem
    */
   public Drive getDrive() {
     return drive;
+  }
+
+  /**
+   * Gets the fuel sim. Null when not in SIM.
+   *
+   * @return the FuelSim instance or null
+   */
+  public FuelSim getFuelSim() {
+    return fuelSim;
   }
 }
