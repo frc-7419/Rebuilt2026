@@ -85,6 +85,7 @@ public class RobotContainer {
 
   /** true = hub mode, false = passing mode. */
   private boolean hubMode = true;
+
   private boolean autoAim = true;
 
   /** Fuel physics sim (SIM only). Null when not in SIM. */
@@ -351,6 +352,15 @@ public class RobotContainer {
         .povDown()
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
+
+    operator
+        .rightBumper()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  shooter.setRPM(3500);
+                },
+                shooter));
   }
 
   private void scheduleSimFuelLaunch() {
