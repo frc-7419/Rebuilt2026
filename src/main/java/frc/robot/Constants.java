@@ -60,14 +60,15 @@ public final class Constants {
   /** Field midpoint */
   public static final double kPassingYThresholdMeters = 4.0;
 
-  /** Hub opening height base */
-  public static final double kHubTargetHeightMeters = 50 * 0.0254;
+  /** Hub center as first constraint. */
+  public static final double kHubTargetHeightMeters = 54 * 0.0254;
 
   /** Hub funnel geometry */
-  public static final double kHubFunnelRadiusMeters = 0.52;
+  public static final double kHubFunnelRadiusMeters = 0.61; // ~24 in
 
-  /** To top of funnel */
-  public static final double kHubFunnelHeightMeters = 0.5588;
+  /** Height of funnel rim */
+  public static final double kHubFunnelHeightMeters = 72 * 0.0254;
 
-  public static final double kHubFunnelClearanceMeters = 0.6;
+  /** Clearance above rim the ball must pass. FunnelClear Z = rim + this. */
+  public static final double kHubFunnelClearanceMeters = 0.1;
 }

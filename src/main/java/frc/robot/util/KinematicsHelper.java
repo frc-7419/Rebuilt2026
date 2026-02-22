@@ -65,83 +65,147 @@ public final class KinematicsHelper {
       double hoodAngleRad,
       double launchSpeedMps,
       double timeOfFlightSec,
-      boolean funnelConstraintMet) {}
+      boolean funnelConstraintMet,
+      double effectiveDistM,
+      double effectiveFunnelClearHeightM) {}
 
-  /** Two-constraint parabola: target + funnel clearance → hood angle and launch speed. */
+  private static final int kFunnelRetryAttempts = 5;
+  private static final double kFunnelRetryIncrementM = 0.08;
+  private static final double[] kDistOffsetM = {0.0, 0.0254, 0.0508, 0.1016, 0.1524};
+  private static final double[] kHubZOffsetM = {0.1016, 0.0508, 0.0};
+
+  /**
+   * Two-constraint parabola: ball must pass through funnel clearance then hub. Retries with raised
+   * funnel clearance and/or hub pose up to 6 in farther until valid. Fallback is steep (max hood).
+   */
   public static FunnelShotSolution solveFunnelClearance(
       double distM,
       double launchHeightM,
       double targetHeightM,
       double funnelRadiusM,
-      double funnelClearHeightM) {
-    double x = Math.max(distM, 0.01);
-    double yDist = targetHeightM - launchHeightM;
-    double hClear = funnelClearHeightM - launchHeightM;
+      double funnelClearHeightM,
+      double fallbackLaunchSpeedMps) {
     double r = funnelRadiusM;
     double g = kGravity;
     double minHood = HoodConstants.kMinAngle.in(Radians);
     double maxHood = HoodConstants.kMaxAngle.in(Radians);
 
-    double theta;
-    double v0;
-    boolean funnelMet = true;
+    double theta = maxHood;
+    double v0 = fallbackLaunchSpeedMps;
+    double tof = 0.01;
+    boolean funnelMet = false;
+    double usedDistM = Math.max(distM, 0.01);
+    double usedFunnelClear = funnelClearHeightM;
 
-    double A1 = x * x, B1 = x, D1 = yDist;
-    double A2 = (x - r) * (x - r), B2 = (x - r), D2 = hClear;
-
-    double Bm = -B2 / B1;
-    double A3 = Bm * A1 + A2;
-    double D3 = Bm * D1 + D2;
-
-    if (r <= 1e-6 || Math.abs(A3) < 1e-9) {
-      funnelMet = false;
+    if (r <= 1e-6) {
       theta = maxHood;
-      v0 = singleConstraintSpeed(x, yDist, theta, g);
+      v0 = singleConstraintSpeed(usedDistM, targetHeightM - launchHeightM, theta, g);
+      tof = usedDistM / (v0 * Math.cos(theta));
     } else {
-      double a = D3 / A3;
-      double b = (D1 - A1 * a) / B1;
+      for (double distOffsetM : kDistOffsetM) {
+        double x = Math.max(distM + distOffsetM, 0.01);
+        double yDist = targetHeightM - launchHeightM;
+        double A1 = x * x, B1 = x, D1 = yDist;
+        double A2 = (x - r) * (x - r), B2 = (x - r);
+        double Bm = -B2 / B1;
+        double A3 = Bm * A1 + A2;
+        if (Math.abs(A3) < 1e-9) continue;
 
-      if (a >= -1e-9) {
-        funnelMet = false;
-        theta = maxHood;
-        v0 = singleConstraintSpeed(x, yDist, theta, g);
-      } else {
-        theta = Math.atan(b);
-        double cosTheta = Math.cos(theta);
-        double v0Sq = -g / (2.0 * a * cosTheta * cosTheta);
+        for (int attempt = 0; attempt < kFunnelRetryAttempts; attempt++) {
+          double tryClearM = funnelClearHeightM + attempt * kFunnelRetryIncrementM;
+          double hClear = tryClearM - launchHeightM;
+          double D2 = hClear;
+          double D3 = Bm * D1 + D2;
 
-        if (v0Sq <= 0.0 || Double.isNaN(v0Sq)) {
-          funnelMet = false;
-          theta = maxHood; // prefer high arc when two-constraint fails
-          v0 = singleConstraintSpeed(x, yDist, theta, g);
-        } else if (theta < minHood || theta > maxHood) {
-          funnelMet = false;
-          theta = maxHood; // prefer high arc so ball drops into hub
-          v0 = singleConstraintSpeed(x, yDist, theta, g);
-        } else {
+          double a = D3 / A3;
+          double b = (D1 - A1 * a) / B1;
+
+          if (a >= -1e-9) continue;
+          double tryTheta = Math.atan(b);
+          double cosTheta = Math.cos(tryTheta);
+          double v0Sq = -g / (2.0 * a * cosTheta * cosTheta);
+          if (v0Sq <= 0.0 || Double.isNaN(v0Sq)) continue;
+          if (tryTheta < minHood || tryTheta > maxHood) continue;
+
+          theta = tryTheta;
           v0 = Math.sqrt(v0Sq);
+          tof = x / (v0 * Math.cos(theta));
+          funnelMet = true;
+          usedDistM = x;
+          usedFunnelClear = tryClearM;
+          break;
+        }
+        if (funnelMet) break;
+      }
+      if (!funnelMet) {
+        for (double distOffsetM : kDistOffsetM) {
+          double x = Math.max(distM + distOffsetM, 0.01);
+          double yDist = targetHeightM - launchHeightM;
+          double d1 = x - r;
+          if (d1 <= 1e-6) continue;
+          for (int attempt = 0; attempt < kFunnelRetryAttempts; attempt++) {
+            double tryClearM = funnelClearHeightM + attempt * kFunnelRetryIncrementM;
+            double hClear = tryClearM - launchHeightM;
+            theta = maxHood;
+            v0 = singleConstraintSpeed(d1, hClear, theta, g);
+            if (v0 <= 0.0 || Double.isNaN(v0)) continue;
+            double yAtHub = heightAtDist(x, theta, v0, g);
+            if (Math.abs(yAtHub - yDist) > 0.03) continue;
+            tof = x / (v0 * Math.cos(theta));
+            funnelMet = true;
+            usedDistM = x;
+            usedFunnelClear = tryClearM;
+            break;
+          }
+          if (funnelMet) break;
+        }
+        if (!funnelMet) {
+          double x = Math.max(distM, 0.01);
+          theta = maxHood;
+          for (double zOff : kHubZOffsetM) {
+            double tryTargetZ = targetHeightM + zOff;
+            double yDist = tryTargetZ - launchHeightM;
+            v0 = singleConstraintSpeed(x, yDist, theta, g);
+            if (v0 > 0.0 && !Double.isNaN(v0) && Double.isFinite(v0)) {
+              tof = x / (v0 * Math.cos(theta));
+              usedDistM = x;
+              break;
+            }
+          }
+          if (tof < 1e-6) {
+            double yDist = targetHeightM - launchHeightM;
+            v0 = singleConstraintSpeed(x, yDist, theta, g);
+            tof = x / (v0 * Math.cos(theta));
+            usedDistM = x;
+          }
         }
       }
     }
-
-    double tof = x / (v0 * Math.cos(theta));
 
     Logger.recordOutput("KinematicsHelper/FunnelSolve/FunnelConstraintMet", funnelMet);
     Logger.recordOutput("KinematicsHelper/FunnelSolve/HoodAngleDeg", Math.toDegrees(theta));
     Logger.recordOutput("KinematicsHelper/FunnelSolve/LaunchSpeedMps", v0);
     Logger.recordOutput("KinematicsHelper/FunnelSolve/TOF", tof);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/DistM", x);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/DeltaHeightM", yDist);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/FunnelClearDeltaM", hClear);
+    Logger.recordOutput("KinematicsHelper/FunnelSolve/DistM", usedDistM);
+    Logger.recordOutput(
+        "KinematicsHelper/FunnelSolve/FunnelClearDeltaM", usedFunnelClear - launchHeightM);
 
-    return new FunnelShotSolution(theta, v0, Math.max(tof, 0.01), funnelMet);
+    return new FunnelShotSolution(
+        theta, v0, Math.max(tof, 0.01), funnelMet, usedDistM, usedFunnelClear);
   }
 
+  /** Vacuum parabola height at horizontal distance d. */
+  private static double heightAtDist(double d, double theta, double v0, double g) {
+    double cosTheta = Math.cos(theta);
+    return Math.tan(theta) * d - (g * d * d) / (2.0 * v0 * v0 * cosTheta * cosTheta);
+  }
+
+  /** Min launch speed to hit (x, yDist) at angle theta (vacuum). */
   private static double singleConstraintSpeed(double x, double yDist, double theta, double g) {
     double cosTheta = Math.cos(theta);
     double num = g * x * x;
     double den = 2.0 * cosTheta * cosTheta * (Math.tan(theta) * x - yDist);
-    if (den <= 1e-9) return 5.0;
+    if (den <= 1e-9) return 8.0;
     return Math.sqrt(num / den);
   }
 

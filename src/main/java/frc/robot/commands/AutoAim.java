@@ -6,6 +6,8 @@ import static edu.wpi.first.wpilibj2.command.Commands.run;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -43,9 +45,7 @@ public final class AutoAim {
     updateAutoAim(turret, shooter, hood, hubMode, false);
   }
 
-  /**
-   * allowFullRange true = use full 720° while shooting; false = stay in [-180°, 180°] 
-   */
+  /** allowFullRange true = use full 720° while shooting; false = stay in [-180°, 180°] */
   public static void updateAutoAim(
       Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
     RobotState state = RobotState.getInstance();
@@ -80,6 +80,11 @@ public final class AutoAim {
     double hoodAngleRad = 0.0;
     double tof = 0.0;
     double launchSpeedMps = 5.0;
+    double lastDistM = 0.0;
+    double lastFunnelRadiusM = 0.0;
+    double lastFunnelClearHeightM = 0.0;
+    double lastEffectiveDistFromLaunchM = 0.0;
+    boolean lastFunnelConstraintMet = true;
 
     for (int i = 0; i < kLeadIterations; i++) {
       aimTarget = KinematicsHelper.predictTargetPos(staticTarget, pivotVx, pivotVy, tof);
@@ -92,13 +97,26 @@ public final class AutoAim {
                 : Constants.kHubFunnelRadiusMeters;
         double funnelClearHeight =
             Constants.kHubFunnelHeightMeters + Constants.kHubFunnelClearanceMeters;
+        lastDistM = dist;
+        lastFunnelRadiusM = scaledFunnelRadius;
+        lastFunnelClearHeightM = funnelClearHeight;
+        double fallbackSpeedMps = (ShooterConstants.kAutoAimRPM / 60.0) * velConstant;
+        double distFromLaunch = Math.max(0.01, dist - kLaunchOffsetMeters);
 
         var solved =
             KinematicsHelper.solveFunnelClearance(
-                dist, launchHeight, aimTarget.getZ(), scaledFunnelRadius, funnelClearHeight);
+                distFromLaunch,
+                launchHeight,
+                aimTarget.getZ(),
+                scaledFunnelRadius,
+                funnelClearHeight,
+                fallbackSpeedMps);
         hoodAngleRad = solved.hoodAngleRad();
         launchSpeedMps = solved.launchSpeedMps();
         tof = solved.timeOfFlightSec();
+        lastEffectiveDistFromLaunchM = solved.effectiveDistM();
+        lastFunnelClearHeightM = solved.effectiveFunnelClearHeightM();
+        lastFunnelConstraintMet = solved.funnelConstraintMet();
       } else {
         launchSpeedMps = (getPassRPM() / 60.0) * velConstant;
         var solved =
@@ -116,9 +134,17 @@ public final class AutoAim {
 
     hood.setAngle(Radians.of(hoodAngleRad));
 
+    Translation2d aimPoint2d = aimTarget.toTranslation2d();
+    if (hubMode && lastEffectiveDistFromLaunchM > 0) {
+      Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
+      double norm = toHub.getNorm();
+      if (norm >= 1e-6) {
+        double effectivePivotToHub = lastEffectiveDistFromLaunchM + kLaunchOffsetMeters;
+        aimPoint2d = turretPivotField.plus(toHub.times(effectivePivotToHub / norm));
+      }
+    }
     double desiredRaw =
-        KinematicsHelper.getDesiredTurretAngleRadHalfTurn(
-            robotPose, turretPivotField, aimTarget.toTranslation2d());
+        KinematicsHelper.getDesiredTurretAngleRadHalfTurn(robotPose, turretPivotField, aimPoint2d);
     double minAngleRad = TurretConstants.kAbsoluteMinAngle.in(Radians);
     double maxAngleRad = TurretConstants.kAbsoluteMaxAngle.in(Radians);
 
@@ -150,6 +176,8 @@ public final class AutoAim {
     boolean turretClamped =
         (desiredTurretRad - minAngle < 1e-4) || (maxAngle - desiredTurretRad < 1e-4);
 
+    Logger.recordOutput("AutoAim/ValidShot", true);
+    Logger.recordOutput("AutoAim/FunnelConstraintMet", hubMode ? lastFunnelConstraintMet : true);
     Logger.recordOutput("AutoAim/Inputs/RobotPose", robotPose);
     Logger.recordOutput("AutoAim/Inputs/HubMode", hubMode);
     Logger.recordOutput("AutoAim/Inputs/StaticTarget", staticTarget);
@@ -165,9 +193,31 @@ public final class AutoAim {
     Logger.recordOutput("AutoAim/Inputs/PivotVx", pivotVx);
     Logger.recordOutput("AutoAim/Inputs/PivotVy", pivotVy);
     Logger.recordOutput("AutoAim/AimTarget", aimTarget);
-    Logger.recordOutput("AutoAim/AimPoint", aimTarget.toTranslation2d());
-    Logger.recordOutput(
-        "AutoAim/DistanceM", turretPivotField.getDistance(aimTarget.toTranslation2d()));
+    Logger.recordOutput("AutoAim/AimPoint", aimPoint2d);
+
+    if (hubMode && lastDistM > 1e-6) {
+      Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
+      double norm = toHub.getNorm();
+      double effectivePivotToHub =
+          lastEffectiveDistFromLaunchM > 0
+              ? lastEffectiveDistFromLaunchM + kLaunchOffsetMeters
+              : lastDistM;
+      double pivotToFunnel = Math.max(0.0, effectivePivotToHub - lastFunnelRadiusM);
+      Translation2d funnelXY =
+          norm >= 1e-6
+              ? turretPivotField.plus(toHub.div(norm).times(pivotToFunnel))
+              : turretPivotField;
+      Pose3d funnelClearancePose =
+          new Pose3d(funnelXY.getX(), funnelXY.getY(), lastFunnelClearHeightM, new Rotation3d());
+      Pose3d hubCenterPose =
+          new Pose3d(aimPoint2d.getX(), aimPoint2d.getY(), aimTarget.getZ(), new Rotation3d());
+      Logger.recordOutput("AutoAim/FunnelClearancePose", funnelClearancePose);
+      Logger.recordOutput("AutoAim/HubCenterPose", hubCenterPose);
+      Logger.recordOutput("AutoAim/FunnelClearanceZM", lastFunnelClearHeightM);
+      Logger.recordOutput("AutoAim/HubCenterZM", aimTarget.getZ());
+    }
+
+    Logger.recordOutput("AutoAim/DistanceM", turretPivotField.getDistance(aimPoint2d));
     Logger.recordOutput(
         "AutoAim/StaticDistanceM", turretPivotField.getDistance(staticTarget.toTranslation2d()));
     Logger.recordOutput("AutoAim/TOF", tof);
