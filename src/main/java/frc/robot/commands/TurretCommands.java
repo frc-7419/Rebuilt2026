@@ -111,25 +111,29 @@ public final class TurretCommands {
           Translation2d turretToTarget = fakeTargetPoint.minus(turretPivotField);
           Rotation2d targetAngleField = turretToTarget.getAngle();
           Rotation2d targetAngleRobot = targetAngleField.minus(robotPose.getRotation());
-          double targetAngleRad = targetAngleRobot.getRadians();
+          double targetAngleRad = angleModulus(targetAngleRobot.getRadians());
 
-          // If angle goes over 180° or under -180°, flip to the other side
-          double bestAngle = targetAngleRad;
-          /*    if (targetAngleRad > Math.PI) {
-            bestAngle = targetAngleRad - 2.0 * Math.PI;
-          } else if (targetAngleRad < -Math.PI) {
-            bestAngle = targetAngleRad + 2.0 * Math.PI;
+          double currentPosRad = turret.getAngle().in(Radians);
+
+          double kBoundaryTolerance = state.isShooting() ? Math.toRadians(40) : Math.toRadians(15);
+          double twoPi = 2.0 * Math.PI;
+
+          double shortPathTarget =
+              targetAngleRad + twoPi * Math.round((currentPosRad - targetAngleRad) / twoPi);
+
+          double bestAngle;
+
+          if (Math.abs(targetAngleRad) > Math.PI - kBoundaryTolerance) {
+            bestAngle =
+                clamp(
+                    shortPathTarget,
+                    TurretConstants.kAbsoluteMinAngle.in(Radians),
+                    TurretConstants.kAbsoluteMaxAngle.in(Radians));
+          } else {
+            bestAngle = angleModulus(targetAngleRad);
           }
 
           Logger.recordOutput("TurretCommands/PointAtHub/TargetAngleRad", targetAngleRad);
-          Logger.recordOutput("TurretCommands/PointAtHub/WrappedAngle", bestAngle);
-
-          if (bestAngle < TurretConstants.kMinAngle.in(Radians)) {
-            bestAngle = TurretConstants.kMinAngle.in(Radians);
-          } else if (bestAngle > TurretConstants.kMaxAngle.in(Radians)) {
-            bestAngle = TurretConstants.kMaxAngle.in(Radians);
-          }*/
-
           Logger.recordOutput("TurretCommands/PointAtHub/ChosenAngleRad", bestAngle);
 
           turret.setAngle(Radians.of(bestAngle));
@@ -137,17 +141,21 @@ public final class TurretCommands {
         turret);
   }
 
+  /**
+   * Computes a lead target point so the turret aims where the hub will be relative to us when the
+   * shot arrives. Uses iterative convergence: fakeTarget = realTarget - robotVel * tof * leadScale,
+   * where tof is time-of-flight from turret to current fake target. Correct because we aim "back"
+   * along our velocity so that after we move for tof seconds the shot lines up.
+   */
   private static Translation2d computeFakeTargetPointLead(
       Translation2d turretPivotField, Translation2d realTargetField, Translation2d robotVelField) {
 
     Translation2d fakeTarget = realTargetField;
+    double leadScale = 0.3; // scale for how much to shift aim (tuning)
 
     for (int i = 0; i < 8; i++) {
       double distanceMeters = fakeTarget.getDistance(turretPivotField);
       double tofSec = timeOfFlightSeconds(distanceMeters);
-
-      double leadScale =
-          0.3; // how much to scale how much pose shifts(bascailly just shifting the scale)
       Translation2d drift = robotVelField.times(tofSec * leadScale);
       fakeTarget = realTargetField.minus(drift);
     }

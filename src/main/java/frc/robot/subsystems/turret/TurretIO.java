@@ -3,6 +3,7 @@ package frc.robot.subsystems.turret;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -19,6 +20,8 @@ public interface TurretIO {
     public Angle rightEncoderZeroOffset = Rotations.of(0);
     public Angle leftEncoderZeroOffset = Rotations.of(0);
     public AngularVelocity velocity = RadiansPerSecond.of(0.0);
+    public Angle requestedPosition = Rotations.of(0);
+    public AngularVelocity requestedVelocity = RotationsPerSecond.of(0);
     public double appliedVolts = 0.0;
     public double currentAmps = 0.0;
   }

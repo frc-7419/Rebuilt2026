@@ -37,7 +37,11 @@ public class Turret extends SubsystemBase {
                     / TurretConstants.kMotorToRightEncoderGearRatio,
                 TurretConstants.kMotorToTurretGearRatio
                     / TurretConstants.kMotorToLeftEncoderGearRatio)
-            .withMechanismRange(TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
+            .withMechanismRange(
+                TurretConstants.kAbsoluteMinAngle, TurretConstants.kAbsoluteMaxAngle)
+            .withAbsoluteEncoderInversions(false, true)
+            .withAbsoluteEncoderOffsets(
+                TurretConstants.rightEncoderZeroOffset, TurretConstants.leftEncoderZeroOffset);
 
     Logger.recordOutput("Turret/SatisfiesRange", config.coverageSatisfiesRange());
   }
@@ -72,19 +76,17 @@ public class Turret extends SubsystemBase {
   }
 
   public void setAngle(Angle angle) {
-    Logger.recordOutput("Turret/TurretRequestedRadRaw", angle.in(Degrees));
+    Logger.recordOutput("Turret/TurretRequestedDeg", angle.in(Degrees));
     double angleRad = angle.in(Radians);
-    double normalizedAngle = MathUtil.angleModulus(angleRad);
 
-    double wrappedAngle =
+    angleRad =
         MathUtil.clamp(
-            normalizedAngle,
-            TurretConstants.kMinAngle.in(Radians),
-            TurretConstants.kMaxAngle.in(Radians));
-    Angle target = Radians.of(wrappedAngle);
+            angleRad,
+            TurretConstants.kAbsoluteMinAngle.in(Radians),
+            TurretConstants.kAbsoluteMaxAngle.in(Radians));
 
-    Logger.recordOutput("Turret/TurretRequestedRad", wrappedAngle);
-    io.setPosition(target);
+    Logger.recordOutput("Turret/TurretRequestedRad", angleRad);
+    io.setPosition(Radians.of(angleRad));
   }
 
   /** Cancels any position hold and stops the motor. */

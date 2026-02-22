@@ -63,7 +63,7 @@ public class ShooterIOSim implements ShooterIO {
     rotorVelocityRadPerSec = motorSim.getAngularVelocityRadPerSec();
     shooterVelocityRadPerSec = rotorVelocityRadPerSec;
 
-    // “Brake damping” behavior retained in spirit.
+    // Brake damping behavior
     if (Math.abs(appliedVolts) < 0.01) {
       double brakeDamping = 0.8;
       shooterVelocityRadPerSec *= brakeDamping;

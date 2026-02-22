@@ -66,6 +66,8 @@ public class RobotState {
   private final AtomicReference<ChassisSpeeds> desiredFieldRelativeChassisSpeeds =
       new AtomicReference<>(new ChassisSpeeds());
 
+  private boolean isShooting = false;
+
   @AutoLogOutput private Pose2d estimatedPose = Pose2d.kZero;
 
   private RobotState() {
@@ -215,8 +217,8 @@ public class RobotState {
   public AngularVelocity getLatestShooterVelocity() {
     var buffer = shooterVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
-    // return RadiansPerSecond.of(value);
-    return RotationsPerSecond.of(5);
+    return RadiansPerSecond.of(value);
+    // return RotationsPerSecond.of(5);
   }
 
   public boolean isRedAlliance() {
@@ -320,6 +322,15 @@ public class RobotState {
     var buffer = hopperVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
     return RadiansPerSecond.of(value);
+  }
+
+  @AutoLogOutput
+  public boolean isShooting() {
+    return isShooting;
+  }
+
+  public void setShooting(boolean shooting) {
+    isShooting = shooting;
   }
 
   public record VisionObservation(double timestamp, Pose2d visionPose, Matrix<N3, N1> stdDevs) {}
