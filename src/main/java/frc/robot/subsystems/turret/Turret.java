@@ -79,9 +79,7 @@ public class Turret extends SubsystemBase {
     setAngleWithVelocity(angle, RadiansPerSecond.of(0.0));
   }
 
-  /**
-   * Sets turret angle with velocity feedforward
-   */
+  /** Sets turret angle with velocity feedforward */
   public void setAngleWithVelocity(Angle angle, AngularVelocity velocityRadPerSec) {
     double angleRad = angle.in(Radians);
     angleRad =

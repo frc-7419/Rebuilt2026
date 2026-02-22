@@ -102,7 +102,7 @@ public final class TurretConstants {
   // Trapezoidal motion profile constraints: max velocity and max acceleration (in rot/s and
   // rot/s^2)
   public static final TrapezoidProfile kMotionProfile =
-      new TrapezoidProfile(new TrapezoidProfile.Constraints(5, 5));
+      new TrapezoidProfile(new TrapezoidProfile.Constraints(15, 10));
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center

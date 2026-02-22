@@ -69,5 +69,5 @@ public final class Constants {
   /** To top of funnel */
   public static final double kHubFunnelHeightMeters = 0.5588;
 
-  public static final double kHubFunnelClearanceMeters = 0.10;
+  public static final double kHubFunnelClearanceMeters = 0.6;
 }

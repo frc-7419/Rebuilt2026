@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.SerializerCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.FuelSimLaunch;
@@ -87,6 +88,8 @@ public class RobotContainer {
   private boolean hubMode = true;
 
   private boolean autoAim = true;
+
+  private final RobotState robotState = RobotState.getInstance();
 
   /** Fuel physics sim (SIM only). Null when not in SIM. */
   private FuelSim fuelSim;
@@ -260,7 +263,8 @@ public class RobotContainer {
         Commands.run(
             () -> {
               if (autoAim) {
-                AutoAim.updateAutoAim(turret, shooter, hood, hubMode);
+                boolean allowFullRange = RobotState.getInstance().isShooting();
+                AutoAim.updateAutoAim(turret, shooter, hood, hubMode, allowFullRange);
               } else {
                 double v = MathUtil.applyDeadband(operator.getRightX(), 0.05);
                 turret.setOpenLoop(v * 12.0);
@@ -311,34 +315,22 @@ public class RobotContainer {
         .whileTrue(
             Commands.run(
                 () -> {
-                  serializer.setOpenLoop(5);
-                  serializer.setFeederOpenLoop(7);
+                  serializer.setBothVoltage(5, 7);
+                  robotState.setShooting(true);
                 },
                 serializer))
         .onFalse(
             Commands.runOnce(
                 () -> {
-                  serializer.setOpenLoop(0);
-                  serializer.stopFeeder();
+                  serializer.stopBoth();
+                  robotState.setShooting(false);
                 },
                 serializer));
 
     operator
         .leftTrigger()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  serializer.setOpenLoop(-5);
-                  serializer.setFeederOpenLoop(-7);
-                },
-                serializer))
-        .onFalse(
-            Commands.runOnce(
-                () -> {
-                  serializer.setOpenLoop(0);
-                  serializer.stopFeeder();
-                },
-                serializer));
+        .whileTrue(SerializerCommands.runBothVoltage(serializer, -5, -7))
+        .onFalse(SerializerCommands.stopBoth(serializer));
 
     operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
     operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
@@ -375,7 +367,7 @@ public class RobotContainer {
                       double now = Timer.getFPGATimestamp();
                       if (now - lastShotTime[0] >= intervalSec
                           && shooter.getRPM() > minRpm
-                          && Math.abs(serializer.getRPM()) > minRpm
+                          && Math.abs(serializer.getSerializerRPM()) > minRpm
                           && Math.abs(serializer.getFeederRPM()) > minRpm) {
                         FuelSimLaunch.launchFromShooter(fuelSim, drive, shooter, hood, turret);
                         lastShotTime[0] = now;

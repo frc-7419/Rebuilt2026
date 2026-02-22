@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.wpilibj2.command.Commands.run;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -30,11 +31,23 @@ public final class AutoAim {
   private static final double kTrajectoryDt = 0.02;
   private static final int kTrajectoryMaxPts = 128;
   private static final int kLeadIterations = 3;
+  private static final double kTwoPi = 2.0 * Math.PI;
+
+  /** Previous commanded turret angle (rad) for wrap choice; avoids double-wrap when shooting. */
+  private static double previousCommandedTurretRad = Double.NaN;
 
   private AutoAim() {}
 
-  /** One cycle: set shooter RPM, hood angle, turret heading. */
+  /** One cycle: set shooter RPM, hood angle, turret heading. Default: turret in [-180°, 180°]. */
   public static void updateAutoAim(Turret turret, Shooter shooter, Hood hood, boolean hubMode) {
+    updateAutoAim(turret, shooter, hood, hubMode, false);
+  }
+
+  /**
+   * allowFullRange true = use full 720° while shooting; false = stay in [-180°, 180°] 
+   */
+  public static void updateAutoAim(
+      Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
     RobotState state = RobotState.getInstance();
     var latestPose = state.getLatestFieldToRobot();
     if (latestPose == null) return;
@@ -103,12 +116,30 @@ public final class AutoAim {
 
     hood.setAngle(Radians.of(hoodAngleRad));
 
-    double desiredTurretRad =
-        KinematicsHelper.calculateAzimuthAngleRad(
-            robotPose,
-            turretPivotField,
-            aimTarget.toTranslation2d(),
-            turret.getAngle().in(Radians));
+    double desiredRaw =
+        KinematicsHelper.getDesiredTurretAngleRadHalfTurn(
+            robotPose, turretPivotField, aimTarget.toTranslation2d());
+    double minAngleRad = TurretConstants.kAbsoluteMinAngle.in(Radians);
+    double maxAngleRad = TurretConstants.kAbsoluteMaxAngle.in(Radians);
+
+    double desiredTurretRad;
+    if (!allowFullRange) {
+      desiredTurretRad = MathUtil.clamp(desiredRaw, -Math.PI, Math.PI);
+    } else {
+      double ref =
+          Double.isNaN(previousCommandedTurretRad)
+              ? turret.getAngle().in(Radians)
+              : previousCommandedTurretRad;
+      desiredTurretRad = desiredRaw + kTwoPi * Math.round((ref - desiredRaw) / kTwoPi);
+      if (!Double.isNaN(previousCommandedTurretRad)
+          && Math.abs(desiredTurretRad - previousCommandedTurretRad) > Math.PI) {
+        double alt =
+            desiredTurretRad - Math.signum(desiredTurretRad - previousCommandedTurretRad) * kTwoPi;
+        if (alt >= minAngleRad && alt <= maxAngleRad) desiredTurretRad = alt;
+      }
+    }
+    desiredTurretRad = MathUtil.clamp(desiredTurretRad, minAngleRad, maxAngleRad);
+    previousCommandedTurretRad = desiredTurretRad;
 
     double turretOmega = -robotOmega; // counter-rotate to hold field heading
 
@@ -162,11 +193,24 @@ public final class AutoAim {
     }
   }
 
-  /** Command that runs auto-aim every cycle. */
+  /** Command that runs auto-aim every cycle. allowFullRange: true when shooting (use full 720°). */
   public static Command autoAim(
-      Turret turret, Shooter shooter, Hood hood, BooleanSupplier hubMode) {
+      Turret turret,
+      Shooter shooter,
+      Hood hood,
+      BooleanSupplier hubMode,
+      BooleanSupplier allowFullRange) {
     return run(
-        () -> updateAutoAim(turret, shooter, hood, hubMode.getAsBoolean()), turret, shooter, hood);
+        () ->
+            updateAutoAim(
+                turret,
+                shooter,
+                hood,
+                hubMode.getAsBoolean(),
+                allowFullRange != null && allowFullRange.getAsBoolean()),
+        turret,
+        shooter,
+        hood);
   }
 
   private static final LoggedNetworkNumber passRPMOverride =

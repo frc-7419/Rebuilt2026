@@ -38,19 +38,23 @@ public final class KinematicsHelper {
         target.getX() - pivotVx * tofSec, target.getY() - pivotVy * tofSec, target.getZ());
   }
 
-  // Turret angle
+  /** Desired turret angle in [-π, π] nowrap. */
+  public static double getDesiredTurretAngleRadHalfTurn(
+      Pose2d robotPose, Translation2d turretPivotField, Translation2d aimPoint) {
+    Rotation2d fieldAngle = aimPoint.minus(turretPivotField).getAngle();
+    Rotation2d robotRelAngle = fieldAngle.minus(robotPose.getRotation());
+    return MathUtil.angleModulus(robotRelAngle.getRadians());
+  }
+
+  /** Full-range azimuth with wrap */
   public static double calculateAzimuthAngleRad(
       Pose2d robotPose,
       Translation2d turretPivotField,
       Translation2d aimPoint,
       double currentAngleRad) {
-    Rotation2d fieldAngle = aimPoint.minus(turretPivotField).getAngle();
-    Rotation2d robotRelAngle = fieldAngle.minus(robotPose.getRotation());
-
-    double desired = MathUtil.angleModulus(robotRelAngle.getRadians());
+    double desired = getDesiredTurretAngleRadHalfTurn(robotPose, turretPivotField, aimPoint);
     double twoPi = 2.0 * Math.PI;
     desired += twoPi * Math.round((currentAngleRad - desired) / twoPi);
-
     return MathUtil.clamp(
         desired,
         TurretConstants.kAbsoluteMinAngle.in(Radians),
@@ -108,11 +112,11 @@ public final class KinematicsHelper {
 
         if (v0Sq <= 0.0 || Double.isNaN(v0Sq)) {
           funnelMet = false;
-          theta = MathUtil.clamp(theta, minHood, maxHood);
+          theta = maxHood; // prefer high arc when two-constraint fails
           v0 = singleConstraintSpeed(x, yDist, theta, g);
         } else if (theta < minHood || theta > maxHood) {
           funnelMet = false;
-          theta = MathUtil.clamp(theta, minHood, maxHood);
+          theta = maxHood; // prefer high arc so ball drops into hub
           v0 = singleConstraintSpeed(x, yDist, theta, g);
         } else {
           v0 = Math.sqrt(v0Sq);
