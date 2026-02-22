@@ -72,7 +72,6 @@ public final class AutoAim {
     double pivotVx = robotVx - robotOmega * pivotOffset.getY();
     double pivotVy = robotVy + robotOmega * pivotOffset.getX();
 
-    double minHoodRad = HoodConstants.kMinAngle.in(Radians);
     double maxHoodRad = HoodConstants.kMaxAngle.in(Radians);
 
     // Iterate to converge on motion-compensated aim
@@ -118,17 +117,26 @@ public final class AutoAim {
         lastFunnelClearHeightM = solved.effectiveFunnelClearHeightM();
         lastFunnelConstraintMet = solved.funnelConstraintMet();
       } else {
-        launchSpeedMps = (getPassRPM() / 60.0) * velConstant;
-        var solved =
-            KinematicsHelper.solveForTarget(
-                dist, launchHeight, aimTarget.getZ(), launchSpeedMps, minHoodRad, maxHoodRad);
-        hoodAngleRad = solved.hoodAngleRad();
-        tof = solved.timeOfFlightSec();
+        double[] highArc =
+            KinematicsHelper.solveForTargetHighArc(
+                dist, launchHeight, aimTarget.getZ(), maxHoodRad);
+        hoodAngleRad = highArc[0];
+        launchSpeedMps = highArc[1];
+        tof = highArc[2];
       }
     }
 
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
+    if (!hubMode) rpm = Math.min(rpm, getPassRPM());
+    double noShootXBlue = 4.5;
+    boolean pastNoShootLine =
+        state.isRedAlliance()
+            ? robotPose.getX() < (kFieldLengthMeters - noShootXBlue)
+            : robotPose.getX() > noShootXBlue;
+    if (hubMode && pastNoShootLine) {
+      rpm = ShooterConstants.kAutoAimRPMMax;
+    }
 
     shooter.setRPM(rpm);
 

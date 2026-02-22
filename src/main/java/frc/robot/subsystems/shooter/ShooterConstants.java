@@ -58,11 +58,11 @@ public final class ShooterConstants {
       kMotorToShooterGearRatio * 2.0 * Math.PI * kShooterWheelRadius.baseUnitMagnitude();
 
   /** Default RPM for pass shots */
-  public static final double kAutoAimRPM = 2500.0;
+  public static final double kAutoAimRPM = 3000.0;
 
   /** Min speed before firing. */
   public static final double kAutoAimRPMMin = 1000.0;
 
   /** Hardware bound */
-  public static final double kAutoAimRPMMax = 6000.0;
+  public static final double kAutoAimRPMMax = 3500.0;
 }

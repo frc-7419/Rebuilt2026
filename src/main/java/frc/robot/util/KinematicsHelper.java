@@ -200,6 +200,18 @@ public final class KinematicsHelper {
     return Math.tan(theta) * d - (g * d * d) / (2.0 * v0 * v0 * cosTheta * cosTheta);
   }
 
+  public static double[] solveForTargetHighArc(
+      double horizontalDistMeters,
+      double launchHeightMeters,
+      double targetHeightMeters,
+      double maxAngleRad) {
+    double x = Math.max(horizontalDistMeters, 0.01);
+    double yDist = targetHeightMeters - launchHeightMeters;
+    double v0 = singleConstraintSpeed(x, yDist, maxAngleRad, kGravity);
+    double tof = x / (v0 * Math.cos(maxAngleRad));
+    return new double[] {maxAngleRad, v0, Math.max(tof, 0.01)};
+  }
+
   /** Min launch speed to hit (x, yDist) at angle theta (vacuum). */
   private static double singleConstraintSpeed(double x, double yDist, double theta, double g) {
     double cosTheta = Math.cos(theta);
