@@ -50,7 +50,10 @@ public final class AutoAim {
       Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
     RobotState state = RobotState.getInstance();
     var latestPose = state.getLatestFieldToRobot();
-    if (latestPose == null) return;
+    if (latestPose == null) {
+      state.setAutoAimArcValid(false);
+      return;
+    }
 
     Pose2d robotPose = latestPose.getValue();
     Translation3d staticTarget = resolveTarget(robotPose, state, hubMode);
@@ -184,7 +187,9 @@ public final class AutoAim {
     boolean turretClamped =
         (desiredTurretRad - minAngle < 1e-4) || (maxAngle - desiredTurretRad < 1e-4);
 
-    Logger.recordOutput("AutoAim/ValidShot", true);
+    boolean arcValid = (hubMode ? lastFunnelConstraintMet : true) && !turretClamped;
+    state.setAutoAimArcValid(arcValid);
+    Logger.recordOutput("AutoAim/ValidShot", arcValid);
     Logger.recordOutput("AutoAim/FunnelConstraintMet", hubMode ? lastFunnelConstraintMet : true);
     Logger.recordOutput("AutoAim/Inputs/RobotPose", robotPose);
     Logger.recordOutput("AutoAim/Inputs/HubMode", hubMode);

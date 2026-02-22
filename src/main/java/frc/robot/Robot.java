@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.intake.IntakeConstants;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -205,6 +206,8 @@ public class Robot extends LoggedRobot {
       var fuelSim = robotContainer.getFuelSim();
       if (fuelSim != null) {
         fuelSim.updateSim();
+        Logger.recordOutput("FuelSim/BlueHubScore", FuelSim.Hub.BLUE_HUB.getScore());
+        Logger.recordOutput("FuelSim/RedHubScore", FuelSim.Hub.RED_HUB.getScore());
       }
     }
   }

@@ -71,4 +71,10 @@ public final class Constants {
 
   /** Clearance above rim the ball must pass. FunnelClear Z = rim + this. */
   public static final double kHubFunnelClearanceMeters = 0.1;
+
+  /** When true, sim tracks fuel stored (capacity) and only launches if fuelStored > 0. */
+  public static final boolean kSimulateFuelCapacity = true;
+
+  /** Max fuel the robot can store when simulating capacity. */
+  public static final int kFuelCapacity = 50;
 }

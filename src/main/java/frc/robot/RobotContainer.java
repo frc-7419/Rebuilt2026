@@ -7,21 +7,16 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -29,8 +24,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.SerializerCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.FuelSimLaunch;
@@ -84,12 +77,8 @@ public class RobotContainer {
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController operator = new CommandXboxController(1);
 
-  /** true = hub mode, false = passing mode. */
-  private boolean hubMode = true;
-
-  private boolean autoAim = true;
-
   private final RobotState robotState = RobotState.getInstance();
+  private final ControlManager controlManager = ControlManager.getInstance();
 
   /** Fuel physics sim (SIM only). Null when not in SIM. */
   private FuelSim fuelSim;
@@ -202,11 +191,12 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
-    configureButtonBindings();
+    controlManager.configureButtonBindings(
+        driver, operator, drive, turret, shooter, hood, intake, serializer);
 
     if (Constants.currentMode == Constants.Mode.SIM) {
       fuelSim = new FuelSim("FuelSim");
-      // fuelSim.spawnStartingFuel();
+      fuelSim.spawnStartingFuel();
       fuelSim.registerRobot(
           Meters.of(0.8749),
           Meters.of(0.8749),
@@ -218,145 +208,32 @@ public class RobotContainer {
             return s != null ? s : new ChassisSpeeds();
           });
       fuelSim.registerIntake(
-          Meters.of(-0.43745),
           Meters.of(-0.739075),
+          Meters.of(-0.43745),
           Meters.of(-0.43745),
           Meters.of(0.43745),
           () ->
-              intake.getWristAngle().in(Degrees) > 115
-                  && Math.abs(intake.getWheelVelocity().in(RPM)) > 10);
+              robotState.isIntaking()
+                  && robotState.isIntakeDown()
+                  && (!Constants.kSimulateFuelCapacity || robotState.canIntake()),
+          () -> {
+            if (Constants.kSimulateFuelCapacity) robotState.intakeFuel();
+          });
       fuelSim.start();
+      SmartDashboard.putData(
+          Commands.runOnce(
+                  () -> {
+                    fuelSim.clearFuel();
+                    fuelSim.spawnStartingFuel();
+                  })
+              .withName("Reset Fuel")
+              .ignoringDisable(true));
       scheduleSimFuelLaunch();
     }
-
-    Logger.recordOutput("ControlStatus/hubMode", hubMode);
-    Logger.recordOutput("ControlStatus/hubModeStatus", hubMode ? "hub" : "passing");
-    Logger.recordOutput("ControlStatus/pointAtHub", autoAim);
-    Logger.recordOutput("ControlStatus/pointAtHubStatus", autoAim ? "pointAtHub" : "manual");
-  }
-
-  /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
-  private void configureButtonBindings() {
-    // -------- Driver --------
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive, () -> driver.getLeftX(), () -> -driver.getLeftY(), () -> -driver.getRightX()));
-
-    driver.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-
-    driver
-        .leftBumper()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-                    drive)
-                .ignoringDisable(true));
-
-    turret.setDefaultCommand(
-        Commands.run(
-            () -> {
-              if (autoAim) {
-                boolean allowFullRange = RobotState.getInstance().isShooting();
-                AutoAim.updateAutoAim(turret, shooter, hood, hubMode, allowFullRange);
-              } else {
-                double v = MathUtil.applyDeadband(operator.getRightX(), 0.05);
-                turret.setOpenLoop(v * 12.0);
-              }
-            },
-            turret));
-
-    hood.setDefaultCommand(
-        Commands.run(
-            () -> {
-              if (!autoAim) {
-                double v = MathUtil.applyDeadband(operator.getLeftY(), 0.05);
-                hood.setOpenLoop(v * 3.0);
-              }
-            },
-            hood));
-
-    // -------- Operator: mode toggles (log status) --------
-    operator
-        .start()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  hubMode = !hubMode;
-                  Logger.recordOutput("ControlStatus/hubMode", hubMode);
-                  Logger.recordOutput("ControlStatus/hubModeStatus", hubMode ? "hub" : "passing");
-                }));
-
-    operator
-        .x()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  autoAim = !autoAim;
-                  Logger.recordOutput("ControlStatus/autoAim", autoAim);
-                  Logger.recordOutput(
-                      "ControlStatus/autoAimStatus", autoAim ? "autoAim" : "manual");
-                }));
-
-    // -------- Operator: intake & index --------
-    operator
-        .leftBumper()
-        .whileTrue(IntakeCommands.runWheel(intake, 10))
-        .onFalse(IntakeCommands.runWheel(intake, 0));
-
-    operator
-        .rightTrigger()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  serializer.setBothVoltage(5, 7);
-                  robotState.setShooting(true);
-                },
-                serializer))
-        .onFalse(
-            Commands.runOnce(
-                () -> {
-                  serializer.stopBoth();
-                  robotState.setShooting(false);
-                },
-                serializer));
-
-    operator
-        .leftTrigger()
-        .whileTrue(SerializerCommands.runBothVoltage(serializer, -5, -7))
-        .onFalse(SerializerCommands.stopBoth(serializer));
-
-    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
-
-    operator
-        .povUp()
-        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
-
-    operator
-        .povDown()
-        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
-
-    operator
-        .rightBumper()
-        .whileTrue(
-            Commands.run(
-                () -> {
-                  shooter.setRPM(3500);
-                },
-                shooter));
   }
 
   private void scheduleSimFuelLaunch() {
-    final double intervalSec = 0.2;
+    final double intervalSec = 0.1;
     final double minRpm = 100.0;
     final double[] lastShotTime = {Timer.getFPGATimestamp()};
 
@@ -365,11 +242,15 @@ public class RobotContainer {
             Commands.run(
                     () -> {
                       double now = Timer.getFPGATimestamp();
-                      if (now - lastShotTime[0] >= intervalSec
-                          && shooter.getRPM() > minRpm
-                          && Math.abs(serializer.getSerializerRPM()) > minRpm
-                          && Math.abs(serializer.getFeederRPM()) > minRpm) {
+                      boolean shooterRunning =
+                          shooter.getRPM() > minRpm
+                              && Math.abs(serializer.getSerializerRPM()) > minRpm
+                              && Math.abs(serializer.getFeederRPM()) > minRpm;
+                      boolean canLaunch =
+                          !Constants.kSimulateFuelCapacity || robotState.getFuelStored() > 0;
+                      if (now - lastShotTime[0] >= intervalSec && shooterRunning && canLaunch) {
                         FuelSimLaunch.launchFromShooter(fuelSim, drive, shooter, hood, turret);
+                        if (Constants.kSimulateFuelCapacity) robotState.consumeFuel();
                         lastShotTime[0] = now;
                       }
                     })
