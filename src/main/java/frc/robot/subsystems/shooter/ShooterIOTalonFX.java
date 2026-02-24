@@ -7,7 +7,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -24,8 +24,8 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final StatusSignal<AngularVelocity> motorVelocity;
 
   private final VoltageOut voltageRequest = new VoltageOut(0);
-  private final MotionMagicVelocityVoltage motionMagicVelocityVoltage =
-      new MotionMagicVelocityVoltage(0.0);
+  private final VelocityVoltage velocityVoltage =
+      new VelocityVoltage(0.0);
 
   public ShooterIOTalonFX() {
     motor = new TalonFX(ShooterConstants.kShooterMotorId);
@@ -63,7 +63,7 @@ public class ShooterIOTalonFX implements ShooterIO {
   @Override
   public void setVelocity(AngularVelocity velocity) {
     motor.setControl(
-        motionMagicVelocityVoltage
+        velocityVoltage
             .withVelocity(velocity.div(kMotorToShooterGearRatio))
             .withAcceleration(200));
   }

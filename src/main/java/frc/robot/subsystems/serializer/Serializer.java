@@ -1,6 +1,7 @@
 package frc.robot.subsystems.serializer;
 
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -38,15 +39,15 @@ public class Serializer extends SubsystemBase {
 
   /** Set serializer wheel target RPM (closed-loop in IO). */
   public void setRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(edu.wpi.first.units.Units.RadiansPerSecond);
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
 
     double clamped =
         MathUtil.clamp(
             targetRadPerSec,
-            SerializerConstants.kMinVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond),
-            SerializerConstants.kMaxVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
 
-    AngularVelocity target = edu.wpi.first.units.Units.RadiansPerSecond.of(clamped);
+    AngularVelocity target = RadiansPerSecond.of(clamped);
 
     Logger.recordOutput("Serializer/RequestedRadPerSec", clamped);
     Logger.recordOutput("Serializer/RequestedRPM", target.in(RPM));
@@ -78,15 +79,15 @@ public class Serializer extends SubsystemBase {
 
   /** Set feeder rollers target RPM (closed-loop in IO). */
   public void setFeederRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(edu.wpi.first.units.Units.RadiansPerSecond);
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
 
     double clamped =
         MathUtil.clamp(
             targetRadPerSec,
-            SerializerConstants.kMinVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond),
-            SerializerConstants.kMaxVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
 
-    AngularVelocity target = edu.wpi.first.units.Units.RadiansPerSecond.of(clamped);
+    AngularVelocity target = RadiansPerSecond.of(clamped);
 
     Logger.recordOutput("Serializer/FeederRequestedRadPerSec", clamped);
     Logger.recordOutput("Serializer/FeederRequestedRPM", target.in(RPM));
