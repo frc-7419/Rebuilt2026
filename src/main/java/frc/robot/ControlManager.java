@@ -28,6 +28,7 @@ public final class ControlManager {
 
   private static final double kShootSerializerVolts = 5.0;
   private static final double kShootFeederVolts = 7.0;
+  private static final double kIntakeVolts = 10;
 
   private static ControlManager instance;
 
@@ -175,15 +176,17 @@ public final class ControlManager {
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    intakeWheelTrigger.whileTrue(runIntakeWheel(intake, 10));
+    intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     shootTrigger.whileTrue(runShooting(serializer));
 
     reverseSerializerTrigger
-        .whileTrue(SerializerCommands.runBothVoltage(serializer, -5, -7))
+        .whileTrue(
+            SerializerCommands.runBothVoltage(
+                serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
     wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(-120.0)));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))

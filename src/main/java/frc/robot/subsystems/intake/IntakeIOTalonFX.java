@@ -9,7 +9,6 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.Units;
@@ -34,7 +33,6 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final StatusSignal<AngularVelocity> wristVelocity;
 
   private final VoltageOut wheelVoltageRequest = new VoltageOut(0);
-  private final VelocityVoltage wheelVelocityRequest = new VelocityVoltage(0.0);
   private final MotionMagicVelocityVoltage wheelMotionMagicVelocityVoltageRequest =
       new MotionMagicVelocityVoltage(0.0);
 
