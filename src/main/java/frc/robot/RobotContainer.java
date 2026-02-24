@@ -7,9 +7,8 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -19,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.ShooterCommands;
 import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -236,9 +236,9 @@ public class RobotContainer {
     turret.setDefaultCommand(TurretCommands.joystickTurret(turret, () -> operator.getLeftX()));
     // intake.setDefaultCommand(IntakeCommands.joystickWrist(intake, () -> operator.getLeftX()));
     operator
-        .b()
-        .whileTrue(IntakeCommands.runWheel(intake, 2))
-        .onFalse(IntakeCommands.runWheel(intake, 0));
+        .y()
+        .whileTrue(IntakeCommands.runWheelWithVelocity(intake, Units.RadiansPerSecond.of(64)))
+        .onFalse(IntakeCommands.runWheelWithVelocity(intake, Units.RadiansPerSecond.of(0)));
 
     // shooter.setDefaultCommand(ShooterCommands.joystickShooter(shooter, () ->
     // operator.getLeftY()));
@@ -246,11 +246,15 @@ public class RobotContainer {
 
     // ==================== OPERATOR BUTTON BINDINGS ====================
 
-    // A button: Intake down (0°)
-    operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    // A button: Intake up (0)
+    // operator.a().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
-    // B button: Intake up (120°)
-    operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    // B button: Intake down (-120 deg)
+    // operator.b().onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(-120.0)));
+    operator
+        .b()
+        .whileTrue(ShooterCommands.velocityShooter(shooter, 3000.0))
+        .onFalse(ShooterCommands.velocityShooter(shooter, 0.0));
 
     // operator.x().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(-50)));
     // operator.y().whileTrue(TurretCommands.toTurretPosition(turret, Degrees.of(200)));
