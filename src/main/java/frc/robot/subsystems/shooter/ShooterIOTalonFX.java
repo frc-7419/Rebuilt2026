@@ -25,7 +25,8 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final StatusSignal<AngularVelocity> motorVelocity;
 
   private final VoltageOut voltageRequest = new VoltageOut(0);
-  private final VelocityVoltage velocityVoltageRequest = new VelocityVoltage(0.0);
+  private final VelocityVoltage velocityVoltage =
+      new VelocityVoltage(0.0);
 
   public ShooterIOTalonFX() {
     motor = new TalonFX(ShooterConstants.kShooterMotorId);
@@ -63,7 +64,10 @@ public class ShooterIOTalonFX implements ShooterIO {
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    motor.setControl(velocityVoltageRequest.withVelocity(velocity.div(kMotorToShooterGearRatio)));
+    motor.setControl(
+        velocityVoltage
+            .withVelocity(velocity.div(kMotorToShooterGearRatio))
+            .withAcceleration(200));
   }
 
   @Override

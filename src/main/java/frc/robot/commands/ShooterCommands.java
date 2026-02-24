@@ -19,4 +19,8 @@ public final class ShooterCommands {
         },
         shooter);
   }
+
+  public static Command velocityShooter(Shooter shooter, double rpm) {
+    return run(() -> shooter.setRPM(rpm), shooter);
+  }
 }

@@ -37,15 +37,18 @@ public class Serializer extends SubsystemBase {
     io.setOpenLoop(volts);
   }
 
-  /** Center wheel closed-loop RPM. */
-  public void setSerializerRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(edu.wpi.first.units.Units.RadiansPerSecond);
+  /** Set serializer wheel target RPM (closed-loop in IO). */
+  public void setRPM(double rpm) {
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
+
     double clamped =
         MathUtil.clamp(
             targetRadPerSec,
-            SerializerConstants.kMinVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond),
-            SerializerConstants.kMaxVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
-    AngularVelocity target = edu.wpi.first.units.Units.RadiansPerSecond.of(clamped);
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
+
+    AngularVelocity target = RadiansPerSecond.of(clamped);
+
     Logger.recordOutput("Serializer/RequestedRadPerSec", clamped);
     Logger.recordOutput("Serializer/RequestedRPM", target.in(RPM));
     io.setVelocity(target);
