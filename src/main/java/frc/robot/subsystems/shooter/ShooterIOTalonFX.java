@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
@@ -24,8 +25,7 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final StatusSignal<AngularVelocity> motorVelocity;
 
   private final VoltageOut voltageRequest = new VoltageOut(0);
-  private final VelocityVoltage velocityVoltage =
-      new VelocityVoltage(0.0);
+  private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0);
 
   public ShooterIOTalonFX() {
     motor = new TalonFX(ShooterConstants.kShooterMotorId);
@@ -53,6 +53,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     inputs.rotorVelocity = motorVelocity.getValue();
     inputs.shooterVelocity = motorVelocity.getValue().div(kMotorToShooterGearRatio);
+    inputs.requestedVelocity = RadiansPerSecond.of(velocityVoltage.Velocity);
   }
 
   @Override
@@ -63,9 +64,7 @@ public class ShooterIOTalonFX implements ShooterIO {
   @Override
   public void setVelocity(AngularVelocity velocity) {
     motor.setControl(
-        velocityVoltage
-            .withVelocity(velocity.div(kMotorToShooterGearRatio))
-            .withAcceleration(200));
+        velocityVoltage.withVelocity(velocity.div(kMotorToShooterGearRatio)).withAcceleration(200));
   }
 
   @Override

@@ -18,14 +18,18 @@ public class Intake extends SubsystemBase {
     this.io = io;
   }
 
+  /** Wrist angle (degrees) above this is considered "down" (deployed) for intake. */
+  private static final double kIntakeDownThresholdDeg = 90.0;
+
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
 
     double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
-    RobotState.getInstance()
-        .addIntakeUpdates(timestamp, inputs.wristPosition, inputs.wristVelocity);
+    RobotState state = RobotState.getInstance();
+    state.addIntakeUpdates(timestamp, inputs.wristPosition, inputs.wristVelocity);
+    state.setIntakeDown(inputs.wristPosition.in(Degrees) >= kIntakeDownThresholdDeg);
   }
 
   /** Set intake wheel motor in open loop (volts). */

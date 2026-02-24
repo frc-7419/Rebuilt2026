@@ -67,6 +67,11 @@ public class RobotState {
       new AtomicReference<>(new ChassisSpeeds());
 
   private boolean isShooting = false;
+  private boolean isIntaking = false;
+  private boolean intakeDown = false;
+  private boolean autoAimEnabled = true;
+  private boolean hubMode = true;
+  private boolean autoAimArcValid = false;
 
   @AutoLogOutput private Pose2d estimatedPose = Pose2d.kZero;
 
@@ -331,6 +336,76 @@ public class RobotState {
 
   public void setShooting(boolean shooting) {
     isShooting = shooting;
+  }
+
+  @AutoLogOutput
+  public boolean isIntaking() {
+    return isIntaking;
+  }
+
+  public void setIntaking(boolean intaking) {
+    isIntaking = intaking;
+  }
+
+  @AutoLogOutput
+  public boolean isIntakeDown() {
+    return intakeDown;
+  }
+
+  public void setIntakeDown(boolean down) {
+    intakeDown = down;
+  }
+
+  @AutoLogOutput
+  public boolean isAutoAimEnabled() {
+    return autoAimEnabled;
+  }
+
+  public void setAutoAimEnabled(boolean enabled) {
+    autoAimEnabled = enabled;
+  }
+
+  @AutoLogOutput
+  public boolean isHubMode() {
+    return hubMode;
+  }
+
+  public void setHubMode(boolean hub) {
+    hubMode = hub;
+  }
+
+  @AutoLogOutput
+  public boolean isAutoAimArcValid() {
+    return autoAimArcValid;
+  }
+
+  public void setAutoAimArcValid(boolean valid) {
+    autoAimArcValid = valid;
+  }
+
+  // --------------- Fuel capacity (sim only; used when Constants.kSimulateFuelCapacity)
+  // ---------------
+
+  private int fuelStored = 0;
+
+  @AutoLogOutput
+  public int getFuelStored() {
+    return fuelStored;
+  }
+
+  /** True when robot can intake more fuel (fuelStored &lt; capacity). */
+  public boolean canIntake() {
+    return fuelStored < Constants.kFuelCapacity;
+  }
+
+  /** Increment stored fuel (call when sim intakes a ball). */
+  public void intakeFuel() {
+    fuelStored++;
+  }
+
+  /** Decrement stored fuel (call when sim launches a ball). No-op if already 0. */
+  public void consumeFuel() {
+    if (fuelStored > 0) fuelStored--;
   }
 
   public record VisionObservation(double timestamp, Pose2d visionPose, Matrix<N3, N1> stdDevs) {}
