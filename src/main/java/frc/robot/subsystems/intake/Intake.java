@@ -16,6 +16,7 @@ public class Intake extends SubsystemBase {
 
   public Intake(IntakeIO io) {
     this.io = io;
+    io.zeroWrist();
   }
 
   /** Wrist angle (degrees) above this is considered "down" (deployed) for intake. */

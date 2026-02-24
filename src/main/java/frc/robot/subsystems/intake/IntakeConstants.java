@@ -16,8 +16,8 @@ public final class IntakeConstants {
   public static final int kIntakeWristMotorId = 23;
 
   // Wrist configuration
-  public static final Angle kMinWristAngle = Degrees.of(-120.0);
-  public static final Angle kMaxWristAngle = Degrees.of(0.0);
+  public static final Angle kMinWristAngle = Degrees.of(0.0);
+  public static final Angle kMaxWristAngle = Degrees.of(120.0);
   public static final Angle kHomeWristAngle = Degrees.of(0.0);
 
   // Gear ratios
@@ -49,7 +49,7 @@ public final class IntakeConstants {
 
   static {
     wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    wristMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    wristMotorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     wristSlot0Configs.kP = 2.0;
     wristSlot0Configs.kI = 0.0;
     wristSlot0Configs.kD = 0.3;
