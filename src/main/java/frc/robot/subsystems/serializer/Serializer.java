@@ -34,11 +34,11 @@ public class Serializer extends SubsystemBase {
 
   /** Center wheel open-loop voltage. */
   public void setSerializerVoltage(double volts) {
-    io.setOpenLoop(volts);
+    io.setSerializerOpenLoop(volts);
   }
 
   /** Set serializer wheel target RPM (closed-loop in IO). */
-  public void setRPM(double rpm) {
+  public void setSerializerRPM(double rpm) {
     double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
 
     double clamped =
@@ -56,7 +56,7 @@ public class Serializer extends SubsystemBase {
 
   /** Stop center wheel. */
   public void stopSerializer() {
-    io.setOpenLoop(0.0);
+    io.setSerializerOpenLoop(0.0);
   }
 
   public AngularVelocity getSerializerVelocity() {
@@ -105,13 +105,13 @@ public class Serializer extends SubsystemBase {
 
   /** Run both at given voltages (e.g. shoot or reverse). */
   public void setBothVoltage(double serializerVolts, double feederVolts) {
-    io.setOpenLoop(serializerVolts);
+    io.setSerializerOpenLoop(serializerVolts);
     io.setFeederOpenLoop(feederVolts);
   }
 
   /** Stop both center wheel and feeder. */
   public void stopBoth() {
-    io.setOpenLoop(0.0);
+    io.setSerializerOpenLoop(0.0);
     io.setFeederOpenLoop(0.0);
   }
 }

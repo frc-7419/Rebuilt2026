@@ -25,7 +25,7 @@ public interface SerializerIO {
   public default void updateInputs(SerializerIOInputs inputs) {}
 
   /** Set serializer wheel motor in open loop (volts). */
-  public default void setOpenLoop(double volts) {}
+  public default void setSerializerOpenLoop(double volts) {}
 
   /** Set serializer wheel motor velocity control. */
   public default void setVelocity(AngularVelocity velocity) {}
