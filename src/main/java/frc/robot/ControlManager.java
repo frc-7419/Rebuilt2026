@@ -2,6 +2,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -46,6 +47,24 @@ public final class ControlManager {
   /** Runs the intake wheel and sets {@link RobotState#setIntaking(boolean)} */
   public Command runIntakeWheel(Intake intake, double volts) {
     return Commands.run(() -> intake.setWheelOpenLoop(volts), intake)
+        .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
+        .finallyDo(
+            interrupted -> {
+              robotState.setIntaking(false);
+              intake.stopWheel();
+            });
+  }
+
+  /**
+   * Lowers wrist to 0° and runs the intake wheel; single command so it only requires Intake once.
+   */
+  public Command runIntakeLowerAndWheel(Intake intake) {
+    return Commands.run(
+            () -> {
+              intake.setWristAngle(Degrees.of(120.0));
+              intake.setWheelOpenLoop(kIntakeVolts);
+            },
+            intake)
         .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
         .finallyDo(
             interrupted -> {
@@ -108,6 +127,50 @@ public final class ControlManager {
 
   public boolean isHubMode() {
     return robotState.isHubMode();
+  }
+
+  private static final double kShootRpmTolerance = 300.0;
+
+  /**
+   * Runs serializer/feeder for shooting only when shooter is within {@value #kShootRpmTolerance}
+   * RPM of the requested speed.
+   */
+  public Command runShootAtSpeed(Shooter shooter, Serializer serializer) {
+    return Commands.run(
+            () -> {
+              double current = shooter.getRPM();
+              double requested = shooter.getRequestedRPM();
+              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+              } else {
+                serializer.stopBoth();
+              }
+            },
+            serializer)
+        .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
+        .finallyDo(
+            interrupted -> {
+              robotState.setShooting(false);
+              serializer.stopBoth();
+            });
+  }
+
+  /**
+   * Registers named commands for PathPlanner/autonomous. Uses the same {@link RobotState} as teleop
+   * so auto and teleop share auto-aim and hub mode state.
+   */
+  public void registerNamedCommands(Intake intake, Shooter shooter, Serializer serializer) {
+    NamedCommands.registerCommand("EnableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(true)));
+    NamedCommands.registerCommand(
+        "DisableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(false)));
+    NamedCommands.registerCommand("EnableHubMode", Commands.runOnce(() -> setHubMode(true)));
+    NamedCommands.registerCommand("DisableHubMode", Commands.runOnce(() -> setHubMode(false)));
+    NamedCommands.registerCommand("Intake", runIntakeLowerAndWheel(intake));
+    NamedCommands.registerCommand("AutoShoot", runShootAtSpeed(shooter, serializer));
+    NamedCommands.registerCommand(
+        "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    NamedCommands.registerCommand(
+        "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
   }
 
   /** Configures driver and operator button bindings. */
@@ -185,8 +248,8 @@ public final class ControlManager {
                 serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
-    wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(-120.0)));
+    wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))

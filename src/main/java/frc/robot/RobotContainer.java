@@ -7,12 +7,10 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -26,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.FuelSimLaunch;
@@ -91,7 +88,6 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    registerNamedCommands();
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -175,6 +171,8 @@ public class RobotContainer {
         serializer = new Serializer(new SerializerIO() {});
         break;
     }
+
+    controlManager.registerNamedCommands(intake, shooter, serializer);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -261,14 +259,6 @@ public class RobotContainer {
                 .ignoringDisable(true));
   }
 
-  private void registerNamedCommands() {
-    NamedCommands.registerCommand(
-        "pointAtHub", AutoAim.autoAim(turret, shooter, hood, () -> true, () -> false));
-    NamedCommands.registerCommand(
-        "intakeLower", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-    NamedCommands.registerCommand(
-        "intakeRaise", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
-  }
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *

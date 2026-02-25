@@ -15,6 +15,9 @@ public class Shooter extends SubsystemBase {
   private final ShooterIO io;
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
+  /** Last RPM passed to {@link #setRPM(double)}. */
+  private double requestedRpm = 0.0;
+
   public Shooter(ShooterIO io) {
     this.io = io;
   }
@@ -46,10 +49,16 @@ public class Shooter extends SubsystemBase {
 
     AngularVelocity target = RadiansPerSecond.of(clamped);
 
+    requestedRpm = target.in(RPM);
     Logger.recordOutput("Shooter/RequestedRadPerSec", clamped);
-    Logger.recordOutput("Shooter/RequestedRPM", target.in(RPM));
+    Logger.recordOutput("Shooter/RequestedRPM", requestedRpm);
 
     io.setVelocity(target);
+  }
+
+  /** Returns the last requested RPM (set via {@link #setRPM(double)}). */
+  public double getRequestedRPM() {
+    return requestedRpm;
   }
 
   /** Cancels any velocity hold and stops the motor. */

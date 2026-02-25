@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.783,
-        "y": 6.821610532413174
+        "x": 8.190086371527778,
+        "y": 4.057832465277778
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.7702426679053715,
-        "y": 3.6865561249553824
+        "x": 7.529257089120371,
+        "y": 2.536980324074075
       },
       "isLocked": false,
-      "linkedName": "PickupLeft"
+      "linkedName": "RightDeepPickup"
     },
     {
       "anchor": {
-        "x": 7.783,
-        "y": 1.1286502459490748
+        "x": 4.381603382260014,
+        "y": 0.6092858406645758
       },
       "prevControl": {
-        "x": 7.760365210579869,
-        "y": 2.25323525156128
+        "x": 7.378090422453704,
+        "y": 0.6286979890046303
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "PickupRight"
+      "linkedName": "StartRight"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 1,
-      "rotationDegrees": 45.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -47,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 90.54422895365391
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Intake",
+  "folder": "Shoot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 89.74192356311407
+    "rotation": -62.82540916474062
   },
   "useDefaultConstraints": true
 }

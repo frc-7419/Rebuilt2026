@@ -9,15 +9,34 @@
           "data": {
             "commands": [
               {
-                "type": "path",
+                "type": "named",
                 "data": {
-                  "pathName": "StartLeftToShootLeft"
+                  "name": "EnableHubMode"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "pointAtHub"
+                  "name": "EnableAutoAim"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartRightToShortPickup"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
                 }
               }
             ]
@@ -26,51 +45,57 @@
         {
           "type": "path",
           "data": {
-            "pathName": "LeftShootToPickupLeft"
+            "pathName": "RightShortPickupToMinShoot"
           }
         },
         {
-          "type": "parallel",
+          "type": "deadline",
           "data": {
             "commands": [
               {
-                "type": "named",
+                "type": "wait",
                 "data": {
-                  "name": "intakeLower"
+                  "waitTime": 4.0
                 }
               },
               {
-                "type": "path",
+                "type": "named",
                 "data": {
-                  "pathName": "PickupLeftToPickupRight"
+                  "name": "AutoShoot"
                 }
               }
             ]
           }
         },
         {
-          "type": "parallel",
+          "type": "deadline",
           "data": {
             "commands": [
               {
-                "type": "named",
-                "data": {
-                  "name": "intakeRaise"
-                }
-              },
-              {
                 "type": "path",
                 "data": {
-                  "pathName": "PickupRightToShootRight"
+                  "pathName": "StartRightToDeepPickup"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "pointAtHub"
+                  "name": "Intake"
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RightDeepPickupToMinShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot"
           }
         }
       ]
