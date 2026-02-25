@@ -15,6 +15,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -79,6 +81,8 @@ public class RobotContainer {
 
   private final RobotState robotState = RobotState.getInstance();
   private final ControlManager controlManager = ControlManager.getInstance();
+
+  private final PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
 
   /** Fuel physics sim (SIM only). Null when not in SIM. */
   private FuelSim fuelSim;
@@ -230,6 +234,7 @@ public class RobotContainer {
               .ignoringDisable(true));
       scheduleSimFuelLaunch();
     }
+    pdh.setSwitchableChannel(true); // powers the limelight
   }
 
   private void scheduleSimFuelLaunch() {
