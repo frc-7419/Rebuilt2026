@@ -7,10 +7,11 @@ import static frc.robot.util.PhoenixUtil.tryUntilOk;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -32,7 +33,8 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final StatusSignal<AngularVelocity> wristVelocity;
 
   private final VoltageOut wheelVoltageRequest = new VoltageOut(0);
-  private final VelocityVoltage wheelVelocityRequest = new VelocityVoltage(0.0);
+  private final MotionMagicVelocityVoltage wheelMotionMagicVelocityVoltageRequest =
+      new MotionMagicVelocityVoltage(0.0);
 
   private final VoltageOut wristVoltageRequest = new VoltageOut(0);
   private final PositionVoltage wristPositionRequest = new PositionVoltage(0.0);
@@ -91,7 +93,9 @@ public class IntakeIOTalonFX implements IntakeIO {
   @Override
   public void setWheelVelocity(AngularVelocity velocity) {
     wheelMotor.setControl(
-        wheelVelocityRequest.withVelocity(velocity.times(kWheelMotorToWheelGearRatio)));
+        wheelMotionMagicVelocityVoltageRequest
+            .withVelocity(velocity.times(kWheelMotorToWheelGearRatio))
+            .withAcceleration(Units.RotationsPerSecondPerSecond.of(100)));
   }
 
   @Override

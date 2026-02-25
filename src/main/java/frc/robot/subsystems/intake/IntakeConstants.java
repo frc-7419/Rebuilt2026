@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 
@@ -15,8 +16,8 @@ public final class IntakeConstants {
   public static final int kIntakeWristMotorId = 23;
 
   // Wrist configuration
-  public static final Angle kMinWristAngle = Degrees.of(0.0);
-  public static final Angle kMaxWristAngle = Degrees.of(120.0);
+  public static final Angle kMinWristAngle = Degrees.of(-120.0);
+  public static final Angle kMaxWristAngle = Degrees.of(0.0);
   public static final Angle kHomeWristAngle = Degrees.of(0.0);
 
   // Gear ratios
@@ -35,7 +36,7 @@ public final class IntakeConstants {
 
   static {
     wheelMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    wheelSlot0Configs.kP = 0.0;
+    wheelSlot0Configs.kP = 0.43;
     wheelSlot0Configs.kI = 0.0;
     wheelSlot0Configs.kD = 0.0;
     wheelSlot0Configs.kV = 0.0;
@@ -48,9 +49,10 @@ public final class IntakeConstants {
 
   static {
     wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    wristSlot0Configs.kP = 10.0;
+    wristMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    wristSlot0Configs.kP = 2.0;
     wristSlot0Configs.kI = 0.0;
-    wristSlot0Configs.kD = 0.1;
+    wristSlot0Configs.kD = 0.3;
     wristSlot0Configs.kV = 0.0;
     wristSlot0Configs.kS = 0.0;
   }

@@ -1,7 +1,8 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.math.MathUtil.*;
-import static edu.wpi.first.wpilibj2.command.Commands.*;
+import static edu.wpi.first.math.MathUtil.applyDeadband;
+import static edu.wpi.first.wpilibj2.command.Commands.run;
+import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.serializer.Serializer;
@@ -10,57 +11,64 @@ import java.util.function.DoubleSupplier;
 public final class SerializerCommands {
   private SerializerCommands() {}
 
-  // ==================== Serializer Wheel Commands ====================
+  // --------------- Center wheel (serializer) ---------------
 
-  /** Manual joystick serializer wheel control. Expects input in [-1, 1]. */
+  /** Manual joystick control for center wheel. Input in [-1, 1]. */
   public static Command joystickSerializer(Serializer serializer, DoubleSupplier input) {
     return run(
-        () -> {
-          double val = applyDeadband(input.getAsDouble(), 0.05);
-          serializer.setOpenLoop(val * 12.0); // scale to volts
-        },
+        () -> serializer.setSerializerVoltage(applyDeadband(input.getAsDouble(), 0.05) * 12.0),
         serializer);
   }
 
-  /** Set serializer wheel to run at a constant RPM. */
-  public static Command setRPM(Serializer serializer, double rpm) {
-    return run(() -> serializer.setRPM(rpm), serializer);
+  /** Center wheel at constant RPM. */
+  public static Command setSerializerRPM(Serializer serializer, double rpm) {
+    return run(() -> serializer.setSerializerRPM(rpm), serializer);
   }
 
-  /** Run serializer wheel at open loop voltage. */
-  public static Command runVoltage(Serializer serializer, double volts) {
-    return run(() -> serializer.setOpenLoop(volts), serializer);
+  /** Center wheel at open-loop voltage. */
+  public static Command runSerializerVoltage(Serializer serializer, double volts) {
+    return run(() -> serializer.setSerializerVoltage(volts), serializer);
   }
 
-  /** Stop the serializer wheel. */
-  public static Command stop(Serializer serializer) {
-    return runOnce(serializer::stop, serializer);
+  /** Stop center wheel. */
+  public static Command stopSerializer(Serializer serializer) {
+    return runOnce(serializer::stopSerializer, serializer);
   }
 
-  // ==================== Feeder Roller Commands ====================
+  // --------------- Feeder ---------------
 
-  /** Manual joystick feeder roller control. Expects input in [-1, 1]. */
+  /** Manual joystick control for feeder. Input in [-1, 1]. */
   public static Command joystickFeeder(Serializer serializer, DoubleSupplier input) {
     return run(
-        () -> {
-          double val = applyDeadband(input.getAsDouble(), 0.05);
-          serializer.setFeederOpenLoop(val * 12.0); // scale to volts
-        },
+        () -> serializer.setFeederVoltage(applyDeadband(input.getAsDouble(), 0.05) * 12.0),
         serializer);
   }
 
-  /** Set feeder rollers to run at a constant RPM. */
+  /** Feeder at constant RPM. */
   public static Command setFeederRPM(Serializer serializer, double rpm) {
     return run(() -> serializer.setFeederRPM(rpm), serializer);
   }
 
-  /** Run feeder rollers at open loop voltage. */
+  /** Feeder at open-loop voltage. */
   public static Command runFeederVoltage(Serializer serializer, double volts) {
-    return run(() -> serializer.setFeederOpenLoop(volts), serializer);
+    return run(() -> serializer.setFeederVoltage(volts), serializer);
   }
 
-  /** Stop the feeder rollers. */
+  /** Stop feeder. */
   public static Command stopFeeder(Serializer serializer) {
     return runOnce(serializer::stopFeeder, serializer);
+  }
+
+  // --------------- Both ---------------
+
+  /** Run both at given voltages (e.g. shoot forward or reverse). */
+  public static Command runBothVoltage(
+      Serializer serializer, double serializerVolts, double feederVolts) {
+    return run(() -> serializer.setBothVoltage(serializerVolts, feederVolts), serializer);
+  }
+
+  /** Stop both center wheel and feeder. */
+  public static Command stopBoth(Serializer serializer) {
+    return runOnce(serializer::stopBoth, serializer);
   }
 }

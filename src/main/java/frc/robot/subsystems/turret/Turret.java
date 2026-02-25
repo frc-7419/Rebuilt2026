@@ -1,11 +1,11 @@
 package frc.robot.subsystems.turret;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -31,13 +31,17 @@ public class Turret extends SubsystemBase {
   public Turret(TurretIO io) {
     this.io = io;
     config =
-        new EasyCRTConfig(() -> inputs.encoderOnePosition, () -> inputs.encoderTwoPosition)
+        new EasyCRTConfig(() -> inputs.rightEncoderPosition, () -> inputs.leftEncoderPosition)
             .withEncoderRatios(
                 TurretConstants.kMotorToTurretGearRatio
-                    / TurretConstants.kMotorToEncoderOneGearRatio,
+                    / TurretConstants.kMotorToRightEncoderGearRatio,
                 TurretConstants.kMotorToTurretGearRatio
-                    / TurretConstants.kMotorToEncoderTwoGearRatio)
-            .withMechanismRange(TurretConstants.kMinAngle, TurretConstants.kMaxAngle);
+                    / TurretConstants.kMotorToLeftEncoderGearRatio)
+            .withMechanismRange(
+                TurretConstants.kAbsoluteMinAngle, TurretConstants.kAbsoluteMaxAngle)
+            .withAbsoluteEncoderInversions(false, true)
+            .withAbsoluteEncoderOffsets(
+                TurretConstants.rightEncoderZeroOffset, TurretConstants.leftEncoderZeroOffset);
 
     Logger.recordOutput("Turret/SatisfiesRange", config.coverageSatisfiesRange());
   }
@@ -72,19 +76,21 @@ public class Turret extends SubsystemBase {
   }
 
   public void setAngle(Angle angle) {
-    Logger.recordOutput("Turret/TurretRequestedRadRaw", angle.in(Degrees));
+    setAngleWithVelocity(angle, RadiansPerSecond.of(0.0));
+  }
+
+  /** Sets turret angle with velocity feedforward */
+  public void setAngleWithVelocity(Angle angle, AngularVelocity velocityRadPerSec) {
     double angleRad = angle.in(Radians);
-    double normalizedAngle = MathUtil.angleModulus(angleRad);
-
-    double wrappedAngle =
+    angleRad =
         MathUtil.clamp(
-            normalizedAngle,
-            TurretConstants.kMinAngle.in(Radians),
-            TurretConstants.kMaxAngle.in(Radians));
-    Angle target = Radians.of(wrappedAngle);
-
-    Logger.recordOutput("Turret/TurretRequestedRad", wrappedAngle);
-    io.setPosition(target);
+            angleRad,
+            TurretConstants.kAbsoluteMinAngle.in(Radians),
+            TurretConstants.kAbsoluteMaxAngle.in(Radians));
+    Logger.recordOutput("Turret/TurretRequestedDeg", angleRad * 180.0 / Math.PI);
+    Logger.recordOutput(
+        "Turret/TurretRequestedVelRadPerSec", velocityRadPerSec.baseUnitMagnitude());
+    io.setState(Radians.of(angleRad), velocityRadPerSec);
   }
 
   /** Cancels any position hold and stops the motor. */
