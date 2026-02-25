@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.FuelSimLaunch;
@@ -260,7 +262,8 @@ public class RobotContainer {
   }
 
   private void registerNamedCommands() {
-    NamedCommands.registerCommand("pointAtHub", TurretCommands.pointAtHub(turret));
+    NamedCommands.registerCommand(
+        "pointAtHub", AutoAim.autoAim(turret, shooter, hood, () -> true, () -> false));
     NamedCommands.registerCommand(
         "intakeLower", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
     NamedCommands.registerCommand(
