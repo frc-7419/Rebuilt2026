@@ -196,6 +196,8 @@ public final class ControlManager {
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
-    revShooterTrigger.whileTrue(Commands.run(() -> shooter.setRPM(3500), shooter));
+    revShooterTrigger
+        .whileTrue(Commands.run(() -> shooter.setRPM(3500), shooter))
+        .onFalse(Commands.runOnce(() -> shooter.setRPM(0), shooter));
   }
 }

@@ -18,7 +18,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.generated.TunerConstants;
 
 /** TalonFX implementation of TurretIO. */
 public class TurretIOTalonFX implements TurretIO {
@@ -44,8 +43,8 @@ public class TurretIOTalonFX implements TurretIO {
 
   public TurretIOTalonFX() {
     motor = new TalonFX(TurretConstants.kTurretMotorId);
-    rightEncoder = new CANcoder(TurretConstants.kEncoderRightId, TunerConstants.kCANBus);
-    leftEncoder = new CANcoder(TurretConstants.kEncoderLeftId, TunerConstants.kCANBus);
+    rightEncoder = new CANcoder(TurretConstants.kEncoderRightId);
+    leftEncoder = new CANcoder(TurretConstants.kEncoderLeftId);
 
     tryUntilOk(5, () -> motor.getConfigurator().apply(TurretConstants.motorConfig, 0.25));
     tryUntilOk(5, () -> rightEncoder.getConfigurator().apply(TurretConstants.cancoderConfig, 0.25));
