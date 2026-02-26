@@ -77,4 +77,9 @@ public final class Constants {
 
   /** Max fuel the robot can store when simulating capacity. */
   public static final int kFuelCapacity = 50;
+
+  /**
+   * Max intake rate (fuel per second) when simulating capacity; used for canIntake() rate limit.
+   */
+  public static final double kMaxIntakeRatePerSecond = 30.0;
 }

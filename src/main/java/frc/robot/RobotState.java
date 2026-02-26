@@ -387,20 +387,47 @@ public class RobotState {
   // ---------------
 
   private int fuelStored = 0;
+  private double pendingFuel = 0.0;
+  private double intakeAccumulator = 0.0;
+  private double lastIntakeSimTimeSec = Double.NaN;
 
   @AutoLogOutput
   public int getFuelStored() {
     return fuelStored;
   }
 
-  /** True when robot can intake more fuel (fuelStored &lt; capacity). */
+  /**
+   * True when robot can intake more fuel: under capacity and intake rate not exceeding max dr/dt
+   * (no fuel still in the pipe).
+   */
   public boolean canIntake() {
-    return fuelStored < Constants.kFuelCapacity;
+    if (fuelStored >= Constants.kFuelCapacity) return false;
+    return pendingFuel < 1.0;
   }
 
-  /** Increment stored fuel (call when sim intakes a ball). */
   public void intakeFuel() {
-    fuelStored++;
+    pendingFuel += 1.0;
+  }
+
+  /**
+   * Advance intake rate simulation: drain pending fuel into fuelStored at max rate. Call from
+   * simulation periodic when {@link Constants#kSimulateFuelCapacity}.
+   */
+  public void updateIntakeSimulation(double nowSec) {
+    if (Double.isNaN(lastIntakeSimTimeSec)) {
+      lastIntakeSimTimeSec = nowSec;
+      return;
+    }
+    double dt = nowSec - lastIntakeSimTimeSec;
+    lastIntakeSimTimeSec = nowSec;
+    double maxRate = Constants.kMaxIntakeRatePerSecond;
+    double canAdd = Math.min(pendingFuel, maxRate * dt);
+    pendingFuel -= canAdd;
+    intakeAccumulator += canAdd;
+    while (intakeAccumulator >= 1.0 && fuelStored < Constants.kFuelCapacity) {
+      fuelStored++;
+      intakeAccumulator -= 1.0;
+    }
   }
 
   /** Decrement stored fuel (call when sim launches a ball). No-op if already 0. */

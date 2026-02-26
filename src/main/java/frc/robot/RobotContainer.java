@@ -82,6 +82,7 @@ public class RobotContainer {
   private final RobotState robotState = RobotState.getInstance();
   private final ControlManager controlManager = ControlManager.getInstance();
 
+  // Check pdh id and update accordingly
   private final PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
 
   /** Fuel physics sim (SIM only). Null when not in SIM. */
@@ -175,6 +176,8 @@ public class RobotContainer {
         serializer = new Serializer(new SerializerIO() {});
         break;
     }
+
+    controlManager.registerNamedCommands(intake, shooter, serializer);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
