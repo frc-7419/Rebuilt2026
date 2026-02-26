@@ -28,7 +28,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kAbsoluteTurretMaxRotations = 550;
+  public static final double kAbsoluteTurretMaxRotations = 600;
 
   /**
    * The absolute min and max angles are the physical limits of the turret, which is set based on
@@ -54,13 +54,10 @@ public final class TurretConstants {
   // Small deadband for joystick control
   public static final double kDeadband = 0.05;
 
-  // Gear ratios: Motor -> 60:12 reduction -> 130:10 reduction to turret
-  // Through Bore Encoders. Shared drive of 60:12 -> 60->30, then 1: 30:17, Encoder 2: 30:16
-  // (opposite direction)
   public static final double kMotorToRightEncoderGearRatio =
-      (60.0 / 12.0) * (60.0 / 30.0) * (30.0 / 17.0);
+      (60.0 / 12.0) * (30.0 / 60.0) * (17.0 / 30.0);
   public static final double kMotorToLeftEncoderGearRatio =
-      (60.0 / 12.0) * (60.0 / 30.0) * (30.0 / 16.0);
+      (60.0 / 12.0) * (30.0 / 60.0) * (16.0 / 30.0);
   public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
   public static final double kRightEncoderToTurretGearRatio =
@@ -84,11 +81,12 @@ public final class TurretConstants {
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    motorSlot0Configs.kP = 10;
+    motorConfig.CurrentLimits.StatorCurrentLimit = 30;
+    motorSlot0Configs.kP = 300;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 0.1;
-    motorSlot0Configs.kV = 0;
-    motorSlot0Configs.kS = 0;
+    motorSlot0Configs.kD = 10.2;
+    motorSlot0Configs.kV = 8.99;
+    motorSlot0Configs.kS = 0.44;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToRightEncoderGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio = kRightEncoderToTurretGearRatio;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kAbsoluteMaxAngle.in(Rotations);

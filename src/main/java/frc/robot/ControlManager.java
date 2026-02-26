@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.SerializerCommands;
 import frc.robot.subsystems.drive.Drive;
@@ -133,6 +134,8 @@ public final class ControlManager {
     Trigger wristUpTrigger = operator.povUp();
     Trigger wristDownTrigger = operator.povDown();
     Trigger revShooterTrigger = operator.rightBumper();
+    Trigger hoodPositionDownTrigger = operator.y();
+    Trigger hoodPositionUpTrigger = operator.back();
 
     // -------- Driver --------
     drive.setDefaultCommand(
@@ -170,6 +173,8 @@ public final class ControlManager {
               }
             },
             hood));
+    hoodPositionUpTrigger.onTrue(HoodCommands.hoodPosition(hood, Degrees.of(35)));
+    hoodPositionDownTrigger.onTrue(HoodCommands.hoodPosition(hood, Degrees.of(64)));
 
     // -------- Operator: mode toggles --------
     hubModeTrigger.onTrue(Commands.runOnce(this::toggleHubMode));

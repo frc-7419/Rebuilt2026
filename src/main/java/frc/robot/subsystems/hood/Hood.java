@@ -1,6 +1,6 @@
 package frc.robot.subsystems.hood;
 
-import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.math.MathUtil.clamp;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
@@ -38,6 +38,8 @@ public class Hood extends SubsystemBase {
     double deg = angle.in(Degrees);
     double clamped =
         clamp(deg, HoodConstants.kMinAngle.in(Degrees), HoodConstants.kMaxAngle.in(Degrees));
+    clamped -= HoodConstants.kMinAngle.in(Degrees);
+    clamped = (HoodConstants.kMaxAngle.in(Degrees) - HoodConstants.kMinAngle.in(Degrees)) - clamped;
     Logger.recordOutput("Hood/RequestedDeg", clamped);
     io.setPosition(Degrees.of(clamped));
   }

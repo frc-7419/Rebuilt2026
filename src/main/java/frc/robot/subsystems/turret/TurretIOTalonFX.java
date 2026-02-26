@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -58,6 +59,8 @@ public class TurretIOTalonFX implements TurretIO {
 
     rightEncoderPosition = rightEncoder.getAbsolutePosition();
     leftEncoderPosition = leftEncoder.getAbsolutePosition();
+
+    zeroRotor(Degrees.of(0));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, motorAppliedVolts, motorCurrent, turretVelocity, turretPosition, rotorPosition);
