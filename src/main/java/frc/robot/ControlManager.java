@@ -1,6 +1,7 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RPM;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.MathUtil;
@@ -29,7 +30,7 @@ public final class ControlManager {
 
   private static final double kShootSerializerVolts = 5.0;
   private static final double kShootFeederVolts = 7.0;
-  private static final double kIntakeVolts = 10;
+  private static final double kIntakeVolts = 3;
 
   private static ControlManager instance;
 
@@ -248,8 +249,8 @@ public final class ControlManager {
                 serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
-    wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
-    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
@@ -259,6 +260,8 @@ public final class ControlManager {
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
-    revShooterTrigger.whileTrue(Commands.run(() -> shooter.setRPM(3500), shooter));
+    revShooterTrigger
+        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(3500)), shooter))
+        .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
   }
 }

@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
@@ -27,7 +28,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kAbsoluteTurretMaxRotations = 1200;
+  public static final double kAbsoluteTurretMaxRotations = 550;
 
   /**
    * The absolute min and max angles are the physical limits of the turret, which is set based on
@@ -62,11 +63,17 @@ public final class TurretConstants {
       (60.0 / 12.0) * (60.0 / 30.0) * (30.0 / 16.0);
   public static final double kMotorToTurretGearRatio = (60.0 / 12.0) * (130.0 / 10.0);
 
+  public static final double kRightEncoderToTurretGearRatio =
+      (130.0 / 10.0) * (60.0 / 30.0) * (30.0 / 17.0);
+
+  public static final double kLeftEncoderToTurretGearRatio =
+      (130.0 / 10.0) * (60.0 / 30.0) * (30.0 / 16.0);
+
   public static final int kEncoderRightId = 6;
   public static final int kEncoderLeftId = 7;
 
-  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.341);
-  public static final Angle leftEncoderZeroOffset = Rotations.of(0.028);
+  public static final Angle rightEncoderZeroOffset = Rotations.of(0.2265);
+  public static final Angle leftEncoderZeroOffset = Rotations.of(0.2089);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
@@ -83,12 +90,13 @@ public final class TurretConstants {
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToRightEncoderGearRatio;
-    motorFeedbackConfigs.SensorToMechanismRatio =
-        kMotorToTurretGearRatio / kMotorToRightEncoderGearRatio;
+    motorFeedbackConfigs.SensorToMechanismRatio = kRightEncoderToTurretGearRatio;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kAbsoluteMaxAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = kAbsoluteMinAngle.in(Rotations);
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
     motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+    motorFeedbackConfigs.FeedbackRemoteSensorID = 6;
+    motorFeedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
 
     cancoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
     cancoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;

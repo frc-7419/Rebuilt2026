@@ -3,6 +3,7 @@ package frc.robot.commands;
 import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.shooter.Shooter;
 import java.util.function.DoubleSupplier;
@@ -20,7 +21,7 @@ public final class ShooterCommands {
         shooter);
   }
 
-  public static Command velocityShooter(Shooter shooter, double rpm) {
-    return run(() -> shooter.setRPM(rpm), shooter);
+  public static Command velocityShooter(Shooter shooter, AngularVelocity velocity) {
+    return run(() -> shooter.setVelocity(velocity), shooter);
   }
 }

@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.wpilibj2.command.Commands.run;
@@ -141,7 +142,7 @@ public final class AutoAim {
       rpm = ShooterConstants.kAutoAimRPMMax;
     }
 
-    shooter.setRPM(rpm);
+    shooter.setVelocity(RPM.of(rpm));
 
     hood.setAngle(Radians.of(hoodAngleRad));
 
