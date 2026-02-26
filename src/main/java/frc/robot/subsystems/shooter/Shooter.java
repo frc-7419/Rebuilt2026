@@ -46,6 +46,7 @@ public class Shooter extends SubsystemBase {
             ShooterConstants.kMinVelocity.in(RadiansPerSecond),
             ShooterConstants.kMaxVelocity.in(RadiansPerSecond));
     AngularVelocity target = RadiansPerSecond.of(clamped);
+    requestedRpm = target.in(RPM);
 
     Logger.recordOutput("Shooter/RequestedRPM", target.in(RPM));
     io.setVelocity(target);
