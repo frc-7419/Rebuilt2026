@@ -133,13 +133,29 @@ public final class AutoAim {
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
     if (!hubMode) rpm = Math.min(rpm, getPassRPM());
-    double noShootXBlue = 4.5;
-    boolean pastNoShootLine =
+    double allianceLineXBlue = 4.5;
+    boolean pastAllianceLine =
         state.isRedAlliance()
-            ? robotPose.getX() < (kFieldLengthMeters - noShootXBlue)
-            : robotPose.getX() > noShootXBlue;
-    if (hubMode && pastNoShootLine) {
-      rpm = ShooterConstants.kAutoAimRPMMax;
+            ? robotPose.getX() < (kFieldLengthMeters - allianceLineXBlue)
+            : robotPose.getX() > allianceLineXBlue;
+    if (hubMode && pastAllianceLine) {
+      rpm = ShooterConstants.kAutoAimRPMMax - 500;
+      hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
+    }
+
+    final double kObstacleZoneXMin = 4.472;
+    final double kObstacleZoneXMax = 5.0;
+    final double kTurretObstacleRadiusM = 0.33;
+    double pivotX = turretPivotField.getX();
+    double blueBandMin = kObstacleZoneXMin - kTurretObstacleRadiusM;
+    double blueBandMax = kObstacleZoneXMax + kTurretObstacleRadiusM;
+    double redBandMin = kFieldLengthMeters - kObstacleZoneXMax - kTurretObstacleRadiusM;
+    double redBandMax = kFieldLengthMeters - kObstacleZoneXMin + kTurretObstacleRadiusM;
+    boolean inObstacleZone =
+        (pivotX >= blueBandMin && pivotX <= blueBandMax)
+            || (pivotX >= redBandMin && pivotX <= redBandMax);
+    if (inObstacleZone) {
+      hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
     }
 
     shooter.setVelocity(RPM.of(rpm));
