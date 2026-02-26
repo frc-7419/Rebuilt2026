@@ -4,6 +4,8 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
+import static frc.robot.subsystems.turret.TurretConstants.kLeftEncoderToTurretGearRatio;
+import static frc.robot.subsystems.turret.TurretConstants.kRightEncoderToTurretGearRatio;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
@@ -34,7 +36,7 @@ public class Turret extends SubsystemBase {
     this.io = io;
     config =
         new EasyCRTConfig(() -> inputs.rightEncoderPosition, () -> inputs.leftEncoderPosition)
-            .withCommonDriveGear((130.0 / 10.0) * (60.0 / 30.0), 30, 17, 16)
+            .withEncoderRatios(kRightEncoderToTurretGearRatio, kLeftEncoderToTurretGearRatio)
             .withMechanismRange(
                 TurretConstants.kAbsoluteMinAngle, TurretConstants.kAbsoluteMaxAngle)
             .withAbsoluteEncoderInversions(false, true)

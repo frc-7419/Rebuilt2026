@@ -36,11 +36,11 @@ public final class ShooterConstants {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    motorSlot0Configs.kP = 0.45;
+    motorSlot0Configs.kP = 0.63;
     motorSlot0Configs.kI = 0;
     motorSlot0Configs.kD = 0;
-    motorSlot0Configs.kV = 0;
-    motorSlot0Configs.kS = 0;
+    motorSlot0Configs.kV = 0.1369;
+    motorSlot0Configs.kS = 0.2;
   }
 
   public static final double kSimP = 1.0;
