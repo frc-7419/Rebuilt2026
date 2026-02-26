@@ -79,7 +79,7 @@ public class SerializerIOSim implements SerializerIO {
   }
 
   @Override
-  public void setOpenLoop(double volts) {
+  public void setSerializerOpenLoop(double volts) {
     serializerVelocityControl = false;
     serializerVelocityController.reset();
     serializerAppliedVolts = clamp(volts, -12.0, 12.0);

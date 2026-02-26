@@ -1,6 +1,7 @@
 package frc.robot.subsystems.serializer;
 
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -9,8 +10,8 @@ import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Serializer subsystem containing the serializer wheel and feeder rollers for feeding fuel into the
- * turret.
+ * Subsystem with two parts: center wheel (serializer) and feeder (into shooter). Both can be run
+ * together or stopped together.
  */
 public class Serializer extends SubsystemBase {
   private final SerializerIO io;
@@ -29,83 +30,88 @@ public class Serializer extends SubsystemBase {
     RobotState.getInstance().addHopperUpdates(timestamp, inputs.serializerVelocity);
   }
 
-  // ==================== Serializer Wheel Methods ====================
+  // --------------- Center wheel (serializer) ---------------
 
-  /** Set serializer wheel in open loop (volts). Cancels any velocity hold. */
-  public void setOpenLoop(double volts) {
-    io.setOpenLoop(volts);
+  /** Center wheel open-loop voltage. */
+  public void setSerializerVoltage(double volts) {
+    io.setSerializerOpenLoop(volts);
   }
 
   /** Set serializer wheel target RPM (closed-loop in IO). */
-  public void setRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(edu.wpi.first.units.Units.RadiansPerSecond);
+  public void setSerializerRPM(double rpm) {
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
 
     double clamped =
         MathUtil.clamp(
             targetRadPerSec,
-            SerializerConstants.kMinVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond),
-            SerializerConstants.kMaxVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
 
-    AngularVelocity target = edu.wpi.first.units.Units.RadiansPerSecond.of(clamped);
+    AngularVelocity target = RadiansPerSecond.of(clamped);
 
     Logger.recordOutput("Serializer/RequestedRadPerSec", clamped);
     Logger.recordOutput("Serializer/RequestedRPM", target.in(RPM));
-
     io.setVelocity(target);
   }
 
-  /** Cancels any velocity hold and stops the serializer wheel. */
-  public void stop() {
-    io.setOpenLoop(0.0);
+  /** Stop center wheel. */
+  public void stopSerializer() {
+    io.setSerializerOpenLoop(0.0);
   }
 
-  /** Returns the most recent serializer wheel velocity. */
-  public AngularVelocity getVelocity() {
+  public AngularVelocity getSerializerVelocity() {
     return inputs.serializerVelocity;
   }
 
-  /** Convenience accessor in RPM. */
-  public double getRPM() {
+  public double getSerializerRPM() {
     return inputs.serializerVelocity.in(RPM);
   }
 
-  // ==================== Feeder Roller Methods ====================
+  // --------------- Feeder (into shooter) ---------------
 
-  /** Set feeder rollers in open loop (volts). */
-  public void setFeederOpenLoop(double volts) {
+  /** Feeder open-loop voltage. */
+  public void setFeederVoltage(double volts) {
     io.setFeederOpenLoop(volts);
   }
 
-  /** Set feeder rollers target RPM (closed-loop in IO). */
+  /** Feeder closed-loop RPM. */
   public void setFeederRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(edu.wpi.first.units.Units.RadiansPerSecond);
-
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
     double clamped =
         MathUtil.clamp(
             targetRadPerSec,
-            SerializerConstants.kMinVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond),
-            SerializerConstants.kMaxVelocity.in(edu.wpi.first.units.Units.RadiansPerSecond));
-
-    AngularVelocity target = edu.wpi.first.units.Units.RadiansPerSecond.of(clamped);
-
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
+    AngularVelocity target = RadiansPerSecond.of(clamped);
     Logger.recordOutput("Serializer/FeederRequestedRadPerSec", clamped);
     Logger.recordOutput("Serializer/FeederRequestedRPM", target.in(RPM));
-
     io.setFeederVelocity(target);
   }
 
-  /** Stop the feeder rollers. */
+  /** Stop feeder. */
   public void stopFeeder() {
     io.setFeederOpenLoop(0.0);
   }
 
-  /** Returns the most recent feeder roller velocity. */
   public AngularVelocity getFeederVelocity() {
     return inputs.feederVelocity;
   }
 
-  /** Convenience accessor in RPM for feeder. */
   public double getFeederRPM() {
     return inputs.feederVelocity.in(RPM);
+  }
+
+  // --------------- Both ---------------
+
+  /** Run both at given voltages (e.g. shoot or reverse). */
+  public void setBothVoltage(double serializerVolts, double feederVolts) {
+    io.setSerializerOpenLoop(serializerVolts);
+    io.setFeederOpenLoop(feederVolts);
+  }
+
+  /** Stop both center wheel and feeder. */
+  public void stopBoth() {
+    io.setSerializerOpenLoop(0.0);
+    io.setFeederOpenLoop(0.0);
   }
 }

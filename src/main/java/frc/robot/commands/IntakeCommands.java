@@ -4,6 +4,7 @@ import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intake.Intake;
 import java.util.function.DoubleSupplier;
@@ -36,9 +37,13 @@ public final class IntakeCommands {
     return run(() -> intake.setWheelOpenLoop(volts), intake);
   }
 
+  public static Command runWheelWithVelocity(Intake intake, AngularVelocity vel) {
+    return run(() -> intake.setWheelVelocity(vel), intake);
+  }
+
   /** Set intake wrist to a specific angle. */
   public static Command setWristAngle(Intake intake, Angle angle) {
-    return runOnce(() -> intake.setWristAngle(angle), intake).andThen(idle(intake));
+    return runOnce(() -> intake.setWristAngle(angle), intake);
   }
 
   /** Stop both wheel and wrist. */

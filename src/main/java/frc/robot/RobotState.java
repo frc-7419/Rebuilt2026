@@ -66,6 +66,13 @@ public class RobotState {
   private final AtomicReference<ChassisSpeeds> desiredFieldRelativeChassisSpeeds =
       new AtomicReference<>(new ChassisSpeeds());
 
+  private boolean isShooting = false;
+  private boolean isIntaking = false;
+  private boolean intakeDown = false;
+  private boolean autoAimEnabled = false; // change to true in comp
+  private boolean hubMode = true;
+  private boolean autoAimArcValid = false;
+
   @AutoLogOutput private Pose2d estimatedPose = Pose2d.kZero;
 
   private RobotState() {
@@ -216,7 +223,7 @@ public class RobotState {
     var buffer = shooterVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
     return RadiansPerSecond.of(value);
-    // return RotationsPerSecond.of(50);
+    // return RotationsPerSecond.of(5);
   }
 
   public boolean isRedAlliance() {
@@ -320,6 +327,112 @@ public class RobotState {
     var buffer = hopperVelocity.getInternalBuffer();
     double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
     return RadiansPerSecond.of(value);
+  }
+
+  @AutoLogOutput
+  public boolean isShooting() {
+    return isShooting;
+  }
+
+  public void setShooting(boolean shooting) {
+    isShooting = shooting;
+  }
+
+  @AutoLogOutput
+  public boolean isIntaking() {
+    return isIntaking;
+  }
+
+  public void setIntaking(boolean intaking) {
+    isIntaking = intaking;
+  }
+
+  @AutoLogOutput
+  public boolean isIntakeDown() {
+    return intakeDown;
+  }
+
+  public void setIntakeDown(boolean down) {
+    intakeDown = down;
+  }
+
+  @AutoLogOutput
+  public boolean isAutoAimEnabled() {
+    return autoAimEnabled;
+  }
+
+  public void setAutoAimEnabled(boolean enabled) {
+    autoAimEnabled = enabled;
+  }
+
+  @AutoLogOutput
+  public boolean isHubMode() {
+    return hubMode;
+  }
+
+  public void setHubMode(boolean hub) {
+    hubMode = hub;
+  }
+
+  @AutoLogOutput
+  public boolean isAutoAimArcValid() {
+    return autoAimArcValid;
+  }
+
+  public void setAutoAimArcValid(boolean valid) {
+    autoAimArcValid = valid;
+  }
+
+  // --------------- Fuel capacity (sim only; used when Constants.kSimulateFuelCapacity)
+  // ---------------
+
+  private int fuelStored = 0;
+  private double pendingFuel = 0.0;
+  private double intakeAccumulator = 0.0;
+  private double lastIntakeSimTimeSec = Double.NaN;
+
+  @AutoLogOutput
+  public int getFuelStored() {
+    return fuelStored;
+  }
+
+  /**
+   * True when robot can intake more fuel: under capacity and intake rate not exceeding max dr/dt
+   * (no fuel still in the pipe).
+   */
+  public boolean canIntake() {
+    if (fuelStored >= Constants.kFuelCapacity) return false;
+    return pendingFuel < 1.0;
+  }
+
+  public void intakeFuel() {
+    pendingFuel += 1.0;
+  }
+
+  /**
+   * Advance intake rate simulation: drain pending fuel into fuelStored at max rate. Call from
+   * simulation periodic when {@link Constants#kSimulateFuelCapacity}.
+   */
+  public void updateIntakeSimulation(double nowSec) {
+    if (Double.isNaN(lastIntakeSimTimeSec)) {
+      lastIntakeSimTimeSec = nowSec;
+      return;
+    }
+    double dt = nowSec - lastIntakeSimTimeSec;
+    lastIntakeSimTimeSec = nowSec;
+    double maxRate = Constants.kMaxIntakeRatePerSecond;
+    double canAdd = Math.min(pendingFuel, maxRate * dt);
+    pendingFuel -= canAdd;
+    intakeAccumulator += canAdd;
+    while (intakeAccumulator >= 1.0 && fuelStored < Constants.kFuelCapacity) {
+      fuelStored++;
+      intakeAccumulator -= 1.0;
+    }
+  }
+
+  /** Decrement stored fuel (call when sim launches a ball). No-op if already 0. */
+  public void consumeFuel() {
+    if (fuelStored > 0) fuelStored--;
   }
 
   public record VisionObservation(double timestamp, Pose2d visionPose, Matrix<N3, N1> stdDevs) {}

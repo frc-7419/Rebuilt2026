@@ -18,7 +18,7 @@ public final class HoodConstants {
 
   public static final double kMotorToHoodGearRatio = (50.0 / 8.0) * (144.0 / 10.0);
 
-  public static final Angle kMinAngle = Degrees.of(25.0);
+  public static final Angle kMinAngle = Degrees.of(30.0);
   public static final Angle kMaxAngle = Degrees.of(64.0);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
@@ -27,9 +27,9 @@ public final class HoodConstants {
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    motorConfig.CurrentLimits.StatorCurrentLimit = 6;
+    motorConfig.CurrentLimits.StatorCurrentLimit = 50;
 
-    motorSlot0Configs.kP = 2.0;
+    motorSlot0Configs.kP = 10.0;
     motorSlot0Configs.kI = 0.0;
     motorSlot0Configs.kD = 0.0;
     motorSlot0Configs.kV = 0.0;

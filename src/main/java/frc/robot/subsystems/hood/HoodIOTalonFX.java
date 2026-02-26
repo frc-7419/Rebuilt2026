@@ -10,10 +10,12 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import org.littletonrobotics.junction.Logger;
 
 /** TalonFX implementation of HoodIO: position (MotionMagic) and open loop. */
 public class HoodIOTalonFX implements HoodIO {
@@ -63,7 +65,10 @@ public class HoodIOTalonFX implements HoodIO {
 
   @Override
   public void setPosition(Angle position) {
-    motor.setControl(motionMagicRequest.withPosition(position.times(kMotorToHoodGearRatio)));
+    motor.setControl(
+        motionMagicRequest.withPosition(position.in(Units.Rotations) * (kMotorToHoodGearRatio)));
+    Logger.recordOutput(
+        "Hood/RequestedPositionRotations", position.in(Units.Rotations) * (kMotorToHoodGearRatio));
   }
 
   @Override

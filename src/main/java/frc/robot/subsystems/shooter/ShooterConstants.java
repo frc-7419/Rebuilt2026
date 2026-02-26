@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.RPM;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
@@ -32,11 +33,12 @@ public final class ShooterConstants {
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
 
   static {
-    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    motorSlot0Configs.kP = 10;
+    motorSlot0Configs.kP = 0.45;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 0.1;
+    motorSlot0Configs.kD = 0;
     motorSlot0Configs.kV = 0;
     motorSlot0Configs.kS = 0;
   }
@@ -51,7 +53,16 @@ public final class ShooterConstants {
 
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 10.0;
+  /** Estimated velocity, tune to robot */
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec =
+      kMotorToShooterGearRatio * 2.0 * Math.PI * kShooterWheelRadius.baseUnitMagnitude();
 
-  public static final double kSpinTransfer = 0.5;
+  /** Default RPM for pass shots */
+  public static final double kAutoAimRPM = 3000.0;
+
+  /** Min speed before firing. */
+  public static final double kAutoAimRPMMin = 1000.0;
+
+  /** Hardware bound */
+  public static final double kAutoAimRPMMax = 3500.0;
 }

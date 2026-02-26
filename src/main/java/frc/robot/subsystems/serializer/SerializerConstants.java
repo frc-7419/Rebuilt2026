@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.RPM;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.AngularVelocity;
 
@@ -40,6 +41,7 @@ public class SerializerConstants {
     serializerSlot0Configs.kS = 0.0;
 
     feederMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    feederMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     feederSlot0Configs.kP = 5.0;
     feederSlot0Configs.kI = 0.0;
     feederSlot0Configs.kD = 0.05;

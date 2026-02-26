@@ -3,6 +3,7 @@ package frc.robot.commands;
 import static edu.wpi.first.math.MathUtil.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.hood.Hood;
 import java.util.function.DoubleSupplier;
@@ -18,5 +19,9 @@ public final class HoodCommands {
           hood.setOpenLoop(val * 3); // scale to volts
         },
         hood);
+  }
+
+  public static Command hoodPosition(Hood hood, Angle angle) {
+    return run(() -> hood.setAngle(angle), hood);
   }
 }

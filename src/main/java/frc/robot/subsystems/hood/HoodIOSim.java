@@ -43,7 +43,7 @@ public class HoodIOSim implements HoodIO {
       double currentRad = mechanismRad;
 
       double pidOutput = positionController.calculate(currentRad, targetRad);
-      appliedVolts = clamp(-pidOutput, -kMaxVoltage, kMaxVoltage);
+      appliedVolts = clamp(pidOutput, -kMaxVoltage, kMaxVoltage);
     }
 
     mechanismRad = clamp(mechanismRad, kMinAngle.in(Radians), kMaxAngle.in(Radians));

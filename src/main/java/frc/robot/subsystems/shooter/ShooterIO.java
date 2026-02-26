@@ -16,6 +16,8 @@ public interface ShooterIO {
     /** Mechanism (wheel) velocity after gear ratio. */
     public AngularVelocity shooterVelocity = RPM.of(0.0);
 
+    public AngularVelocity requestedVelocity = RPM.of(0.0);
+
     public double appliedVolts = 0.0;
     public double currentAmps = 0.0;
   }

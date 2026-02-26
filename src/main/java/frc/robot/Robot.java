@@ -14,8 +14,10 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.intake.IntakeConstants;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -97,6 +99,12 @@ public class Robot extends LoggedRobot {
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
+
+    // Show in sim and replay simulation
+    if (Constants.currentMode != Constants.Mode.REAL) {
+      robotContainer.updateShooterTrajectoryVisualization();
+    }
+
     Rotation3d turretYaw =
         new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));
 
@@ -119,7 +127,7 @@ public class Robot extends LoggedRobot {
         Constants.hopperBasePose.transformBy(
             new Transform3d(
                 new Translation3d(
-                    -(intakePercentage * Constants.kSerializerMaxExtension.in(Meters)), 0, 0),
+                    -(intakePercentage * Constants.kHopperMaxExtension.in(Meters)), 0, 0),
                 new Rotation3d()));
 
     Pose3d intakePose =
@@ -195,6 +203,15 @@ public class Robot extends LoggedRobot {
       if (drive != null) {
         var groundTruthPose = drive.getOdometryOnlyPose();
         simulatedRobotState.addFieldToRobot(groundTruthPose);
+      }
+      var fuelSim = robotContainer.getFuelSim();
+      if (fuelSim != null) {
+        fuelSim.updateSim();
+        Logger.recordOutput("FuelSim/BlueHubScore", FuelSim.Hub.BLUE_HUB.getScore());
+        Logger.recordOutput("FuelSim/RedHubScore", FuelSim.Hub.RED_HUB.getScore());
+      }
+      if (Constants.kSimulateFuelCapacity) {
+        RobotState.getInstance().updateIntakeSimulation(Timer.getFPGATimestamp());
       }
     }
   }
