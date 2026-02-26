@@ -4,8 +4,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
-import static frc.robot.subsystems.turret.TurretConstants.kLeftEncoderToTurretGearRatio;
-import static frc.robot.subsystems.turret.TurretConstants.kRightEncoderToTurretGearRatio;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
@@ -36,9 +34,9 @@ public class Turret extends SubsystemBase {
     this.io = io;
     config =
         new EasyCRTConfig(() -> inputs.rightEncoderPosition, () -> inputs.leftEncoderPosition)
-            .withEncoderRatios(kRightEncoderToTurretGearRatio, kLeftEncoderToTurretGearRatio)
+            .withCommonDriveGear((130.0 / 10.0) * (60.0 / 30.0), 30, 17, 16)
             .withMechanismRange(
-                TurretConstants.kAbsoluteMinAngle, TurretConstants.kAbsoluteMaxAngle)
+                Degrees.of(-60), Degrees.of(60))
             .withAbsoluteEncoderInversions(false, true)
             .withMatchTolerance(Rotations.of(0.06))
             .withAbsoluteEncoderOffsets(
@@ -129,6 +127,14 @@ public class Turret extends SubsystemBase {
 
     String status = easyCrtSolver.getLastStatus();
     Logger.recordOutput("Turret/CRTSolverStatus", status);
+
+    easyCrtSolver
+        .getAngleOptional()
+        .ifPresent(
+            angle -> {
+              Logger.recordOutput("Turret/CRTSolverAngleDeg", angle.in(Degrees));
+            });
+
     return easyCrtSolver.getAngleOptional().isPresent();
   }
 }
