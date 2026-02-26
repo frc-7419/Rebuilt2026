@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 8.190086371527778,
-        "y": 4.057832465277778
+        "x": 7.795686320334758,
+        "y": 1.298838920049858
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.529257089120371,
-        "y": 2.536980324074075
+        "x": 7.13485703792735,
+        "y": -0.22201322115384547
       },
       "isLocked": false,
       "linkedName": "RightDeepPickup"
@@ -48,7 +48,7 @@
   "folder": "Shoot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -62.82540916474062
+    "rotation": -89.51932830512764
   },
   "useDefaultConstraints": true
 }
