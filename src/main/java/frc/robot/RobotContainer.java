@@ -177,6 +177,8 @@ public class RobotContainer {
         break;
     }
 
+    controlManager.registerNamedCommands(intake, shooter, serializer);
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
