@@ -34,21 +34,17 @@ public class Shooter extends SubsystemBase {
     io.setOpenLoop(volts);
   }
 
-  /** Set shooter target RPM (closed-loop in IO). */
-  public void setRPM(double rpm) {
-    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
-
+  /** Set shooter target velocity. Clamped to constants. */
+  public void setVelocity(AngularVelocity velocity) {
+    double targetRadPerSec = velocity.in(RadiansPerSecond);
     double clamped =
         clamp(
             targetRadPerSec,
             ShooterConstants.kMinVelocity.in(RadiansPerSecond),
             ShooterConstants.kMaxVelocity.in(RadiansPerSecond));
-
     AngularVelocity target = RadiansPerSecond.of(clamped);
 
-    Logger.recordOutput("Shooter/RequestedRadPerSec", clamped);
     Logger.recordOutput("Shooter/RequestedRPM", target.in(RPM));
-
     io.setVelocity(target);
   }
 
@@ -62,7 +58,6 @@ public class Shooter extends SubsystemBase {
     return inputs.shooterVelocity;
   }
 
-  /** Convenience accessor in RPM. */
   public double getRPM() {
     return inputs.shooterVelocity.in(RPM);
   }

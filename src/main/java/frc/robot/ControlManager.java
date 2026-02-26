@@ -1,6 +1,7 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RPM;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -197,7 +198,7 @@ public final class ControlManager {
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
     revShooterTrigger
-        .whileTrue(Commands.run(() -> shooter.setRPM(3500), shooter))
-        .onFalse(Commands.runOnce(() -> shooter.setRPM(0), shooter));
+        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(3500)), shooter))
+        .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
   }
 }
