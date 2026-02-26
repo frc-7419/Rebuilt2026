@@ -7,13 +7,26 @@
         {
           "type": "named",
           "data": {
-            "name": "AutoAim"
+            "name": "EnableAutoAim"
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "StartRightToPickupRight"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartRightToPickupRight"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "LowerIntake"
+                }
+              }
+            ]
           }
         },
         {
@@ -55,15 +68,41 @@
           }
         },
         {
-          "type": "named",
+          "type": "race",
           "data": {
-            "name": "AutoShoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 1.5
+                }
+              }
+            ]
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "ShootRightToPickupRight"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "ShootRightToPickupRight"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "LowerIntake"
+                }
+              }
+            ]
           }
         },
         {
@@ -105,9 +144,22 @@
           }
         },
         {
-          "type": "named",
+          "type": "race",
           "data": {
-            "name": "AutoShoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 1.5
+                }
+              }
+            ]
           }
         }
       ]

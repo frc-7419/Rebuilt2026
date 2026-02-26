@@ -4,12 +4,12 @@
     {
       "anchor": {
         "x": 7.783,
-        "y": 5.432045066550926
+        "y": 6.210251591435185
       },
       "prevControl": null,
       "nextControl": {
         "x": 6.6195282706567795,
-        "y": 7.330282210010593
+        "y": 8.108488734894852
       },
       "isLocked": false,
       "linkedName": "PickupLeftEnd"
