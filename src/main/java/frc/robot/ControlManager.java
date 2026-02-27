@@ -201,6 +201,7 @@ public final class ControlManager {
     Trigger hoodPositionDownTrigger = operator.y();
     Trigger hoodPositionUpTrigger = operator.back();
 
+    operator.povLeft().onTrue(Commands.runOnce(() -> turret.zeroRotor(Degrees.of(0)), turret));
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(

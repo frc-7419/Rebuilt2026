@@ -19,11 +19,19 @@ public class VisionConstants {
   public static String kLimelightThreeTable = "limelight-three";
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
-  public static final double kLimelightFourCameraHeightM = 0.2;
-  public static final double kLimelightFourCameraPitchDeg = 0;
-  public static final double kLimelightFourCameraYawDeg = 90;
+  public static final double kLimelightFourCameraForwardM = -0.194;
+  public static final double kLimelightFourCameraSideM = -0.117;
+  public static final double kLimelightFourCameraHeightM = 0.508;
+  public static final double kLimelightFourCameraRollDeg = 0;
+  public static final double kLimelightFourCameraPitchDeg = 9.65;
+  public static final double kLimelightFourCameraYawDeg = 0;
   public static final double[] kLimelightFourCameraPose = {
-    0, 0, kLimelightFourCameraHeightM, 0, kLimelightFourCameraPitchDeg, kLimelightFourCameraYawDeg
+    kLimelightFourCameraForwardM,
+    kLimelightFourCameraSideM,
+    kLimelightFourCameraHeightM,
+    kLimelightFourCameraRollDeg,
+    kLimelightFourCameraPitchDeg,
+    kLimelightFourCameraYawDeg
   };
 
   public static final double kLimelightThreeCameraHeightM = 0.2;

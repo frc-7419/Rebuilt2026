@@ -35,8 +35,7 @@ public class Turret extends SubsystemBase {
     config =
         new EasyCRTConfig(() -> inputs.rightEncoderPosition, () -> inputs.leftEncoderPosition)
             .withCommonDriveGear((130.0 / 10.0) * (60.0 / 30.0), 30, 17, 16)
-            .withMechanismRange(
-                Degrees.of(-60), Degrees.of(60))
+            .withMechanismRange(Degrees.of(-60), Degrees.of(60))
             .withAbsoluteEncoderInversions(false, true)
             .withMatchTolerance(Rotations.of(0.06))
             .withAbsoluteEncoderOffsets(
@@ -122,19 +121,17 @@ public class Turret extends SubsystemBase {
         .getAngleOptional()
         .ifPresent(
             angle -> {
+              Logger.recordOutput("Turret/CRTSolverAngleDeg", (angle.in(Degrees)));
               io.zeroRotor(angle);
             });
 
     String status = easyCrtSolver.getLastStatus();
     Logger.recordOutput("Turret/CRTSolverStatus", status);
 
-    easyCrtSolver
-        .getAngleOptional()
-        .ifPresent(
-            angle -> {
-              Logger.recordOutput("Turret/CRTSolverAngleDeg", angle.in(Degrees));
-            });
-
     return easyCrtSolver.getAngleOptional().isPresent();
+  }
+
+  public void zeroRotor(Angle offset) {
+    io.zeroRotor(offset);
   }
 }
