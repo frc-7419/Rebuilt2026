@@ -34,6 +34,8 @@ public class TurretIOTalonFX implements TurretIO {
   private final StatusSignal<Angle> rightEncoderPosition;
   private final StatusSignal<Angle> leftEncoderPosition;
 
+  private Angle positionOffset = Degrees.of(0);
+
   // Control requests
   private final VoltageOut voltageRequest = new VoltageOut(0);
   private final PositionVoltage positionVoltageRequest = new PositionVoltage(0.0);
@@ -84,7 +86,7 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.currentAmps = motorCurrent.getValueAsDouble();
     inputs.velocity = turretVelocity.getValue();
     inputs.rotorPosition = rotorPosition.getValue();
-    inputs.turretPosition = turretPosition.getValue();
+    inputs.turretPosition = turretPosition.getValue().plus(positionOffset);
     inputs.rightEncoderPosition = rightEncoderPosition.getValue();
     inputs.leftEncoderPosition = leftEncoderPosition.getValue();
 
@@ -98,7 +100,7 @@ public class TurretIOTalonFX implements TurretIO {
       positionVoltageRequest.Position = setpoint.position;
       positionVoltageRequest.Velocity = setpoint.velocity;
 
-      inputs.requestedPosition = Rotations.of(setpoint.position);
+      inputs.requestedPosition = Rotations.of(setpoint.position).plus(positionOffset);
       inputs.requestedVelocity = RotationsPerSecond.of(setpoint.velocity);
 
       motor.setControl(positionVoltageRequest);
@@ -119,12 +121,13 @@ public class TurretIOTalonFX implements TurretIO {
   @Override
   public void setState(Angle position, AngularVelocity velocity) {
     positionControl = true;
-    goalState = new TrapezoidProfile.State(position.in(Rotations), velocity.in(RotationsPerSecond));
-    // Setpoint is computed every cycle in updateInputs from current state + goal
+    goalState =
+        new TrapezoidProfile.State(
+            position.minus(positionOffset).in(Rotations), velocity.in(RotationsPerSecond));
   }
 
   @Override
   public void zeroRotor(Angle offset) {
-    motor.setPosition(offset);
+    positionOffset = offset.minus(turretPosition.getValue());
   }
 }
