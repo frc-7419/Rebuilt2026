@@ -20,10 +20,14 @@ import frc.robot.subsystems.drive.Drive;
 import java.util.Optional;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 
 public class Vision extends SubsystemBase {
   private static final String LOG_FOUR = "Vision/LimelightFour/";
   private static final String LOG_THREE = "Vision/LimelightThree/";
+
+  private static final LoggedNetworkBoolean overrideMegatag1Only =
+      new LoggedNetworkBoolean("Vision/OverrideMegatag1Only", false);
 
   private final VisionIO io;
   private final RobotState robotState;
@@ -63,10 +67,13 @@ public class Vision extends SubsystemBase {
     Logger.recordOutput("Vision/limelightFourHasTarget", inputs.limelightFourHasTarget);
     Logger.recordOutput("Vision/limelightThreeHasTarget", inputs.limelightThreeHasTarget);
     Logger.recordOutput("Vision/useMegatag2Mode", useMegatag2Mode);
+    Logger.recordOutput("Vision/overrideMegatag1Only", overrideMegatag1Only.get());
 
     logCameraPoses();
 
-    if (useMegatag2Mode) {
+    boolean useMT2 = useMegatag2Mode && !overrideMegatag1Only.get();
+    Logger.recordOutput("Vision/effectiveMegatag2", useMT2);
+    if (useMT2) {
       if (inputs.limelightFourMT2Pose != null
           && inputs.limelightFourMT2Pose.timestampSeconds != lastFourMT2Timestamp) {
         processMegatag2(inputs.limelightFourMT2Pose, LOG_FOUR);
