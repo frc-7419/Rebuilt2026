@@ -8,8 +8,10 @@ public interface VisionIO {
     public boolean connected = false;
     public boolean limelightFourHasTarget;
     public boolean limelightThreeHasTarget;
-    public PoseObservation limelightFourPose;
-    public PoseObservation limelightThreePose;
+    public PoseObservation limelightFourMT1Pose;
+    public PoseObservation limelightThreeMT1Pose;
+    public PoseObservation limelightFourMT2Pose;
+    public PoseObservation limelightThreeMT2Pose;
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}

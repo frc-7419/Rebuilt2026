@@ -35,28 +35,28 @@ public class VisionIOLimelight implements VisionIO {
 
   private void updateRobotOrientation() {
     var latestRobotPose = robotState.getLatestFieldToRobot();
+    if (latestRobotPose == null) return;
 
-    if (latestRobotPose != null) {
-      Rotation2d robotRotation = latestRobotPose.getValue().getRotation();
-      var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
-      double robotYawRateDegPerS = Units.radiansToDegrees(robotSpeeds.omegaRadiansPerSecond);
+    Rotation2d robotRotation = latestRobotPose.getValue().getRotation();
+    var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
+    double robotYawRateDegPerS = Units.radiansToDegrees(robotSpeeds.omegaRadiansPerSecond);
 
-      LimelightHelpers.SetRobotOrientation(
-          kLimelightFourTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
-
-      LimelightHelpers.SetRobotOrientation(
-          kLimelightThreeTable,
-          robotRotation.getDegrees(),
-          robotYawRateDegPerS,
-          0.0,
-          0.0,
-          0.0,
-          0.0);
-    }
+    LimelightHelpers.SetRobotOrientation(
+        kLimelightFourTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
+    LimelightHelpers.SetRobotOrientation(
+        kLimelightThreeTable,
+        robotRotation.getDegrees(),
+        robotYawRateDegPerS,
+        0.0,
+        0.0,
+        0.0,
+        0.0);
   }
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
+    updateRobotOrientation();
+
     inputs.connected = true;
 
     boolean limelightFourSeesTarget = limelightFourTable.getEntry("tv").getDouble(0) == 1.0;
@@ -66,27 +66,29 @@ public class VisionIOLimelight implements VisionIO {
     inputs.limelightThreeHasTarget = limelightThreeSeesTarget;
 
     if (limelightFourSeesTarget) {
-      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLimelightFourTable);
-      if (megatag2 != null && megatag2.tagCount > 0) {
-        inputs.limelightFourPose = PoseObservation.fromLimelight(megatag2);
-      } else {
-        inputs.limelightFourPose = null;
-      }
+      var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kLimelightFourTable);
+      inputs.limelightFourMT1Pose =
+          (mt1 != null && mt1.tagCount > 0) ? PoseObservation.fromLimelight(mt1) : null;
+
+      var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLimelightFourTable);
+      inputs.limelightFourMT2Pose =
+          (mt2 != null && mt2.tagCount > 0) ? PoseObservation.fromLimelight(mt2) : null;
     } else {
-      inputs.limelightFourPose = null;
+      inputs.limelightFourMT1Pose = null;
+      inputs.limelightFourMT2Pose = null;
     }
 
     if (limelightThreeSeesTarget) {
-      var megatag2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLimelightThreeTable);
-      if (megatag2 != null && megatag2.tagCount > 0) {
-        inputs.limelightThreePose = PoseObservation.fromLimelight(megatag2);
-      } else {
-        inputs.limelightThreePose = null;
-      }
-    } else {
-      inputs.limelightThreePose = null;
-    }
+      var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kLimelightThreeTable);
+      inputs.limelightThreeMT1Pose =
+          (mt1 != null && mt1.tagCount > 0) ? PoseObservation.fromLimelight(mt1) : null;
 
-    updateRobotOrientation();
+      var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLimelightThreeTable);
+      inputs.limelightThreeMT2Pose =
+          (mt2 != null && mt2.tagCount > 0) ? PoseObservation.fromLimelight(mt2) : null;
+    } else {
+      inputs.limelightThreeMT1Pose = null;
+      inputs.limelightThreeMT2Pose = null;
+    }
   }
 }

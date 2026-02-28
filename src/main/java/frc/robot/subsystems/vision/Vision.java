@@ -7,11 +7,8 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -25,13 +22,20 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
+  private static final String LOG_FOUR = "Vision/LimelightFour/";
+  private static final String LOG_THREE = "Vision/LimelightThree/";
+
   private final VisionIO io;
   private final RobotState robotState;
   private final VisionIO.VisionIOInputs inputs = new VisionIO.VisionIOInputs();
   private Drive drive;
 
-  private double lastProcessedLeftTimestamp = 0.0;
-  private double lastProcessedRightTimestamp = 0.0;
+  private boolean useMegatag2Mode = false;
+
+  private double lastFourMT1Timestamp = 0.0;
+  private double lastFourMT2Timestamp = 0.0;
+  private double lastThreeMT1Timestamp = 0.0;
+  private double lastThreeMT2Timestamp = 0.0;
 
   public Vision(VisionIO io) {
     this.io = io;
@@ -42,193 +46,159 @@ public class Vision extends SubsystemBase {
     this.drive = drive;
   }
 
+  public void useMegatag1() {
+    useMegatag2Mode = false;
+  }
+
+  public void useMegatag2() {
+    useMegatag2Mode = true;
+  }
+
   @Override
   public void periodic() {
-    double timestamp = Timer.getFPGATimestamp();
+    double startTime = Timer.getFPGATimestamp();
     io.updateInputs(inputs);
+
     Logger.recordOutput("Vision/connected", inputs.connected);
     Logger.recordOutput("Vision/limelightFourHasTarget", inputs.limelightFourHasTarget);
     Logger.recordOutput("Vision/limelightThreeHasTarget", inputs.limelightThreeHasTarget);
+    Logger.recordOutput("Vision/useMegatag2Mode", useMegatag2Mode);
 
     logCameraPoses();
 
-    if (inputs.limelightFourHasTarget && inputs.limelightFourPose != null) {
-      updateVision(inputs.limelightFourPose, true);
-    }
-    if (inputs.limelightThreeHasTarget && inputs.limelightThreePose != null) {
-      updateVision(inputs.limelightThreePose, false);
+    if (useMegatag2Mode) {
+      if (inputs.limelightFourMT2Pose != null
+          && inputs.limelightFourMT2Pose.timestampSeconds != lastFourMT2Timestamp) {
+        processMegatag2(inputs.limelightFourMT2Pose, LOG_FOUR);
+        lastFourMT2Timestamp = inputs.limelightFourMT2Pose.timestampSeconds;
+      }
+      if (inputs.limelightThreeMT2Pose != null
+          && inputs.limelightThreeMT2Pose.timestampSeconds != lastThreeMT2Timestamp) {
+        processMegatag2(inputs.limelightThreeMT2Pose, LOG_THREE);
+        lastThreeMT2Timestamp = inputs.limelightThreeMT2Pose.timestampSeconds;
+      }
+    } else {
+      if (inputs.limelightFourMT1Pose != null
+          && inputs.limelightFourMT1Pose.timestampSeconds != lastFourMT1Timestamp) {
+        processMegatag1(inputs.limelightFourMT1Pose, LOG_FOUR);
+        lastFourMT1Timestamp = inputs.limelightFourMT1Pose.timestampSeconds;
+      }
+      if (inputs.limelightThreeMT1Pose != null
+          && inputs.limelightThreeMT1Pose.timestampSeconds != lastThreeMT1Timestamp) {
+        processMegatag1(inputs.limelightThreeMT1Pose, LOG_THREE);
+        lastThreeMT1Timestamp = inputs.limelightThreeMT1Pose.timestampSeconds;
+      }
     }
 
-    Logger.recordOutput("Vision/latencyPeriodicSec", Timer.getFPGATimestamp() - timestamp);
+    Logger.recordOutput("Vision/latencyPeriodicSec", Timer.getFPGATimestamp() - startTime);
   }
 
   @AutoLogOutput(key = "Vision/LimelightFourPose")
-  private Pose3d limelightFourPose = new Pose3d();
+  private Pose3d limelightFourCamPose = new Pose3d();
 
   @AutoLogOutput(key = "Vision/LimelightThreePose")
-  private Pose3d limelightThreePose = new Pose3d();
+  private Pose3d limelightThreeCamPose = new Pose3d();
 
   private void logCameraPoses() {
     var latestRobotPose = robotState.getLatestFieldToRobot();
     if (latestRobotPose == null) {
-      limelightFourPose = new Pose3d();
-      limelightThreePose = new Pose3d();
+      limelightFourCamPose = new Pose3d();
+      limelightThreeCamPose = new Pose3d();
       return;
     }
-
-    Pose2d robotPose = latestRobotPose.getValue();
-    Pose3d robotPose3d = new Pose3d(robotPose);
-
-    Transform3d robotToLimelightFourCamera3d = getCameraTransform(true);
-    limelightFourPose = robotPose3d.transformBy(robotToLimelightFourCamera3d);
-
-    Transform3d robotToLimelightThreeCamera3d = getCameraTransform(false);
-    limelightThreePose = robotPose3d.transformBy(robotToLimelightThreeCamera3d);
+    Pose3d robotPose3d = new Pose3d(latestRobotPose.getValue());
+    limelightFourCamPose = robotPose3d.transformBy(getCameraTransform(true));
+    limelightThreeCamPose = robotPose3d.transformBy(getCameraTransform(false));
   }
 
-  private void updateVision(PoseObservation observation, boolean isLimelightFour) {
-    String logPrefix = "Vision/" + (isLimelightFour ? "LimelightFour/" : "LimelightThree/");
-    double timestamp = observation.timestampSeconds;
-    double lastProcessedTimestamp =
-        isLimelightFour ? lastProcessedLeftTimestamp : lastProcessedRightTimestamp;
-
-    if (timestamp == lastProcessedTimestamp) {
+  private void processMegatag1(PoseObservation observation, String logPrefix) {
+    if (!hasValidPose(observation)) return;
+    if (!isMotionAcceptable(logPrefix)) {
+      Logger.recordOutput(logPrefix + "MT1Rejected", observation.estimatedPose);
       return;
     }
 
-    Optional<RobotState.VisionObservation> megatag2Estimate =
-        processMegatag2Estimate(observation, isLimelightFour, logPrefix);
-
-    if (megatag2Estimate.isPresent()) {
-      if (shouldUseMegatag2(observation, isLimelightFour, logPrefix)) {
-        Logger.recordOutput(logPrefix + "Megatag2Estimate", megatag2Estimate.get().visionPose());
-        addVisionObservation(megatag2Estimate.get());
-      } else {
-        Logger.recordOutput(
-            logPrefix + "Megatag2EstimateRejected", megatag2Estimate.get().visionPose());
-      }
-    }
-
-    if (isLimelightFour) {
-      lastProcessedLeftTimestamp = timestamp;
+    double xyStdDevMeters;
+    double thetaStdDevRad;
+    if (observation.tagCount >= 2) {
+      xyStdDevMeters = 0.5;
+      thetaStdDevRad = Units.degreesToRadians(10.0);
     } else {
-      lastProcessedRightTimestamp = timestamp;
-    }
-  }
-
-  private boolean shouldUseMegatag2(
-      PoseObservation observation, boolean isLimelightFour, String logPrefix) {
-    return isMotionAcceptable(observation.timestampSeconds, logPrefix);
-  }
-
-  private boolean isMotionAcceptable(double timestamp, String logPrefix) {
-    final double kMaxYawRateRadPerS = Units.degreesToRadians(100.0);
-
-    var robotSpeeds = robotState.getLatestRobotRelativeChassisSpeed();
-    double robotYawRateRadPerS = Math.abs(robotSpeeds.omegaRadiansPerSecond);
-
-    if (robotYawRateRadPerS > kMaxYawRateRadPerS) {
-      Logger.recordOutput(logPrefix + "motionAcceptable", false);
-      return false;
-    }
-    Logger.recordOutput(logPrefix + "motionAcceptable", true);
-    return true;
-  }
-
-  private Optional<Pose2d> getFieldToRobotEstimate(
-      PoseObservation observation, boolean isLimelightFour) {
-    Pose2d fieldToCamera = observation.estimatedPose;
-    if (fieldToCamera.getX() == 0.0) {
-      return Optional.empty();
+      xyStdDevMeters = 1.5;
+      thetaStdDevRad = Units.degreesToRadians(30.0);
     }
 
-    Transform3d robotToCamera3d = getCameraTransform(isLimelightFour);
-    Transform3d cameraToRobot3d = robotToCamera3d.inverse();
-    Transform2d cameraToRobot2d =
-        new Transform2d(
-            new Translation2d(cameraToRobot3d.getX(), cameraToRobot3d.getY()),
-            new Rotation2d(cameraToRobot3d.getRotation().getZ()));
-    return Optional.of(fieldToCamera.transformBy(cameraToRobot2d));
+    Matrix<N3, N1> stdDevs = VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, thetaStdDevRad);
+    Logger.recordOutput(logPrefix + "MT1Estimate", observation.estimatedPose);
+    Logger.recordOutput(logPrefix + "MT1XYStdDevMeters", xyStdDevMeters);
+
+    addVisionObservation(
+        new RobotState.VisionObservation(
+            observation.timestampSeconds, observation.estimatedPose, stdDevs));
+  }
+
+  private void processMegatag2(PoseObservation observation, String logPrefix) {
+    if (!hasValidPose(observation)) return;
+    if (!isMotionAcceptable(logPrefix)) {
+      Logger.recordOutput(logPrefix + "MT2Rejected", observation.estimatedPose);
+      return;
+    }
+
+    Optional<Pose2d> odometryPoseAtTime = robotState.getFieldToRobot(observation.timestampSeconds);
+    if (odometryPoseAtTime.isEmpty()) return;
+
+    double poseDifferenceMeters =
+        observation
+            .estimatedPose
+            .getTranslation()
+            .getDistance(odometryPoseAtTime.get().getTranslation());
+
+    double xyStdDevMeters = (observation.tagCount >= 2) ? 0.2 : 0.8;
+
+    if (poseDifferenceMeters < 0.20) {
+      xyStdDevMeters *= 2.0;
+    } else if (poseDifferenceMeters < 0.50) {
+      xyStdDevMeters *= 1.3;
+    } else if (poseDifferenceMeters > 1.50) {
+      xyStdDevMeters *= 0.75;
+    }
+
+    Pose2d correctedPose =
+        new Pose2d(
+            observation.estimatedPose.getTranslation(), odometryPoseAtTime.get().getRotation());
+
+    Matrix<N3, N1> stdDevs =
+        VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(9999.0));
+
+    Logger.recordOutput(logPrefix + "MT2Estimate", correctedPose);
+    Logger.recordOutput(logPrefix + "MT2XYStdDevMeters", xyStdDevMeters);
+    Logger.recordOutput(logPrefix + "MT2PoseDifferenceMeters", poseDifferenceMeters);
+
+    addVisionObservation(
+        new RobotState.VisionObservation(observation.timestampSeconds, correctedPose, stdDevs));
+  }
+
+  private boolean hasValidPose(PoseObservation observation) {
+    return observation.estimatedPose.getX() != 0.0 || observation.estimatedPose.getY() != 0.0;
+  }
+
+  private boolean isMotionAcceptable(String logPrefix) {
+    final double kMaxYawRateRadPerS = Units.degreesToRadians(720.0);
+    double yawRate =
+        Math.abs(robotState.getLatestRobotRelativeChassisSpeed().omegaRadiansPerSecond);
+    boolean acceptable = yawRate <= kMaxYawRateRadPerS;
+    Logger.recordOutput(logPrefix + "motionAcceptable", acceptable);
+    return acceptable;
   }
 
   private Transform3d getCameraTransform(boolean isLimelightFour) {
-    if (isLimelightFour) {
-      // kLeftCameraPose: [forward, side, up, roll(deg), pitch(deg), yaw(deg)]
-      return new Transform3d(
-          new Translation3d(
-              kLimelightFourCameraPose[0],
-              kLimelightFourCameraPose[1],
-              kLimelightFourCameraPose[2]),
-          new Rotation3d(
-              Units.degreesToRadians(kLimelightFourCameraPose[3]),
-              Units.degreesToRadians(kLimelightFourCameraPose[4]),
-              Units.degreesToRadians(kLimelightFourCameraPose[5])));
-    } else {
-      // kRightCameraPose: [forward, side, up, roll(deg), pitch(deg), yaw(deg)]
-      return new Transform3d(
-          new Translation3d(
-              kLimelightThreeCameraPose[0],
-              kLimelightThreeCameraPose[1],
-              kLimelightThreeCameraPose[2]),
-          new Rotation3d(
-              Units.degreesToRadians(kLimelightThreeCameraPose[3]),
-              Units.degreesToRadians(kLimelightThreeCameraPose[4]),
-              Units.degreesToRadians(kLimelightThreeCameraPose[5])));
-    }
-  }
-
-  private Optional<RobotState.VisionObservation> processMegatag2Estimate(
-      PoseObservation observation, boolean isLimelightFour, String logPrefix) {
-    Optional<Pose2d> loggedFieldToRobot = robotState.getFieldToRobot(observation.timestampSeconds);
-    if (loggedFieldToRobot.isEmpty()) {
-      return Optional.empty();
-    }
-
-    Optional<Pose2d> fieldToRobotEstimate = getFieldToRobotEstimate(observation, isLimelightFour);
-    if (fieldToRobotEstimate.isEmpty()) {
-      return Optional.empty();
-    }
-
-    double poseDifferenceMeters =
-        fieldToRobotEstimate
-            .get()
-            .getTranslation()
-            .getDistance(loggedFieldToRobot.get().getTranslation());
-
-    double xyStdDevMeters;
-    if (observation.fiducialIds != null && observation.fiducialIds.length > 0) {
-      if (observation.tagCount >= 2 || observation.fiducialIds.length >= 2) {
-        xyStdDevMeters = 0.2;
-      } else {
-        xyStdDevMeters = 0.80;
-      }
-
-      if (poseDifferenceMeters < 0.20) {
-        xyStdDevMeters *= 2.0;
-      } else if (poseDifferenceMeters < 0.50) {
-        xyStdDevMeters *= 1.3;
-      } else if (poseDifferenceMeters > 1.50) {
-        xyStdDevMeters *= 0.75;
-      }
-
-      Logger.recordOutput(logPrefix + "megatag2StdDevMeters", xyStdDevMeters);
-      Logger.recordOutput(logPrefix + "megatag2PoseDifferenceMeters", poseDifferenceMeters);
-
-      double thetaStdDevRad;
-      if (observation.tagCount >= 2 || observation.fiducialIds.length >= 2) {
-        thetaStdDevRad = Units.degreesToRadians(15.0);
-      } else {
-        thetaStdDevRad = Units.degreesToRadians(30.0);
-      }
-
-      Matrix<N3, N1> stdDevs = VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, thetaStdDevRad);
-      Pose2d correctedPose =
-          new Pose2d(
-              fieldToRobotEstimate.get().getTranslation(), loggedFieldToRobot.get().getRotation());
-      return Optional.of(
-          new RobotState.VisionObservation(observation.timestampSeconds, correctedPose, stdDevs));
-    }
-    return Optional.empty();
+    double[] p = isLimelightFour ? kLimelightFourCameraPose : kLimelightThreeCameraPose;
+    return new Transform3d(
+        new Translation3d(p[0], p[1], p[2]),
+        new Rotation3d(
+            Units.degreesToRadians(p[3]),
+            Units.degreesToRadians(p[4]),
+            Units.degreesToRadians(p[5])));
   }
 
   private void addVisionObservation(RobotState.VisionObservation observation) {

@@ -35,6 +35,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.VisionIO;
+import frc.robot.subsystems.vision.VisionIOLimelight;
+import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.hood.Hood;
 import frc.robot.subsystems.hood.HoodIO;
 import frc.robot.subsystems.hood.HoodIOSim;
@@ -68,7 +72,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  // private final Vision vision;
+  private final Vision vision;
   private final Turret turret;
   private final Shooter shooter;
   private final Hood hood;
@@ -123,8 +127,8 @@ public class RobotContainer {
         // new ModuleIOTalonFXS(TunerConstants.BackLeft),
         // new ModuleIOTalonFXS(TunerConstants.BackRight));
 
-        // vision = new Vision(new VisionIOLimelight());
-        // vision.setDrive(drive);
+        vision = new Vision(new VisionIOLimelight());
+        vision.setDrive(drive);
         turret = new Turret(new TurretIOTalonFX());
 
         shooter = new Shooter(new ShooterIOTalonFX());
@@ -146,8 +150,8 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.FrontRight),
                 new ModuleIOSim(TunerConstants.BackLeft),
                 new ModuleIOSim(TunerConstants.BackRight));
-        // vision = new Vision(new VisionIOPhotonVisionSim());
-        // vision.setDrive(drive);
+        vision = new Vision(new VisionIOPhotonVisionSim());
+        vision.setDrive(drive);
         turret = new Turret(new TurretIOSim());
         shooter = new Shooter(new ShooterIOSim());
         hood = new Hood(new HoodIOSim());
@@ -166,8 +170,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
 
-        // vision = new Vision(new VisionIO() {});
-        // vision.setDrive(drive);
+        vision = new Vision(new VisionIO() {});
+        vision.setDrive(drive);
         turret = new Turret(new TurretIO() {});
 
         shooter = new Shooter(new ShooterIO() {});
@@ -312,6 +316,15 @@ public class RobotContainer {
    */
   public Drive getDrive() {
     return drive;
+  }
+
+  /**
+   * Gets the vision subsystem.
+   *
+   * @return the vision subsystem
+   */
+  public Vision getVision() {
+    return vision;
   }
 
   /**

@@ -20,6 +20,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.intake.IntakeConstants;
+import frc.robot.subsystems.vision.VisionConstants;
+import frc.robot.util.LimelightHelpers;
+
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -142,21 +145,27 @@ public class Robot extends LoggedRobot {
 
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    robotContainer.getVision().useMegatag1();
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 1);
+  }
 
   /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+  }
 
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
+    robotContainer.getVision().useMegatag2();
+
     autonomousCommand = robotContainer.getAutonomousCommand();
 
-    // schedule the autonomous command (example)
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 4);
   }
 
   /** This function is called periodically during autonomous. */
@@ -166,13 +175,12 @@ public class Robot extends LoggedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    // This makes sure that the autonomous stops running when
-    // teleop starts running. If you want the autonomous to
-    // continue until interrupted by another command, remove
-    // this line or comment it out.
+    robotContainer.getVision().useMegatag2();
+
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 4);
   }
 
   /** This function is called periodically during operator control. */
