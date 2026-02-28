@@ -335,6 +335,17 @@ public final class AutoAim {
     return launchVelConstant.get();
   }
 
+  private static final double kLaunchVelConstantStep = 0.1;
+
+  public static void decreaseLaunchVelConstant() {
+    double v = Math.max(0.0, launchVelConstant.get() - kLaunchVelConstantStep);
+    launchVelConstant.set(v);
+  }
+
+  public static void increaseLaunchVelConstant() {
+    launchVelConstant.set(launchVelConstant.get() + kLaunchVelConstantStep);
+  }
+
   private static Translation3d resolveTarget(Pose2d robotPose, RobotState state, boolean hubMode) {
     if (hubMode) {
       Translation2d hub =

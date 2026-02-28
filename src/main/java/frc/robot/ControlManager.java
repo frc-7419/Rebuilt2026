@@ -202,6 +202,8 @@ public final class ControlManager {
     Trigger hoodPositionUpTrigger = operator.back();
 
     operator.povLeft().onTrue(Commands.runOnce(() -> turret.zeroRotor(Degrees.of(0)), turret));
+    operator.povLeft().onTrue(Commands.runOnce(AutoAim::decreaseLaunchVelConstant));
+    operator.povRight().onTrue(Commands.runOnce(AutoAim::increaseLaunchVelConstant));
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
