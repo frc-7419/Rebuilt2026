@@ -23,6 +23,7 @@ import frc.robot.subsystems.turret.TurretConstants;
 import frc.robot.util.KinematicsHelper;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 /** Auto-aim: hub shots (funnel solver) or pass shots (drag solver). */
@@ -132,7 +133,7 @@ public final class AutoAim {
 
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
-    if (!hubMode) rpm = Math.min(rpm, getPassRPM());
+    if (!hubMode && !isPassCenter()) rpm = Math.min(rpm, getPassRPM());
     double allianceLineXBlue = 4.5;
     boolean pastAllianceLine =
         state.isRedAlliance()
@@ -210,6 +211,8 @@ public final class AutoAim {
     Logger.recordOutput("AutoAim/FunnelConstraintMet", hubMode ? lastFunnelConstraintMet : true);
     Logger.recordOutput("AutoAim/Inputs/RobotPose", robotPose);
     Logger.recordOutput("AutoAim/Inputs/HubMode", hubMode);
+    Logger.recordOutput(
+        "AutoAim/Inputs/PassMode", isPassCenter() ? PassMode.CENTER.name() : PassMode.SIDES.name());
     Logger.recordOutput("AutoAim/Inputs/StaticTarget", staticTarget);
     Logger.recordOutput("AutoAim/Inputs/TurretPivotField", turretPivotField);
     Logger.recordOutput("AutoAim/Inputs/LaunchSpeedMps", launchSpeedMps);
@@ -300,6 +303,26 @@ public final class AutoAim {
       new LoggedNetworkNumber(
           "AutoAim/LaunchVelConstant", ShooterConstants.kFuelLaunchVelMetersPerSecPerRotPerSec);
 
+  public enum PassMode {
+    CENTER,
+    SIDES
+  }
+
+  private static final LoggedDashboardChooser<PassMode> passModeChooser;
+
+  static {
+    passModeChooser = new LoggedDashboardChooser<>("Pass Mode");
+    passModeChooser.addDefaultOption("Center Pass", PassMode.CENTER);
+    passModeChooser.addOption("Side Pass", PassMode.SIDES);
+  }
+
+  private static final Translation2d kPassCenterBlue = new Translation2d(2.4, 4.0);
+
+  private static boolean isPassCenter() {
+    PassMode mode = passModeChooser.get();
+    return mode == null || mode == PassMode.CENTER;
+  }
+
   private static double getPassRPM() {
     double override = passRPMOverride.get();
     if (override >= ShooterConstants.kAutoAimRPMMin) {
@@ -317,6 +340,10 @@ public final class AutoAim {
       Translation2d hub =
           allianceFlip(Constants.kHubPoseBlue.getTranslation(), state.isRedAlliance());
       return new Translation3d(hub.getX(), hub.getY(), Constants.kHubTargetHeightMeters);
+    }
+    if (isPassCenter()) {
+      Translation2d pass = allianceFlip(kPassCenterBlue, state.isRedAlliance());
+      return new Translation3d(pass.getX(), pass.getY(), 0.0);
     }
     Translation2d passingBlue =
         robotPose.getY() > Constants.kPassingYThresholdMeters
