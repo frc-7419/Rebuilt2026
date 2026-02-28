@@ -118,7 +118,7 @@ public class Vision extends SubsystemBase {
 
   private boolean shouldUseMegatag2(
       PoseObservation observation, boolean isLimelightFour, String logPrefix) {
-    return isMotionAcceptable(observation.timestampSeconds, logPrefix);
+    return false;
   }
 
   private boolean isMotionAcceptable(double timestamp, String logPrefix) {

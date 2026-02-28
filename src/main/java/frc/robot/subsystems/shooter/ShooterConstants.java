@@ -54,13 +54,14 @@ public final class ShooterConstants {
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
   /** Estimated velocity, tune to robot */
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 1.97;
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec =
+      kMotorToShooterGearRatio * 2.0 * Math.PI * kShooterWheelRadius.baseUnitMagnitude();
 
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;
 
   /** Min speed before firing. */
-  public static final double kAutoAimRPMMin = 400.0;
+  public static final double kAutoAimRPMMin = 1000.0;
 
   /** Hardware bound */
   public static final double kAutoAimRPMMax = 3500.0;
