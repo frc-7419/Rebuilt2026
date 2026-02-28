@@ -104,9 +104,9 @@ public class Robot extends LoggedRobot {
     // Threads.setCurrentThreadPriority(false, 10);
 
     // Show in sim and replay simulation
-    if (Constants.currentMode != Constants.Mode.REAL) {
-      robotContainer.updateShooterTrajectoryVisualization();
-    }
+    // if (Constants.currentMode == Constants.Mode.REAL) {
+    robotContainer.updateShooterTrajectoryVisualization();
+    // }
 
     Rotation3d turretYaw =
         new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));

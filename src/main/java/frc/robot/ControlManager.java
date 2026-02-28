@@ -201,6 +201,7 @@ public final class ControlManager {
     Trigger hoodPositionDownTrigger = operator.y();
     Trigger hoodPositionUpTrigger = operator.back();
 
+    operator.povLeft().onTrue(Commands.runOnce(() -> turret.zeroRotor(Degrees.of(0)), turret));
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
@@ -266,7 +267,7 @@ public final class ControlManager {
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
     revShooterTrigger
-        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(3500)), shooter))
+        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(1700)), shooter))
         .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
   }
 }

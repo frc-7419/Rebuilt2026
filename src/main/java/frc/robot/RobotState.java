@@ -120,6 +120,7 @@ public class RobotState {
     return buffer.isEmpty() ? null : buffer.lastEntry();
   }
 
+  @AutoLogOutput
   public Pose2d getLatestFieldToRobotPose() {
     var latest = getLatestFieldToRobot();
     return latest != null ? latest.getValue() : Pose2d.kZero;
