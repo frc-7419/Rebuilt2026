@@ -22,7 +22,6 @@ import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.LimelightHelpers;
-
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -152,8 +151,7 @@ public class Robot extends LoggedRobot {
 
   /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {
-  }
+  public void disabledPeriodic() {}
 
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override

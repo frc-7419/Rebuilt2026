@@ -209,14 +209,16 @@ public class Drive extends SubsystemBase {
 
       // Update odometry-only pose (before vision corrections)
       Pose2d odometryOnlyPose = odometryOnly.update(rawGyroRotation, modulePositions);
-      robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
+
+      // robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
 
       // Apply update to pose estimator (includes vision corrections)
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
     }
 
     Pose2d visionCorrectedPose = poseEstimator.getEstimatedPosition();
-    robotState.setEstimatedPose(visionCorrectedPose);
+    robotState.addOdometryMeasurement(Timer.getFPGATimestamp(), visionCorrectedPose);
+    // robotState.setEstimatedPose(visionCorrectedPose);
 
     Pose2d odometryOnlyPose = odometryOnly.getPoseMeters();
     Logger.recordOutput("Odometry/OdometryOnly", odometryOnlyPose);
