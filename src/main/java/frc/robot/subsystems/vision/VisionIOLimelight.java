@@ -44,13 +44,7 @@ public class VisionIOLimelight implements VisionIO {
     LimelightHelpers.SetRobotOrientation(
         kLimelightFourTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
     LimelightHelpers.SetRobotOrientation(
-        kLimelightThreeTable,
-        robotRotation.getDegrees(),
-        robotYawRateDegPerS,
-        0.0,
-        0.0,
-        0.0,
-        0.0);
+        kLimelightThreeTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
   }
 
   @Override

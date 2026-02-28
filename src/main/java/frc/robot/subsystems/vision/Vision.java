@@ -183,7 +183,7 @@ public class Vision extends SubsystemBase {
   }
 
   private boolean isMotionAcceptable(String logPrefix) {
-    final double kMaxYawRateRadPerS = Units.degreesToRadians(720.0);
+    final double kMaxYawRateRadPerS = Units.degreesToRadians(360.0);
     double yawRate =
         Math.abs(robotState.getLatestRobotRelativeChassisSpeed().omegaRadiansPerSecond);
     boolean acceptable = yawRate <= kMaxYawRateRadPerS;
