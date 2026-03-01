@@ -241,7 +241,6 @@ public class RobotState {
   }
 
   public enum MatchShift {
-    AUTO,
     TELEOP_TRANSITION,
     SHIFT_1,
     SHIFT_2,
@@ -251,46 +250,117 @@ public class RobotState {
     UNKNOWN
   }
 
+  private static final double BOUNDARY_TELEOP = 105.0;
+  private static final double BOUNDARY_SHIFT_1 = 80.0;
+  private static final double BOUNDARY_SHIFT_2 = 55.0;
+  private static final double BOUNDARY_SHIFT_3 = 30.0;
+  private static final double BOUNDARY_SHIFT_4 = 0.0;
+
   public MatchShift getCurrentShift() {
     if (!DriverStation.isEnabled()) {
       return MatchShift.UNKNOWN;
     }
 
     double matchTime = DriverStation.getMatchTime();
-    if (matchTime > 130.0) {
-      return MatchShift.AUTO;
-    } else if (matchTime > 105.0) {
+    if (matchTime > BOUNDARY_TELEOP) {
       return MatchShift.TELEOP_TRANSITION;
-    } else if (matchTime > 80.0) {
+    } else if (matchTime > BOUNDARY_SHIFT_1) {
       return MatchShift.SHIFT_1;
-    } else if (matchTime > 55.0) {
+    } else if (matchTime > BOUNDARY_SHIFT_2) {
       return MatchShift.SHIFT_2;
-    } else if (matchTime > 30.0) {
+    } else if (matchTime > BOUNDARY_SHIFT_3) {
       return MatchShift.SHIFT_3;
-    } else if (matchTime > 0.0) {
+    } else if (matchTime > BOUNDARY_SHIFT_4) {
       return MatchShift.SHIFT_4;
     } else {
       return MatchShift.END_GAME;
     }
   }
 
+  @AutoLogOutput(key = "RobotState/ShiftTimeSec")
+  public double getShiftTimeSec() {
+    if (!DriverStation.isEnabled()) return 0.0;
+    double matchTime = DriverStation.getMatchTime();
+    MatchShift shift = getCurrentShift();
+    double raw =
+        switch (shift) {
+          case TELEOP_TRANSITION -> matchTime - BOUNDARY_TELEOP;
+          case SHIFT_1 -> matchTime - BOUNDARY_SHIFT_1;
+          case SHIFT_2 -> matchTime - BOUNDARY_SHIFT_2;
+          case SHIFT_3 -> matchTime - BOUNDARY_SHIFT_3;
+          case SHIFT_4 -> matchTime - BOUNDARY_SHIFT_4;
+          case END_GAME, UNKNOWN -> 0.0;
+        };
+    return Math.round(raw * 10.0) / 10.0;
+  }
+
+  @AutoLogOutput(key = "RobotState/MatchStage")
+  public String getMatchStageString() {
+    if (DriverStation.isDisabled()) return "DISABLED";
+    if (DriverStation.isAutonomousEnabled()) return "AUTONOMOUS";
+
+    MatchShift shift = getCurrentShift();
+    if (shift == MatchShift.UNKNOWN) return "DISABLED";
+    String shiftLabel =
+        switch (shift) {
+          case TELEOP_TRANSITION -> "TELEOP TRANSITION";
+          case SHIFT_1 -> "SHIFT 1";
+          case SHIFT_2 -> "SHIFT 2";
+          case SHIFT_3 -> "SHIFT 3";
+          case SHIFT_4 -> "SHIFT 4";
+          case END_GAME -> "END GAME";
+          case UNKNOWN -> "";
+        };
+    String active = isHubActive() ? "ACTIVE" : "INACTIVE";
+    return active + " - " + shiftLabel;
+  }
+
+  @AutoLogOutput(key = "RobotState/HubActive")
   public boolean isHubActive() {
-    var gameData = getGameData();
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isEmpty()) {
+      return false;
+    }
+    if (DriverStation.isAutonomousEnabled()) {
+      return true;
+    }
+    if (!DriverStation.isTeleopEnabled()) {
+      return false;
+    }
+
+    double matchTime = DriverStation.getMatchTime();
+    String gameData = DriverStation.getGameSpecificMessage();
     if (gameData.isEmpty()) {
-      return false;
+      return true;
+    }
+    boolean redInactiveFirst = false;
+    switch (gameData.charAt(0)) {
+      case 'R' -> redInactiveFirst = true;
+      case 'B' -> redInactiveFirst = false;
+      default -> {
+        return true;
+      }
     }
 
-    char inactiveAlliance = gameData.get();
-    MatchShift currentShift = getCurrentShift();
+    boolean shift1Active =
+        switch (alliance.get()) {
+          case Red -> !redInactiveFirst;
+          case Blue -> redInactiveFirst;
+        };
 
-    if (currentShift != MatchShift.SHIFT_2 && currentShift != MatchShift.SHIFT_4) {
-      return false;
+    if (matchTime > 130) {
+      return true;
+    } else if (matchTime > 105) {
+      return shift1Active;
+    } else if (matchTime > 80) {
+      return !shift1Active;
+    } else if (matchTime > 55) {
+      return shift1Active;
+    } else if (matchTime > 30) {
+      return !shift1Active;
+    } else {
+      return true;
     }
-
-    boolean isRed = isRedAlliance();
-    boolean inactiveIsRed = inactiveAlliance == 'R';
-
-    return isRed == inactiveIsRed;
   }
 
   public void addIntakeUpdates(
@@ -382,6 +452,17 @@ public class RobotState {
 
   public void setAutoAimArcValid(boolean valid) {
     autoAimArcValid = valid;
+  }
+
+  @AutoLogOutput(key = "RobotState/Status")
+  public String getRobotStatusString() {
+    if (isShooting) return hubMode ? "Shooting Auto Hub" : "Shooting Auto Pass";
+    if (isIntaking) return "Intaking";
+    if (autoAimEnabled) {
+      if (hubMode) return autoAimArcValid ? "Auto Aiming Hub" : "Hub Arc Invalid";
+      return autoAimArcValid ? "Auto Passing" : "Pass Arc Invalid";
+    }
+    return hubMode ? "Idle Hub" : "Idle Pass";
   }
 
   // --------------- Fuel capacity (sim only; used when Constants.kSimulateFuelCapacity)
