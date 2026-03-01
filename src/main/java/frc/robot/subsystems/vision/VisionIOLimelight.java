@@ -9,13 +9,21 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
 import frc.robot.util.LimelightHelpers;
 
 public class VisionIOLimelight implements VisionIO {
+  private static final double kConnectionTimeoutSec = 0.5;
+
   private final NetworkTable limelightFourTable;
   private final NetworkTable limelightThreeTable;
   private final RobotState robotState;
+
+  private long lastChangeFour = 0;
+  private long lastChangeThree = 0;
+  private double lastConnectedFourSec = 0;
+  private double lastConnectedThreeSec = 0;
 
   public VisionIOLimelight() {
     limelightFourTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
@@ -51,7 +59,19 @@ public class VisionIOLimelight implements VisionIO {
   public void updateInputs(VisionIOInputs inputs) {
     updateRobotOrientation();
 
-    inputs.connected = true;
+    double nowSec = Timer.getFPGATimestamp();
+    long changeFour = limelightFourTable.getEntry("tl").getLastChange();
+    long changeThree = limelightThreeTable.getEntry("tl").getLastChange();
+    if (changeFour != lastChangeFour) {
+      lastChangeFour = changeFour;
+      lastConnectedFourSec = nowSec;
+    }
+    if (changeThree != lastChangeThree) {
+      lastChangeThree = changeThree;
+      lastConnectedThreeSec = nowSec;
+    }
+    inputs.leftConnected = (nowSec - lastConnectedFourSec) < kConnectionTimeoutSec;
+    inputs.rightConnected = (nowSec - lastConnectedThreeSec) < kConnectionTimeoutSec;
 
     boolean limelightFourSeesTarget = limelightFourTable.getEntry("tv").getDouble(0) == 1.0;
     boolean limelightThreeSeesTarget = limelightThreeTable.getEntry("tv").getDouble(0) == 1.0;

@@ -208,6 +208,10 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
         seesTarget = true;
       }
       table.getEntry("cl").setDouble(result.metadata.getLatencyMillis() / 1000.0);
+      table.getEntry("tl").setDouble(result.metadata.getLatencyMillis() / 1000.0);
+    }
+    if (!seesTarget) {
+      table.getEntry("tl").setDouble(0.02);
     }
     table.getEntry("tv").setInteger(seesTarget ? 1 : 0);
   }

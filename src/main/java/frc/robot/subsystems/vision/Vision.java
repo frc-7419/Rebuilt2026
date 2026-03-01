@@ -13,8 +13,12 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import java.util.Optional;
@@ -35,6 +39,10 @@ public class Vision extends SubsystemBase {
   private Drive drive;
 
   private boolean useMegatag2Mode = false;
+  private final Alert leftVisionDisconnectedAlert =
+      new Alert("Disconnected left vision camera (limelight-four).", AlertType.kError);
+  private final Alert rightVisionDisconnectedAlert =
+      new Alert("Disconnected right vision camera (limelight-three).", AlertType.kError);
 
   private double lastFourMT1Timestamp = 0.0;
   private double lastFourMT2Timestamp = 0.0;
@@ -63,7 +71,12 @@ public class Vision extends SubsystemBase {
     double startTime = Timer.getFPGATimestamp();
     io.updateInputs(inputs);
 
-    Logger.recordOutput("Vision/connected", inputs.connected);
+    Logger.recordOutput("Vision/leftConnected", inputs.leftConnected);
+    Logger.recordOutput("Vision/rightConnected", inputs.rightConnected);
+    if (Constants.currentMode != Mode.SIM) {
+      leftVisionDisconnectedAlert.set(!inputs.leftConnected);
+      rightVisionDisconnectedAlert.set(!inputs.rightConnected);
+    }
     Logger.recordOutput("Vision/limelightFourHasTarget", inputs.limelightFourHasTarget);
     Logger.recordOutput("Vision/limelightThreeHasTarget", inputs.limelightThreeHasTarget);
     Logger.recordOutput("Vision/useMegatag2Mode", useMegatag2Mode);

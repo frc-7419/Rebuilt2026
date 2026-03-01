@@ -40,7 +40,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     motorCurrent = motor.getStatorCurrent();
     motorVelocity = motor.getVelocity();
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, motorAppliedVolts, motorCurrent, motorVelocity);
+    BaseStatusSignal.setUpdateFrequencyForAll(4.0, motorAppliedVolts, motorCurrent, motorVelocity);
   }
 
   @Override

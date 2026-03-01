@@ -8,9 +8,12 @@ import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 import yams.units.EasyCRT;
@@ -29,6 +32,8 @@ public class Turret extends SubsystemBase {
   private final double seedStartTimeSec = Timer.getFPGATimestamp();
   private double lastSeedAttemptSec = -Double.MAX_VALUE;
   private boolean seedTimedOut = false;
+  private final Alert turretDisconnectedAlert =
+      new Alert("Disconnected turret motor.", AlertType.kError);
 
   public Turret(TurretIO io) {
     this.io = io;
@@ -72,6 +77,8 @@ public class Turret extends SubsystemBase {
       Logger.recordOutput("Turret/SeedElapsedSec", elapsed);
       Logger.recordOutput("Turret/Seeded", seeded);
     }
+
+    turretDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
   }
 
   /** Sets the turret in open loop (volts). Cancels any position hold. */

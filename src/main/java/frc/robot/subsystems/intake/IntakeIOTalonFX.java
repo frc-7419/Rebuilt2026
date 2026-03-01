@@ -58,7 +58,7 @@ public class IntakeIOTalonFX implements IntakeIO {
     wristVelocity = wristMotor.getVelocity();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
+        4.0,
         wheelAppliedVolts,
         wheelCurrent,
         wheelVelocity,

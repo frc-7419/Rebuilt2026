@@ -5,7 +5,8 @@ import org.littletonrobotics.junction.AutoLog;
 public interface VisionIO {
   @AutoLog
   public static class VisionIOInputs {
-    public boolean connected = false;
+    public boolean leftConnected = false;
+    public boolean rightConnected = false;
     public boolean limelightFourHasTarget;
     public boolean limelightThreeHasTarget;
     public PoseObservation limelightFourMT1Pose;

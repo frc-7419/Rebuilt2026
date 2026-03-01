@@ -5,7 +5,11 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
@@ -16,6 +20,10 @@ import org.littletonrobotics.junction.Logger;
 public class Serializer extends SubsystemBase {
   private final SerializerIO io;
   private final SerializerIOInputsAutoLogged inputs = new SerializerIOInputsAutoLogged();
+  private final Alert serializerDisconnectedAlert =
+      new Alert("Disconnected serializer motor.", AlertType.kError);
+  private final Alert feederDisconnectedAlert =
+      new Alert("Disconnected feeder motor.", AlertType.kError);
 
   public Serializer(SerializerIO io) {
     this.io = io;
@@ -28,6 +36,11 @@ public class Serializer extends SubsystemBase {
 
     double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
     RobotState.getInstance().addHopperUpdates(timestamp, inputs.serializerVelocity);
+
+    if (Constants.currentMode != Mode.SIM) {
+      serializerDisconnectedAlert.set(!inputs.serializerConnected);
+      feederDisconnectedAlert.set(!inputs.feederConnected);
+    }
   }
 
   // --------------- Center wheel (serializer) ---------------

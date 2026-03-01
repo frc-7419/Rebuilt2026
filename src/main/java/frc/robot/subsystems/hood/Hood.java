@@ -6,7 +6,11 @@ import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
@@ -14,6 +18,8 @@ import org.littletonrobotics.junction.Logger;
 public class Hood extends SubsystemBase {
   private final HoodIO io;
   private final HoodIOInputsAutoLogged inputs = new HoodIOInputsAutoLogged();
+  private final Alert hoodDisconnectedAlert =
+      new Alert("Disconnected hood motor.", AlertType.kError);
 
   public Hood(HoodIO io) {
     this.io = io;
@@ -26,6 +32,8 @@ public class Hood extends SubsystemBase {
 
     double timestamp = getFPGATimestamp();
     RobotState.getInstance().addHoodUpdates(timestamp, inputs.position);
+
+    hoodDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
   }
 
   /** Sets the hood in open loop (volts). Cancels any position hold. */

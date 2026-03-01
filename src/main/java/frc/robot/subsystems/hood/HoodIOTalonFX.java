@@ -41,7 +41,7 @@ public class HoodIOTalonFX implements HoodIO {
     zeroRotor();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
+        4.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
   }
 
   @Override

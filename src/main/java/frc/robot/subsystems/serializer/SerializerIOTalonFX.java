@@ -53,7 +53,7 @@ public class SerializerIOTalonFX implements SerializerIO {
     feederVelocity = feederMotor.getVelocity();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
+        4.0,
         serializerAppliedVolts,
         serializerCurrent,
         serializerVelocity,

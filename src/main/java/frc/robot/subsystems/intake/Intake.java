@@ -5,7 +5,11 @@ import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
@@ -13,6 +17,10 @@ import org.littletonrobotics.junction.Logger;
 public class Intake extends SubsystemBase {
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+  private final Alert wheelDisconnectedAlert =
+      new Alert("Disconnected intake wheel motor.", AlertType.kError);
+  private final Alert wristDisconnectedAlert =
+      new Alert("Disconnected intake wrist motor.", AlertType.kError);
 
   public Intake(IntakeIO io) {
     this.io = io;
@@ -31,6 +39,11 @@ public class Intake extends SubsystemBase {
     RobotState state = RobotState.getInstance();
     state.addIntakeUpdates(timestamp, inputs.wristPosition, inputs.wristVelocity);
     state.setIntakeDown(inputs.wristPosition.in(Degrees) >= kIntakeDownThresholdDeg);
+
+    if (Constants.currentMode != Mode.SIM) {
+      wheelDisconnectedAlert.set(!inputs.wheelConnected);
+      wristDisconnectedAlert.set(!inputs.wristConnected);
+    }
   }
 
   /** Set intake wheel motor in open loop (volts). */

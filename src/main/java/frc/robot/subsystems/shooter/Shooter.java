@@ -6,7 +6,11 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
@@ -14,6 +18,8 @@ import org.littletonrobotics.junction.Logger;
 public class Shooter extends SubsystemBase {
   private final ShooterIO io;
   private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
+  private final Alert shooterDisconnectedAlert =
+      new Alert("Disconnected shooter motor.", AlertType.kError);
 
   /** Last RPM passed to {@link #setRPM(double)}. */
   private double requestedRpm = 0.0;
@@ -30,6 +36,8 @@ public class Shooter extends SubsystemBase {
     double timestamp = getFPGATimestamp();
     RobotState.getInstance()
         .addShooterUpdates(timestamp, inputs.shooterVelocity, inputs.rotorVelocity);
+
+    shooterDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
   }
 
   /** Sets the shooter in open loop (volts). Cancels any velocity hold. */
