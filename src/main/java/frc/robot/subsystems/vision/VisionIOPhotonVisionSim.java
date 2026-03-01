@@ -40,6 +40,8 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
   private static PhotonCamera rightCamera;
   private static PhotonCameraSim leftCameraSim;
   private static PhotonCameraSim rightCameraSim;
+  private static Transform3d leftCameraOffset;
+  private static Transform3d rightCameraOffset;
 
   private final SimulatedRobotState simulatedRobotState;
 
@@ -60,7 +62,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
       leftCameraSim = new PhotonCameraSim(leftCamera, cameraProps);
       rightCameraSim = new PhotonCameraSim(rightCamera, cameraProps);
 
-      Transform3d leftCameraOffset =
+      leftCameraOffset =
           new Transform3d(
               kLimelightFourCameraPose[0],
               kLimelightFourCameraPose[1],
@@ -70,7 +72,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
                   Units.degreesToRadians(kLimelightFourCameraPose[4]),
                   Units.degreesToRadians(kLimelightFourCameraPose[5])));
 
-      Transform3d rightCameraOffset =
+      rightCameraOffset =
           new Transform3d(
               kLimelightThreeCameraPose[0],
               kLimelightThreeCameraPose[1],
@@ -113,33 +115,41 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     NetworkTable leftTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
     NetworkTable rightTable = NetworkTableInstance.getDefault().getTable(kLimelightThreeTable);
 
-    writeToTable(leftCamera.getAllUnreadResults(), leftTable);
-    writeToTable(rightCamera.getAllUnreadResults(), rightTable);
+    writeToTable(leftCamera.getAllUnreadResults(), leftTable, leftCameraOffset);
+    writeToTable(rightCamera.getAllUnreadResults(), rightTable, rightCameraOffset);
 
     super.updateInputs(inputs);
   }
 
+  /**
+   * Converts field-to-camera to field-to-robot using the camera offset (robot-to-camera). Limelight
+   * botpose is the robot pose, not the camera pose.
+   */
   private List<Double> getBotpose(
-      Transform3d fieldToCamera, int numTags, PhotonPipelineResult result) {
+      Transform3d fieldToCamera,
+      Transform3d robotToCamera,
+      int numTags,
+      PhotonPipelineResult result) {
     if (result == null || result.targets.isEmpty()) {
       return null;
     }
 
     Pose3d fieldToCameraPose3d = new Pose3d().plus(fieldToCamera);
-    Pose2d fieldToCamera2d =
+    Pose3d fieldToRobotPose3d = fieldToCameraPose3d.plus(robotToCamera.inverse());
+    Pose2d fieldToRobot2d =
         new Pose2d(
-            fieldToCameraPose3d.getTranslation().toTranslation2d(),
-            fieldToCameraPose3d.getRotation().toRotation2d());
+            fieldToRobotPose3d.getTranslation().toTranslation2d(),
+            fieldToRobotPose3d.getRotation().toRotation2d());
 
     List<Double> poseData =
         new ArrayList<>(
             Arrays.asList(
-                fieldToCamera2d.getX(),
-                fieldToCamera2d.getY(),
+                fieldToRobot2d.getX(),
+                fieldToRobot2d.getY(),
                 0.0,
                 0.0,
                 0.0,
-                Units.radiansToDegrees(fieldToCamera2d.getRotation().getRadians()),
+                Units.radiansToDegrees(fieldToRobot2d.getRotation().getRadians()),
                 result.metadata.getLatencyMillis() / 1000.0,
                 (double) numTags,
                 0.0,
@@ -161,24 +171,26 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     return poseData;
   }
 
-  private void writeToTable(List<PhotonPipelineResult> results, NetworkTable table) {
+  private void writeToTable(
+      List<PhotonPipelineResult> results, NetworkTable table, Transform3d robotToCamera) {
     boolean seesTarget = false;
     for (var result : results) {
       List<Double> poseData = null;
       if (result.getMultiTagResult().isPresent()) {
         var multiTagResult = result.getMultiTagResult().get();
-        Transform3d best = multiTagResult.estimatedPose.best;
-        poseData = getBotpose(best, multiTagResult.fiducialIDsUsed.size(), result);
+        Transform3d fieldToCamera = multiTagResult.estimatedPose.best;
+        poseData =
+            getBotpose(fieldToCamera, robotToCamera, multiTagResult.fiducialIDsUsed.size(), result);
       } else if (result.hasTargets()) {
         var bestTarget = result.getBestTarget();
         Optional<Pose3d> tagPose = aprilTagLayout.getTagPose(bestTarget.getFiducialId());
         if (tagPose.isPresent()) {
-          Transform3d best =
+          Transform3d fieldToCamera =
               new Transform3d(
                       tagPose.get().getTranslation().minus(new Translation3d()),
                       tagPose.get().getRotation())
                   .plus(bestTarget.bestCameraToTarget.inverse());
-          poseData = getBotpose(best, 1, result);
+          poseData = getBotpose(fieldToCamera, robotToCamera, 1, result);
         }
       }
 
