@@ -43,6 +43,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.leds.StatusLEDs;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.serializer.SerializerIO;
 import frc.robot.subsystems.serializer.SerializerIOSim;
@@ -78,6 +79,7 @@ public class RobotContainer {
   private final Hood hood;
   private final Intake intake;
   private final Serializer serializer;
+  private final StatusLEDs statusLEDs = new StatusLEDs();
 
   // Controller
   private final CommandXboxController driver = new CommandXboxController(0);

@@ -200,10 +200,8 @@ public final class ControlManager {
     Trigger revShooterTrigger = operator.rightBumper();
     Trigger hoodPositionDownTrigger = operator.y();
     Trigger hoodPositionUpTrigger = operator.back();
+    Trigger reverseIntakeTrigger = operator.povLeft();
 
-    operator.povLeft().onTrue(Commands.runOnce(() -> turret.zeroRotor(Degrees.of(0)), turret));
-    operator.povLeft().onTrue(Commands.runOnce(AutoAim::decreaseLaunchVelConstant));
-    operator.povRight().onTrue(Commands.runOnce(AutoAim::increaseLaunchVelConstant));
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
@@ -249,6 +247,7 @@ public final class ControlManager {
 
     // -------- Operator: intake & shooting --------
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
+    reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
     shootTrigger.whileTrue(runShooting(serializer));
 
     reverseSerializerTrigger
