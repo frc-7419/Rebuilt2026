@@ -187,6 +187,7 @@ public final class ControlManager {
       Serializer serializer) {
 
     Trigger stopSwerveTrigger = driver.x();
+    Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
     Trigger hubModeTrigger = operator.start();
     Trigger autoAimTrigger = operator.x();
@@ -206,6 +207,13 @@ public final class ControlManager {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+
+    lockPushOrientationTrigger.whileTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> -driver.getLeftY(),
+            () -> -driver.getLeftX(),
+            () -> Rotation2d.fromDegrees(90)));
 
     stopSwerveTrigger.onTrue(Commands.runOnce(drive::stopWithX, drive));
 
