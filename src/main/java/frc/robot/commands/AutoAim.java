@@ -35,10 +35,6 @@ public final class AutoAim {
   private static final double kTrajectoryDt = 0.02;
   private static final int kTrajectoryMaxPts = 128;
   private static final int kLeadIterations = 3;
-  private static final double kTwoPi = 2.0 * Math.PI;
-
-  /** Previous commanded turret angle (rad) for wrap choice; avoids double-wrap when shooting. */
-  private static double previousCommandedTurretRad = Double.NaN;
 
   private AutoAim() {}
 
@@ -181,20 +177,11 @@ public final class AutoAim {
     if (!allowFullRange) {
       desiredTurretRad = MathUtil.clamp(desiredRaw, -Math.PI, Math.PI);
     } else {
-      double ref =
-          Double.isNaN(previousCommandedTurretRad)
-              ? turret.getAngle().in(Radians)
-              : previousCommandedTurretRad;
-      desiredTurretRad = desiredRaw + kTwoPi * Math.round((ref - desiredRaw) / kTwoPi);
-      if (!Double.isNaN(previousCommandedTurretRad)
-          && Math.abs(desiredTurretRad - previousCommandedTurretRad) > Math.PI) {
-        double alt =
-            desiredTurretRad - Math.signum(desiredTurretRad - previousCommandedTurretRad) * kTwoPi;
-        if (alt >= minAngleRad && alt <= maxAngleRad) desiredTurretRad = alt;
-      }
+      desiredTurretRad =
+          KinematicsHelper.calculateAzimuthAngleRad(
+              robotPose, turretPivotField, aimPoint2d, turret.getAngle().in(Radians));
     }
     desiredTurretRad = MathUtil.clamp(desiredTurretRad, minAngleRad, maxAngleRad);
-    previousCommandedTurretRad = desiredTurretRad;
 
     double turretOmega = -robotOmega; // counter-rotate to hold field heading
 

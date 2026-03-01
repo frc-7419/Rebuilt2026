@@ -4,7 +4,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static frc.robot.subsystems.turret.TurretConstants.kMotionProfile;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -14,7 +13,6 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -40,9 +38,9 @@ public class TurretIOTalonFX implements TurretIO {
   private final VoltageOut voltageRequest = new VoltageOut(0);
   private final PositionVoltage positionVoltageRequest = new PositionVoltage(0.0);
 
-  private static final double kControlDt = 0.02;
   private boolean positionControl = false;
-  private TrapezoidProfile.State goalState;
+  private double goalPositionRotations = 0.0;
+  private double goalVelocityRotPerSec = 0.0;
 
   public TurretIOTalonFX() {
     motor = new TalonFX(TurretConstants.kTurretMotorId);
@@ -90,18 +88,12 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.rightEncoderPosition = rightEncoderPosition.getValue();
     inputs.leftEncoderPosition = leftEncoderPosition.getValue();
 
-    if (positionControl && goalState != null) {
-      TrapezoidProfile.State currentState =
-          new TrapezoidProfile.State(
-              turretPosition.getValue().in(Rotations),
-              turretVelocity.getValue().in(RotationsPerSecond));
-      TrapezoidProfile.State setpoint =
-          kMotionProfile.calculate(kControlDt, currentState, goalState);
-      positionVoltageRequest.Position = setpoint.position;
-      positionVoltageRequest.Velocity = setpoint.velocity;
+    if (positionControl) {
+      positionVoltageRequest.Position = goalPositionRotations;
+      positionVoltageRequest.Velocity = goalVelocityRotPerSec;
 
-      inputs.requestedPosition = Rotations.of(setpoint.position).plus(positionOffset);
-      inputs.requestedVelocity = RotationsPerSecond.of(setpoint.velocity);
+      inputs.requestedPosition = Rotations.of(goalPositionRotations).plus(positionOffset);
+      inputs.requestedVelocity = RotationsPerSecond.of(goalVelocityRotPerSec);
 
       motor.setControl(positionVoltageRequest);
     }
@@ -121,9 +113,8 @@ public class TurretIOTalonFX implements TurretIO {
   @Override
   public void setState(Angle position, AngularVelocity velocity) {
     positionControl = true;
-    goalState =
-        new TrapezoidProfile.State(
-            position.minus(positionOffset).in(Rotations), velocity.in(RotationsPerSecond));
+    goalPositionRotations = position.minus(positionOffset).in(Rotations);
+    goalVelocityRotPerSec = velocity.in(RotationsPerSecond);
   }
 
   @Override

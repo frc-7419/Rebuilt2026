@@ -14,7 +14,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 
 /** Basic turret configuration values. Update IDs and gains for your robot. */
@@ -101,14 +100,9 @@ public final class TurretConstants {
     cancoderConfig.MagnetSensor.MagnetOffset = 0;
   }
 
-  public static final double kSimP = 10.0;
+  public static final double kSimP = 20.0;
   public static final double kSimI = 0.0;
   public static final double kSimD = 0.1;
-
-  // Trapezoidal motion profile constraints: max velocity and max acceleration (in rot/s and
-  // rot/s^2)
-  public static final TrapezoidProfile kMotionProfile =
-      new TrapezoidProfile(new TrapezoidProfile.Constraints(15, 10));
 
   // Turret pivot point offset from robot center (forward, left)
   // Positive forward = forward of robot center, positive left = left of robot center

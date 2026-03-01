@@ -3,15 +3,12 @@ package frc.robot.subsystems.turret;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.subsystems.turret.TurretConstants.*;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -29,9 +26,8 @@ public class TurretIOSim implements TurretIO {
   private final PIDController positionController;
 
   private boolean positionControl = false;
-  private TrapezoidProfile.State goalState;
-  private double targetPositionRad = 0.0;
-  private double feedforwardVelocityRadPerSec = 0.0;
+  private double goalPositionRad = 0.0;
+  private double goalVelocityRadPerSec = 0.0;
   private double appliedVolts = 0.0;
 
   private double rotorPositionRad = 0.0;
@@ -55,25 +51,15 @@ public class TurretIOSim implements TurretIO {
 
   @Override
   public void updateInputs(TurretIOInputs inputs) {
-    if (positionControl && goalState != null) {
-      TrapezoidProfile.State currentState =
-          new TrapezoidProfile.State(
-              turretPositionRad / (2.0 * Math.PI), velocityRadPerSec / (2.0 * Math.PI));
-      TrapezoidProfile.State setpoint =
-          TurretConstants.kMotionProfile.calculate(SIMULATION_DT, currentState, goalState);
-      targetPositionRad =
-          MathUtil.clamp(
-              setpoint.position * (2.0 * Math.PI),
-              kAbsoluteMinAngle.in(Radians),
-              kAbsoluteMaxAngle.in(Radians));
-      feedforwardVelocityRadPerSec = setpoint.velocity * (2.0 * Math.PI);
-      inputs.requestedPosition = Radians.of(targetPositionRad);
-      inputs.requestedVelocity = RadiansPerSecond.of(feedforwardVelocityRadPerSec);
-    }
-
     if (positionControl) {
+      double targetPositionRad =
+          MathUtil.clamp(
+              goalPositionRad, kAbsoluteMinAngle.in(Radians), kAbsoluteMaxAngle.in(Radians));
+      inputs.requestedPosition = Radians.of(targetPositionRad);
+      inputs.requestedVelocity = RadiansPerSecond.of(goalVelocityRadPerSec);
+
       double pidOutput = positionController.calculate(turretPositionRad, targetPositionRad);
-      double feedforwardVolts = feedforwardVelocityRadPerSec * kV;
+      double feedforwardVolts = goalVelocityRadPerSec * kV;
       appliedVolts = MathUtil.clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
     }
 
@@ -132,8 +118,6 @@ public class TurretIOSim implements TurretIO {
   public void setOpenLoop(double volts) {
     positionControl = false;
     positionController.reset();
-    feedforwardVelocityRadPerSec = 0.0;
-
     appliedVolts = MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
   }
 
@@ -145,7 +129,7 @@ public class TurretIOSim implements TurretIO {
   @Override
   public void setState(Angle position, AngularVelocity velocity) {
     positionControl = true;
-    goalState = new TrapezoidProfile.State(position.in(Rotations), velocity.in(RotationsPerSecond));
-    // Setpoint is computed every cycle in updateInputs from current state + goal
+    goalPositionRad = position.in(Radians);
+    goalVelocityRadPerSec = velocity.in(RadiansPerSecond);
   }
 }
