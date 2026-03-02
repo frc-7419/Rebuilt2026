@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.795422846045199,
-        "y": 1.2407624911723167
+        "x": 7.800303571428572,
+        "y": 1.265410714285714
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.7983604775100845,
-        "y": 2.337918386267728
+        "x": 7.803241202893458,
+        "y": 2.362566609381126
       },
       "isLocked": false,
       "linkedName": "PickupRight"
@@ -48,7 +48,7 @@
   "folder": "Intake",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -90.25337326255448
+    "rotation": -90.0
   },
   "useDefaultConstraints": false
 }

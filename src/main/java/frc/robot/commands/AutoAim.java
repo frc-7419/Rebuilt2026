@@ -322,7 +322,7 @@ public final class AutoAim {
     return launchVelConstant.get();
   }
 
-  private static final double kLaunchVelConstantStep = 0.1;
+  private static final double kLaunchVelConstantStep = 0.01;
 
   public static void decreaseLaunchVelConstant() {
     double v = Math.max(0.0, launchVelConstant.get() - kLaunchVelConstantStep);

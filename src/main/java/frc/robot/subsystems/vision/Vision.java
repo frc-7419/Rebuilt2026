@@ -141,10 +141,10 @@ public class Vision extends SubsystemBase {
     double xyStdDevMeters;
     double thetaStdDevRad;
     if (observation.tagCount >= 2) {
-      xyStdDevMeters = 0.5;
+      xyStdDevMeters = 0.75;
       thetaStdDevRad = Units.degreesToRadians(10.0);
     } else {
-      xyStdDevMeters = 1.5;
+      xyStdDevMeters = 3;
       thetaStdDevRad = Units.degreesToRadians(30.0);
     }
 
@@ -178,9 +178,9 @@ public class Vision extends SubsystemBase {
     if (poseDifferenceMeters < 0.20) {
       xyStdDevMeters *= 2.0;
     } else if (poseDifferenceMeters < 0.50) {
-      xyStdDevMeters *= 1.3;
+      xyStdDevMeters *= 1.5;
     } else if (poseDifferenceMeters > 1.50) {
-      xyStdDevMeters *= 0.75;
+      xyStdDevMeters *= 3;
     }
 
     Pose2d correctedPose =
@@ -188,7 +188,7 @@ public class Vision extends SubsystemBase {
             observation.estimatedPose.getTranslation(), odometryPoseAtTime.get().getRotation());
 
     Matrix<N3, N1> stdDevs =
-        VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(9999.0));
+        VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, Units.degreesToRadians(9999999.0));
 
     Logger.recordOutput(logPrefix + "MT2Estimate", correctedPose);
     Logger.recordOutput(logPrefix + "MT2XYStdDevMeters", xyStdDevMeters);

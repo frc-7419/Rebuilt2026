@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -29,9 +30,9 @@ import frc.robot.subsystems.turret.Turret;
  */
 public final class ControlManager {
 
-  private static final double kShootSerializerVolts = 5.0;
-  private static final double kShootFeederVolts = 7.0;
-  private static final double kIntakeVolts = 3;
+  private static final double kShootSerializerVolts = 10.0;
+  private static final double kShootFeederVolts = 10.0;
+  private static final double kIntakeVolts = 4;
 
   private static ControlManager instance;
 
@@ -173,6 +174,8 @@ public final class ControlManager {
         "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
     NamedCommands.registerCommand(
         "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+
+    new EventTrigger("Intake").whileTrue(runIntakeLowerAndWheel(intake));
   }
 
   /** Configures driver and operator button bindings. */
@@ -206,7 +209,7 @@ public final class ControlManager {
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> driver.getRightX()));
 
     lockPushOrientationTrigger.whileTrue(
         DriveCommands.joystickDriveAtAngle(
