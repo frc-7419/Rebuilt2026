@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.766978628773483,
-        "y": 6.128113634357345
+        "x": 2.2060121527777783,
+        "y": 7.135688151041666
       },
       "isLocked": false,
       "linkedName": "StartLeft"
@@ -20,15 +20,20 @@
         "y": 5.965921279131355
       },
       "prevControl": {
-        "x": 1.2523742055084748,
-        "y": 5.9936952683615825
+        "x": 2.378633463541667,
+        "y": 5.8288575665509255
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "Stash"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.8491467927631581,
+      "rotationDegrees": 0.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -45,10 +50,10 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Intake",
+  "folder": "Stash",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }

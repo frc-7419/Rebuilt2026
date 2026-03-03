@@ -1,5 +1,7 @@
 package frc.robot.subsystems.hood;
 
+import static edu.wpi.first.math.MathUtil.clamp;
+import static edu.wpi.first.units.Units.Rotations;
 import static frc.robot.subsystems.hood.HoodConstants.kMaxAngle;
 import static frc.robot.subsystems.hood.HoodConstants.kMotorToHoodGearRatio;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -10,7 +12,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -65,10 +66,14 @@ public class HoodIOTalonFX implements HoodIO {
 
   @Override
   public void setPosition(Angle position) {
-    motor.setControl(
-        motionMagicRequest.withPosition(position.in(Units.Rotations) * (kMotorToHoodGearRatio)));
-    Logger.recordOutput(
-        "Hood/RequestedPositionRotations", position.in(Units.Rotations) * (kMotorToHoodGearRatio));
+    double deg = position.in(Rotations);
+    double clamped =
+        clamp(deg, HoodConstants.kMinAngle.in(Rotations), HoodConstants.kMaxAngle.in(Rotations));
+    clamped -= HoodConstants.kMinAngle.in(Rotations);
+    clamped =
+        (HoodConstants.kMaxAngle.in(Rotations) - HoodConstants.kMinAngle.in(Rotations)) - clamped;
+    motor.setControl(motionMagicRequest.withPosition(clamped * (kMotorToHoodGearRatio)));
+    Logger.recordOutput("Hood/RequestedTalonFXPosition", clamped * (kMotorToHoodGearRatio));
   }
 
   @Override

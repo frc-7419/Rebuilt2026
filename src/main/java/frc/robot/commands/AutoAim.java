@@ -136,7 +136,7 @@ public final class AutoAim {
             ? robotPose.getX() < (kFieldLengthMeters - allianceLineXBlue)
             : robotPose.getX() > allianceLineXBlue;
     if (hubMode && pastAllianceLine) {
-      rpm = ShooterConstants.kAutoAimRPMMax - 500;
+      rpm = ShooterConstants.kIdleRPM;
       hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
     }
 
@@ -299,15 +299,15 @@ public final class AutoAim {
 
   static {
     passModeChooser = new LoggedDashboardChooser<>("Pass Mode");
-    passModeChooser.addDefaultOption("Center Pass", PassMode.CENTER);
-    passModeChooser.addOption("Side Pass", PassMode.SIDES);
+    passModeChooser.addDefaultOption("Side Pass", PassMode.SIDES);
+    passModeChooser.addOption("Center Pass", PassMode.CENTER);
   }
 
   private static final Translation2d kPassCenterBlue = new Translation2d(2.4, 4.0);
 
   private static boolean isPassCenter() {
     PassMode mode = passModeChooser.get();
-    return mode == null || mode == PassMode.CENTER;
+    return mode == null || mode == PassMode.SIDES;
   }
 
   private static double getPassRPM() {

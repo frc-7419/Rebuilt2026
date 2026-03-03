@@ -159,6 +159,29 @@ public final class ControlManager {
   }
 
   /**
+   * Same behavior as {@link #runShootAtSpeed} but with no subsystem requirements for zoned events
+   * idk it was bugging
+   */
+  public Command runShootAtSpeedNoRequirements(Shooter shooter, Serializer serializer) {
+    return Commands.run(
+            () -> {
+              double current = shooter.getRPM();
+              double requested = shooter.getRequestedRPM();
+              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+              } else {
+                serializer.stopBoth();
+              }
+            })
+        .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
+        .finallyDo(
+            interrupted -> {
+              robotState.setShooting(false);
+              serializer.stopBoth();
+            });
+  }
+
+  /**
    * Registers named commands for PathPlanner/autonomous. Uses the same {@link RobotState} as teleop
    * so auto and teleop share auto-aim and hub mode state.
    */
@@ -176,6 +199,7 @@ public final class ControlManager {
         "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
 
     new EventTrigger("Intake").whileTrue(runIntakeLowerAndWheel(intake));
+    new EventTrigger("AutoShoot").whileTrue(runShootAtSpeedNoRequirements(shooter, serializer));
   }
 
   /** Configures driver and operator button bindings. */

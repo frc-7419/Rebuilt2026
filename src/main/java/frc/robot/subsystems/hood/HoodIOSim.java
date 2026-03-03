@@ -10,6 +10,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import org.littletonrobotics.junction.Logger;
 
 /** Simulation implementation of HoodIO: position control and open loop. */
 public class HoodIOSim implements HoodIO {
@@ -43,6 +44,7 @@ public class HoodIOSim implements HoodIO {
       double currentRad = mechanismRad;
 
       double pidOutput = positionController.calculate(currentRad, targetRad);
+      Logger.recordOutput("Hood/SimPIDOutput", pidOutput);
       appliedVolts = clamp(pidOutput, -kMaxVoltage, kMaxVoltage);
     }
 
@@ -82,6 +84,7 @@ public class HoodIOSim implements HoodIO {
   public void setPosition(Angle position) {
     positionControl = true;
     double positionDeg = clamp(position.in(Degrees), kMinAngle.in(Degrees), kMaxAngle.in(Degrees));
+    Logger.recordOutput("Hood/SimRequestedPositionDeg", positionDeg);
     targetAngle = Degrees.of(positionDeg);
   }
 

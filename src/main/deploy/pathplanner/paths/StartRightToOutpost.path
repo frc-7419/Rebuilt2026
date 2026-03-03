@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 1.8990860821759266,
+        "x": 0.7650080295138892,
         "y": 0.6792180989583334
       },
       "prevControl": {
-        "x": 1.6425170190694829,
+        "x": 0.5084389664074456,
         "y": 0.6786262344981275
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "FarRight"
+      "linkedName": "Outpost"
     }
   ],
   "rotationTargets": [],
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": "Start",
