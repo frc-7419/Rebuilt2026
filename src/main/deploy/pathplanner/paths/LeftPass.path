@@ -94,13 +94,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 43.83507041137025
+    "rotation": 43.83507041137026
   },
   "reversed": false,
   "folder": "Pass",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -90.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }
