@@ -28,6 +28,11 @@ public class StatusLEDs extends SubsystemBase {
   private final LEDPattern patternIdle;
   private final LEDPattern patternIntakingAutoAimArcValid;
   private final LEDPattern patternNoAutoAim;
+  
+  // Intake-specific patterns
+  private final LEDPattern patternIntakeDeployed;
+  private final LEDPattern patternIntakeRetracted;
+  private final LEDPattern patternIntakeMoving;
 
   public StatusLEDs() {
     state = RobotState.getInstance();
@@ -54,6 +59,11 @@ public class StatusLEDs extends SubsystemBase {
             .scrollAtRelativeSpeed(Hertz.of(0.2))
             .breathe(Seconds.of(2.5))
             .atBrightness(Percent.of(100));
+    
+    // Intake state patterns
+    patternIntakeDeployed = LEDPattern.solid(LEDConstants.kLimeGreen).blink(Seconds.of(0.5));
+    patternIntakeRetracted = LEDPattern.solid(LEDConstants.kOrange);
+    patternIntakeMoving = LEDPattern.solid(Color.kCyan).blink(Seconds.of(0.15));
   }
 
   private void alternateYellowGreen(LEDWriter writer) {
@@ -69,6 +79,44 @@ public class StatusLEDs extends SubsystemBase {
     LEDPattern chosen = choosePattern();
     chosen.applyTo(buffer);
     led.setData(buffer);
+  }
+
+  /**
+   * Chooses an LED pattern based on intake state.
+   * This demonstrates LED state control for a single input (intake subsystem).
+   * This method is provided as an example implementation.
+   * To use this instead of the default choosePattern(), swap the calls in periodic().
+   * 
+   * Priority:
+   * 1. Intake is moving (animating deployment/retraction)
+   * 2. Intake is deployed/down
+   * 3. Intake is retracted/up
+   * 4. Idle pattern (default)
+   */
+  @SuppressWarnings("unused")
+  private LEDPattern choosePatternByIntakeState() {
+    if (DriverStation.isDisabled()) {
+      return patternIdle;
+    }
+    
+    // Get intake state from RobotState
+    boolean intakeDown = state.isIntakeDown();
+    boolean isIntaking = state.isIntaking();
+    
+    // Check if intake is actively moving (blinking cyan to indicate motion)
+    // This could be enhanced with intake velocity feedback
+    if (isIntaking && !intakeDown) {
+      // Intake is in motion, likely deploying
+      return patternIntakeMoving;
+    }
+    
+    if (intakeDown) {
+      // Intake is deployed, show solid blink pattern
+      return patternIntakeDeployed;
+    } else {
+      // Intake is retracted, show solid orange
+      return patternIntakeRetracted;
+    }
   }
 
   private LEDPattern choosePattern() {
