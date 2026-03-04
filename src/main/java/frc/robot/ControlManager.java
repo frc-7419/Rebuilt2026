@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import com.ctre.phoenix6.Orchestra;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeCommands;
@@ -119,10 +120,13 @@ public final class ControlManager {
       Shooter shooter,
       Hood hood,
       Intake intake,
-      Serializer serializer) {
+      Serializer serializer,
+      Orchestra orchestra) {
 
     Trigger stopSwerveTrigger = driver.x();
     Trigger resetPoseTrigger = driver.leftBumper();
+    Trigger orchestraPlayPauseTrigger = driver.a();
+    Trigger orchestraStopTrigger = driver.b();
     Trigger hubModeTrigger = operator.start();
     Trigger autoAimTrigger = operator.x();
     Trigger intakeWheelTrigger = operator.leftBumper();
@@ -140,6 +144,10 @@ public final class ControlManager {
             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
 
     stopSwerveTrigger.onTrue(Commands.runOnce(drive::stopWithX, drive));
+
+    orchestraPlayPauseTrigger.onTrue(
+        Commands.runOnce(() -> { if (orchestra.isPlaying()) orchestra.pause(); else orchestra.play(); }));
+    orchestraStopTrigger.onTrue(Commands.runOnce(orchestra::stop));
 
     resetPoseTrigger.onTrue(
         Commands.runOnce(

@@ -39,7 +39,7 @@ public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
 
-  private Orchestra orchestra_all;
+  private static Orchestra orchestra_all;
 
   private Orchestra voice1;
   private Orchestra voice2;
@@ -122,6 +122,10 @@ public class Robot extends LoggedRobot {
 
     // orchestra_all.loadMusic("blah");
     orchestra_all.loadMusic("bwv_846.chrp");
+  }
+
+  public static Orchestra getOrchestra() {
+    return orchestra_all;
   }
 
   /** This function is called periodically during all modes. */
