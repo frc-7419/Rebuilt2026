@@ -27,7 +27,6 @@ public class StatusLEDs extends SubsystemBase {
   private final LEDPattern patternIntaking;
   private final LEDPattern patternIdle;
   private final LEDPattern patternIntakingAutoAimArcValid;
-  private final LEDPattern patternNoAutoAim;
 
   public StatusLEDs() {
     state = RobotState.getInstance();
@@ -43,7 +42,6 @@ public class StatusLEDs extends SubsystemBase {
     patternAutoAimArcValid = LEDPattern.solid(Color.kGreen);
     patternIntaking = LEDPattern.solid(Color.kYellow).blink(Seconds.of(0.25));
     patternIntakingAutoAimArcValid = (r, w) -> alternateYellowGreen(w);
-    patternNoAutoAim = LEDPattern.solid(Color.kRed).blink(Seconds.of(0.5));
 
     patternIdle =
         LEDPattern.gradient(
@@ -92,9 +90,6 @@ public class StatusLEDs extends SubsystemBase {
     }
     if (state.isAutoAimArcValid() && state.isAutoAimEnabled()) {
       return patternAutoAimArcValid;
-    }
-    if (!state.isAutoAimEnabled()) {
-      return patternNoAutoAim;
     }
 
     return patternIdle;
