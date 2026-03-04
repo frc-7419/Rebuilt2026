@@ -121,7 +121,7 @@ public class Robot extends LoggedRobot {
     voice4.addInstrument(new TalonFX(5)); // BR drive motor
 
     // orchestra_all.loadMusic("blah");
-    orchestra_all.loadMusic("bwv_846.mid");
+    orchestra_all.loadMusic("bwv_846.chrp");
   }
 
   /** This function is called periodically during all modes. */
