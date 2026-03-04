@@ -26,6 +26,9 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.hardware.TalonFX;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -35,6 +38,32 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
+
+  private Orchestra orchestra_all;
+
+  private Orchestra voice1;
+  private Orchestra voice2;
+  private Orchestra voice3;
+  private Orchestra voice4;
+
+  TalonFX[] motors = {
+    new TalonFX(1),  // FL Drive
+    new TalonFX(2),  // FL Steer
+    new TalonFX(3),  // BL Drive
+    new TalonFX(4),  // BL Steer
+    new TalonFX(5),  // BR Drive
+    new TalonFX(6),  // BR Steer
+    new TalonFX(7),  // FR Drive
+    new TalonFX(8),  // FR Steer
+    new TalonFX(22), // Hood
+    new TalonFX(23), // Intake Wrist
+    new TalonFX(25), // Intake Wheel
+    new TalonFX(30), // Feeder
+    new TalonFX(31), // Turret
+    new TalonFX(35), // Serializer
+    new TalonFX(38), // Shooter Follower
+    new TalonFX(40), // Shooter
+  };
 
   public Robot() {
     // Record metadata
@@ -79,6 +108,20 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
     robotContainer = new RobotContainer();
+
+    // Instantiate Orchestra
+
+    for (int i = 0; i < motors.length; ++i) {
+        orchestra_all.addInstrument(motors[i]);
+    }
+    
+    voice1.addInstrument(new TalonFX(1)); // FL drive motor
+    voice2.addInstrument(new TalonFX(7)); // FR drive motor
+    voice3.addInstrument(new TalonFX(3)); // BL drive motor
+    voice4.addInstrument(new TalonFX(5)); // BR drive motor
+
+    // orchestra_all.loadMusic("blah");
+    orchestra_all.loadMusic();
   }
 
   /** This function is called periodically during all modes. */
@@ -172,6 +215,8 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
+
+    orchestra.play();
   }
 
   /** This function is called periodically during operator control. */
