@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.HoodCommands;
 import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.SerializerCommands;
 import frc.robot.subsystems.drive.Drive;
@@ -188,7 +187,8 @@ public final class ControlManager {
       Hood hood,
       Intake intake,
       Serializer serializer) {
-
+    // New Controls
+    /*
     Trigger stopSwerveTrigger = driver.x();
     Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
@@ -205,6 +205,27 @@ public final class ControlManager {
     Trigger hoodPositionDownTrigger = operator.y();
     Trigger hoodPositionUpTrigger = operator.back();
     Trigger reverseIntakeTrigger = operator.povLeft();
+    */
+
+    Trigger stopSwerveTrigger = driver.x();
+    Trigger lockPushOrientationTrigger = driver.a();
+    Trigger resetPoseTrigger = driver.leftBumper();
+
+    Trigger reverseSerializerTrigger = operator.leftTrigger();
+    Trigger shootTrigger = operator.rightTrigger();
+    Trigger reverseIntakeTrigger = operator.leftBumper();
+    Trigger intakeWheelTrigger = operator.rightBumper();
+
+    Trigger wristUpTrigger = operator.povUp();
+    Trigger wristDownTrigger = operator.povDown();
+
+    Trigger revShooterTrigger = operator.y();
+    Trigger autoAimTrigger = operator.x();
+    Trigger wristStowTrigger = operator.b();
+    Trigger wristDeployTrigger = operator.a();
+
+    Trigger hubModeTrigger = operator.start();
+    Trigger intakeJerkingTrigger = operator.povLeft();
 
     // -------- Driver --------
     drive.setDefaultCommand(
@@ -249,17 +270,19 @@ public final class ControlManager {
               }
             },
             hood));
-    hoodPositionUpTrigger.onTrue(HoodCommands.hoodPosition(hood, Degrees.of(35)));
-    hoodPositionDownTrigger.onTrue(HoodCommands.hoodPosition(hood, Degrees.of(64)));
 
     // -------- Operator: mode toggles --------
     hubModeTrigger.onTrue(Commands.runOnce(this::toggleHubMode));
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
+    // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
+    intakeWheelTrigger.toggleOnTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
     shootTrigger.whileTrue(runShooting(serializer));
+
+    intakeJerkingTrigger.whileTrue(
+        IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20)));
 
     reverseSerializerTrigger
         .whileTrue(

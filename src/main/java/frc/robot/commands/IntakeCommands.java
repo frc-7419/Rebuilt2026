@@ -1,10 +1,12 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intake.Intake;
 import java.util.function.DoubleSupplier;
@@ -44,6 +46,16 @@ public final class IntakeCommands {
   /** Set intake wrist to a specific angle. */
   public static Command setWristAngle(Intake intake, Angle angle) {
     return runOnce(() -> intake.setWristAngle(angle), intake);
+  }
+
+  public static Command setWristAngleWiggle(Intake intake, Angle midpoint, Angle wiggle) {
+    return run(
+        () ->
+            intake.setWristAngle(
+                Degrees.of(
+                    wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 5)
+                        + midpoint.in(Degrees))),
+        intake);
   }
 
   /** Stop both wheel and wrist. */
