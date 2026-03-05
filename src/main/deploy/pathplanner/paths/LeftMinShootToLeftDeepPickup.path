@@ -4,28 +4,28 @@
     {
       "anchor": {
         "x": 4.262803672316384,
-        "y": 0.5603481417725982
+        "y": 7.4399999999999995
       },
       "prevControl": null,
       "nextControl": {
         "x": 5.262803672316384,
-        "y": 0.5603481417725984
+        "y": 7.4399999999999995
       },
       "isLocked": false,
-      "linkedName": "ShootRight"
+      "linkedName": "MinShootLeft"
     },
     {
       "anchor": {
-        "x": 6.636100911458334,
-        "y": 0.8936333188657408
+        "x": 7.523423186657476,
+        "y": 7.058293935738358
       },
       "prevControl": {
-        "x": 6.323433477425241,
-        "y": 0.8415490888987895
+        "x": 7.244720358455884,
+        "y": 7.147241277956496
       },
       "nextControl": {
-        "x": 7.269045717592593,
-        "y": 0.9990694444444441
+        "x": 7.910006320778179,
+        "y": 6.934916851450133
       },
       "isLocked": false,
       "linkedName": null
@@ -33,25 +33,25 @@
     {
       "anchor": {
         "x": 7.79727611400463,
-        "y": 3.897
+        "y": 4.103
       },
       "prevControl": {
-        "x": 7.655951027199075,
-        "y": 2.685107855902778
+        "x": 7.854246179917279,
+        "y": 4.962437911688113
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "RightDeepPickup"
+      "linkedName": "LeftDeepPickup"
     }
   ],
   "rotationTargets": [
     {
       "waypointRelativePos": 0.33689839572192515,
-      "rotationDegrees": -168.95410601386317
+      "rotationDegrees": 175.45315686945474
     },
     {
       "waypointRelativePos": 1.0575452302631578,
-      "rotationDegrees": -93.45964537383175
+      "rotationDegrees": 77.40560892213831
     }
   ],
   "constraintZones": [],
@@ -74,7 +74,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -83.48019824834306
+    "rotation": 76.1244214673007
   },
   "reversed": false,
   "folder": "Shoot",
