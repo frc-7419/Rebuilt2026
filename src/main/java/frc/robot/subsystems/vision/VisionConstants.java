@@ -20,7 +20,7 @@ public class VisionConstants {
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
   public static final double kLimelightFourCameraForwardM = 0.0877665;
-  public static final double kLimelightFourCameraSideM = -0.2018325;
+  public static final double kLimelightFourCameraSideM = 0.2018325;
   public static final double kLimelightFourCameraHeightM = 0.498363;
   public static final double kLimelightFourCameraRollDeg = 0;
   public static final double kLimelightFourCameraPitchDeg = 10;
@@ -35,7 +35,7 @@ public class VisionConstants {
   };
 
   public static final double kLimelightThreeCameraForwardM = 0.060;
-  public static final double kLimelightThreeCameraSideM = -0.281;
+  public static final double kLimelightThreeCameraSideM = 0.281;
   public static final double kLimelightThreeCameraHeightM = 0.498376;
   public static final double kLimelightThreeCameraPitchDeg = 10;
   public static final double kLimelightThreeCameraYawDeg = -55;
