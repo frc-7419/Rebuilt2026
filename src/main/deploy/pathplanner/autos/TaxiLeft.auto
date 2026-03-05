@@ -1,0 +1,37 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "EnableAutoAim"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "EnableHubMode"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StartLeftToFarLeft"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

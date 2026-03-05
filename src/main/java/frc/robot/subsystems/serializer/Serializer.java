@@ -1,0 +1,130 @@
+package frc.robot.subsystems.serializer;
+
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
+import frc.robot.RobotState;
+import org.littletonrobotics.junction.Logger;
+
+/**
+ * Subsystem with two parts: center wheel (serializer) and feeder (into shooter). Both can be run
+ * together or stopped together.
+ */
+public class Serializer extends SubsystemBase {
+  private final SerializerIO io;
+  private final SerializerIOInputsAutoLogged inputs = new SerializerIOInputsAutoLogged();
+  private final Alert serializerDisconnectedAlert =
+      new Alert("Disconnected serializer motor.", AlertType.kError);
+  private final Alert feederDisconnectedAlert =
+      new Alert("Disconnected feeder motor.", AlertType.kError);
+
+  public Serializer(SerializerIO io) {
+    this.io = io;
+  }
+
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    Logger.processInputs("Serializer", inputs);
+
+    double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+    RobotState.getInstance().addHopperUpdates(timestamp, inputs.serializerVelocity);
+
+    if (Constants.currentMode != Mode.SIM) {
+      serializerDisconnectedAlert.set(!inputs.serializerConnected);
+      feederDisconnectedAlert.set(!inputs.feederConnected);
+    }
+  }
+
+  // --------------- Center wheel (serializer) ---------------
+
+  /** Center wheel open-loop voltage. */
+  public void setSerializerVoltage(double volts) {
+    io.setSerializerOpenLoop(volts);
+  }
+
+  /** Set serializer wheel target RPM (closed-loop in IO). */
+  public void setSerializerRPM(double rpm) {
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
+
+    double clamped =
+        MathUtil.clamp(
+            targetRadPerSec,
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
+
+    AngularVelocity target = RadiansPerSecond.of(clamped);
+
+    Logger.recordOutput("Serializer/RequestedRadPerSec", clamped);
+    Logger.recordOutput("Serializer/RequestedRPM", target.in(RPM));
+    io.setVelocity(target);
+  }
+
+  /** Stop center wheel. */
+  public void stopSerializer() {
+    io.setSerializerOpenLoop(0.0);
+  }
+
+  public AngularVelocity getSerializerVelocity() {
+    return inputs.serializerVelocity;
+  }
+
+  public double getSerializerRPM() {
+    return inputs.serializerVelocity.in(RPM);
+  }
+
+  // --------------- Feeder (into shooter) ---------------
+
+  /** Feeder open-loop voltage. */
+  public void setFeederVoltage(double volts) {
+    io.setFeederOpenLoop(volts);
+  }
+
+  /** Feeder closed-loop RPM. */
+  public void setFeederRPM(double rpm) {
+    double targetRadPerSec = RPM.of(rpm).in(RadiansPerSecond);
+    double clamped =
+        MathUtil.clamp(
+            targetRadPerSec,
+            SerializerConstants.kMinVelocity.in(RadiansPerSecond),
+            SerializerConstants.kMaxVelocity.in(RadiansPerSecond));
+    AngularVelocity target = RadiansPerSecond.of(clamped);
+    Logger.recordOutput("Serializer/FeederRequestedRadPerSec", clamped);
+    Logger.recordOutput("Serializer/FeederRequestedRPM", target.in(RPM));
+    io.setFeederVelocity(target);
+  }
+
+  /** Stop feeder. */
+  public void stopFeeder() {
+    io.setFeederOpenLoop(0.0);
+  }
+
+  public AngularVelocity getFeederVelocity() {
+    return inputs.feederVelocity;
+  }
+
+  public double getFeederRPM() {
+    return inputs.feederVelocity.in(RPM);
+  }
+
+  // --------------- Both ---------------
+
+  /** Run both at given voltages (e.g. shoot or reverse). */
+  public void setBothVoltage(double serializerVolts, double feederVolts) {
+    io.setSerializerOpenLoop(serializerVolts);
+    io.setFeederOpenLoop(feederVolts);
+  }
+
+  /** Stop both center wheel and feeder. */
+  public void stopBoth() {
+    io.setSerializerOpenLoop(0.0);
+    io.setFeederOpenLoop(0.0);
+  }
+}

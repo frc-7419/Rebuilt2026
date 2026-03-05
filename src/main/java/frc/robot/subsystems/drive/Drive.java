@@ -37,6 +37,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -101,6 +102,7 @@ public class Drive extends SubsystemBase {
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
   private SwerveDriveOdometry odometryOnly =
       new SwerveDriveOdometry(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+  private ChassisSpeeds desiredFieldRelativeSpeeds = new ChassisSpeeds();
 
   public Drive(
       GyroIO gyroIO,
@@ -207,14 +209,16 @@ public class Drive extends SubsystemBase {
 
       // Update odometry-only pose (before vision corrections)
       Pose2d odometryOnlyPose = odometryOnly.update(rawGyroRotation, modulePositions);
-      robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
+
+      // robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
 
       // Apply update to pose estimator (includes vision corrections)
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
     }
 
     Pose2d visionCorrectedPose = poseEstimator.getEstimatedPosition();
-    robotState.setEstimatedPose(visionCorrectedPose);
+    robotState.addOdometryMeasurement(Timer.getFPGATimestamp(), visionCorrectedPose);
+    // robotState.setEstimatedPose(visionCorrectedPose);
 
     Pose2d odometryOnlyPose = odometryOnly.getPoseMeters();
     Logger.recordOutput("Odometry/OdometryOnly", odometryOnlyPose);
@@ -224,6 +228,17 @@ public class Drive extends SubsystemBase {
         new Pose2d(
             visionCorrectedPose.getTranslation().minus(odometryOnlyPose.getTranslation()),
             visionCorrectedPose.getRotation().minus(odometryOnlyPose.getRotation())));
+
+    ChassisSpeeds measuredRobotRelativeSpeeds = getChassisSpeeds();
+    ChassisSpeeds measuredFieldRelativeSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            measuredRobotRelativeSpeeds, visionCorrectedPose.getRotation());
+    double timestamp = Timer.getFPGATimestamp();
+    robotState.addDriveMotionMeasurements(
+        timestamp,
+        desiredFieldRelativeSpeeds,
+        measuredRobotRelativeSpeeds,
+        measuredFieldRelativeSpeeds);
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
@@ -235,6 +250,8 @@ public class Drive extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
+    desiredFieldRelativeSpeeds = speeds;
+
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);

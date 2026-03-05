@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.math.util.Units.*;
 import static frc.robot.util.PhoenixUtil.*;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -27,7 +28,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -198,8 +198,8 @@ public class ModuleIOTalonFXS implements ModuleIO {
 
     // Update drive inputs
     inputs.driveConnected = driveConnectedDebounce.calculate(driveStatus.isOK());
-    inputs.drivePositionRad = Units.rotationsToRadians(drivePosition.getValueAsDouble());
-    inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble());
+    inputs.drivePositionRad = rotationsToRadians(drivePosition.getValueAsDouble());
+    inputs.driveVelocityRadPerSec = rotationsToRadians(driveVelocity.getValueAsDouble());
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = driveCurrent.getValueAsDouble();
 
@@ -208,7 +208,7 @@ public class ModuleIOTalonFXS implements ModuleIO {
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderStatus.isOK());
     inputs.turnAbsolutePosition = Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
     inputs.turnPosition = Rotation2d.fromRotations(turnPosition.getValueAsDouble());
-    inputs.turnVelocityRadPerSec = Units.rotationsToRadians(turnVelocity.getValueAsDouble());
+    inputs.turnVelocityRadPerSec = rotationsToRadians(turnVelocity.getValueAsDouble());
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = turnCurrent.getValueAsDouble();
 
@@ -217,7 +217,7 @@ public class ModuleIOTalonFXS implements ModuleIO {
         timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryDrivePositionsRad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value))
+            .mapToDouble((Double value) -> rotationsToRadians(value))
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
@@ -240,7 +240,7 @@ public class ModuleIOTalonFXS implements ModuleIO {
 
   @Override
   public void setDriveVelocity(double velocityRadPerSec) {
-    double velocityRotPerSec = Units.radiansToRotations(velocityRadPerSec);
+    double velocityRotPerSec = radiansToRotations(velocityRadPerSec);
     driveTalon.setControl(velocityVoltageRequest.withVelocity(velocityRotPerSec));
   }
 

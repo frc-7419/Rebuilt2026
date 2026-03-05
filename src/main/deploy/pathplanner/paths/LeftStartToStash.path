@@ -1,0 +1,59 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 4.204696428571428,
+        "y": 7.385729890046297
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.2060121527777783,
+        "y": 7.135688151041666
+      },
+      "isLocked": false,
+      "linkedName": "StartLeft"
+    },
+    {
+      "anchor": {
+        "x": 0.7960872395833334,
+        "y": 5.965921279131355
+      },
+      "prevControl": {
+        "x": 2.378633463541667,
+        "y": 5.8288575665509255
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "Stash"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.8491467927631581,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 4.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "reversed": false,
+  "folder": "Stash",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 180.0
+  },
+  "useDefaultConstraints": true
+}
