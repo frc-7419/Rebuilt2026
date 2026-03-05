@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.5155327690972227,
-        "y": 4.046088179976852
+        "x": 3.681593026620371,
+        "y": 5.33500708912037
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.6319914641203708,
-        "y": 5.456911458333334
+        "x": 2.057273075810186,
+        "y": 6.038680049189814
       },
       "isLocked": false,
       "linkedName": "StartCenter"
@@ -20,15 +20,20 @@
         "y": 5.965921279131355
       },
       "prevControl": {
-        "x": 2.4228347800925913,
-        "y": 6.191359068483207
+        "x": 2.410126519097222,
+        "y": 5.924189670138889
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "Stash"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 0.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -45,10 +50,10 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Intake",
+  "folder": "Stash",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -51.91680273043146
   },
   "useDefaultConstraints": true
 }

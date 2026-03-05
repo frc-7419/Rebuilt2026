@@ -58,7 +58,7 @@ public final class IntakeConstants {
   }
 
   // Simulation PID gains
-  public static final double kSimP = 1.0;
+  public static final double kSimP = 10.0;
   public static final double kSimI = 0.0;
   public static final double kSimD = 0.0;
 }

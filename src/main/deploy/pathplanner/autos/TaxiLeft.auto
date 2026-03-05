@@ -5,9 +5,27 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "EnableAutoAim"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "EnableHubMode"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "StartLeftToFarLeft"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot"
           }
         }
       ]

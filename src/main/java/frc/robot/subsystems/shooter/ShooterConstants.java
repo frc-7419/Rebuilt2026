@@ -59,6 +59,9 @@ public final class ShooterConstants {
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;
 
+  /** Default RPM for idle state. */
+  public static final double kIdleRPM = 2000.0;
+
   /** Min speed before firing. */
   public static final double kAutoAimRPMMin = 1000.0;
 

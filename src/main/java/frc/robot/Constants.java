@@ -81,5 +81,5 @@ public final class Constants {
   /**
    * Max intake rate (fuel per second) when simulating capacity; used for canIntake() rate limit.
    */
-  public static final double kMaxIntakeRatePerSecond = 30.0;
+  public static final double kMaxIntakeRatePerSecond = 50.0;
 }

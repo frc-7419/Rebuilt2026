@@ -1,7 +1,5 @@
 package frc.robot.subsystems.hood;
 
-import static edu.wpi.first.math.MathUtil.clamp;
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
 import edu.wpi.first.units.measure.Angle;
@@ -43,13 +41,7 @@ public class Hood extends SubsystemBase {
 
   /** Set hood target angle */
   public void setAngle(Angle angle) {
-    double deg = angle.in(Degrees);
-    double clamped =
-        clamp(deg, HoodConstants.kMinAngle.in(Degrees), HoodConstants.kMaxAngle.in(Degrees));
-    clamped -= HoodConstants.kMinAngle.in(Degrees);
-    clamped = (HoodConstants.kMaxAngle.in(Degrees) - HoodConstants.kMinAngle.in(Degrees)) - clamped;
-    Logger.recordOutput("Hood/RequestedDeg", clamped);
-    io.setPosition(Degrees.of(clamped));
+    io.setPosition(angle);
   }
 
   /** Cancels position hold and stops the motor. */
