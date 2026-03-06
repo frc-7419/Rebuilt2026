@@ -287,4 +287,26 @@ public class DriveCommands {
     Rotation2d lastAngle = Rotation2d.kZero;
     double gyroDelta = 0.0;
   }
+
+  public static Command driveFixedVelocity(
+      Drive drive, double xVelocity, double yVelocity, double omega) {
+
+    return Commands.runEnd(
+        () -> {
+          ChassisSpeeds speeds = new ChassisSpeeds(xVelocity, yVelocity, omega);
+
+          boolean isFlipped =
+              DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get() == Alliance.Red;
+
+          drive.runVelocity(
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  speeds,
+                  isFlipped
+                      ? drive.getRotation().plus(Rotation2d.fromDegrees(180))
+                      : drive.getRotation()));
+        },
+        () -> drive.runVelocity(new ChassisSpeeds()),
+        drive);
+  }
 }
