@@ -104,7 +104,7 @@ public class Robot extends LoggedRobot {
 
     // Show in sim and replay simulation
     // if (Constants.currentMode == Constants.Mode.REAL) {
-    robotContainer.updateShooterTrajectoryVisualization();
+    // robotContainer.updateShooterTrajectoryVisualization();
     // }
 
     Rotation3d turretYaw =

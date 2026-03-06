@@ -131,7 +131,7 @@ public final class ControlManager {
     return robotState.isHubMode();
   }
 
-  private static final double kShootRpmTolerance = 300.0;
+  private static final double kShootRpmTolerance = 200.0;
 
   /**
    * Runs serializer/feeder for shooting only when shooter is within {@value #kShootRpmTolerance}
@@ -185,6 +185,7 @@ public final class ControlManager {
    * so auto and teleop share auto-aim and hub mode state.
    */
   public void registerNamedCommands(Intake intake, Shooter shooter, Serializer serializer) {
+    Command wiggle = IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), 7);
     NamedCommands.registerCommand("EnableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(true)));
     NamedCommands.registerCommand(
         "DisableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(false)));
@@ -196,8 +197,10 @@ public final class ControlManager {
         "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
     NamedCommands.registerCommand(
         "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+    NamedCommands.registerCommand("WiggleIntake", wiggle);
 
     new EventTrigger("Intake").whileTrue(runIntakeLowerAndWheel(intake));
+    new EventTrigger("WiggleIntake").whileTrue(wiggle);
     new EventTrigger("AutoShoot").whileTrue(runShootAtSpeedNoRequirements(shooter, serializer));
   }
 
@@ -254,7 +257,7 @@ public final class ControlManager {
     // -------- Driver --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> driver.getRightX()));
+            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
 
     lockPushOrientationTrigger.whileTrue(
         DriveCommands.joystickDriveAtAngle(
@@ -306,7 +309,7 @@ public final class ControlManager {
     shootTrigger.whileTrue(runShooting(serializer));
 
     intakeJerkingTrigger.whileTrue(
-        IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20)));
+        IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), kIntakeVolts));
 
     reverseSerializerTrigger
         .whileTrue(

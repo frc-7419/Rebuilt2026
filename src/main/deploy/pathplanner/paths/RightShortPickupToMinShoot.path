@@ -9,7 +9,7 @@
       "prevControl": null,
       "nextControl": {
         "x": 7.480246021412037,
-        "y": 2.248622034143519
+        "y": 2.2486220341435184
       },
       "isLocked": false,
       "linkedName": "RightPickupShort"
@@ -21,7 +21,7 @@
       },
       "prevControl": {
         "x": 7.192774711208635,
-        "y": 0.3387484362389017
+        "y": 0.3387484362389013
       },
       "nextControl": null,
       "isLocked": false,

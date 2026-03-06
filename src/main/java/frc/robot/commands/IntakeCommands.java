@@ -48,13 +48,15 @@ public final class IntakeCommands {
     return runOnce(() -> intake.setWristAngle(angle), intake);
   }
 
-  public static Command setWristAngleWiggle(Intake intake, Angle midpoint, Angle wiggle) {
+  public static Command setWristAngleWiggle(
+      Intake intake, Angle midpoint, Angle wiggle, double volts) {
     return run(
-        () ->
-            intake.setWristAngle(
-                Degrees.of(
-                    wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 5)
-                        + midpoint.in(Degrees))),
+        () -> {
+          intake.setWristAngle(
+              Degrees.of(
+                  wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 8) + midpoint.in(Degrees)));
+          intake.setWheelOpenLoop(volts);
+        },
         intake);
   }
 
