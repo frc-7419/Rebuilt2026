@@ -18,7 +18,7 @@ public final class HoodConstants {
 
   public static final double kMotorToHoodGearRatio = (50.0 / 8.0) * (144.0 / 10.0);
 
-  public static final Angle kMinAngle = Degrees.of(30.0);
+  public static final Angle kMinAngle = Degrees.of(54.0);
   public static final Angle kMaxAngle = Degrees.of(64.0);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();

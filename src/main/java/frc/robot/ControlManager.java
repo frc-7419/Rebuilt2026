@@ -31,7 +31,7 @@ public final class ControlManager {
 
   private static final double kShootSerializerVolts = 10.0;
   private static final double kShootFeederVolts = 10.0;
-  private static final double kIntakeVolts = 4;
+  private static final double kIntakeVolts = 5;
 
   private static ControlManager instance;
 
@@ -304,7 +304,7 @@ public final class ControlManager {
 
     // -------- Operator: intake & shooting --------
     // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
-    intakeWheelTrigger.toggleOnTrue(runIntakeWheel(intake, kIntakeVolts));
+    intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
     shootTrigger.whileTrue(runShooting(serializer));
 

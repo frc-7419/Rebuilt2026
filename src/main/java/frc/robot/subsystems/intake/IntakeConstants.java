@@ -36,6 +36,8 @@ public final class IntakeConstants {
 
   static {
     wheelMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    wheelMotorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    wheelMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     wheelSlot0Configs.kP = 0.43;
     wheelSlot0Configs.kI = 0.0;
     wheelSlot0Configs.kD = 0.0;
@@ -50,6 +52,8 @@ public final class IntakeConstants {
   static {
     wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     wristMotorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    wristMotorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    wristMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     wristSlot0Configs.kP = 2.0;
     wristSlot0Configs.kI = 0.0;
     wristSlot0Configs.kD = 0.3;
