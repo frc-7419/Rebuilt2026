@@ -43,12 +43,6 @@
                 "data": {
                   "name": "AutoShoot"
                 }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "WiggleIntake"
-                }
               }
             ]
           }
@@ -73,12 +67,6 @@
                 "type": "named",
                 "data": {
                   "name": "AutoShoot"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "WiggleIntake"
                 }
               }
             ]
