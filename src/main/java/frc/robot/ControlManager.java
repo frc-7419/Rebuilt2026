@@ -25,8 +25,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
 
 /**
- * Central manager for control state (intaking, shooting, auto-aim mode, hub
- * mode). Updates {@link
+ * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
  * RobotState} so that teleop and autonomous use the same state uniformly.
  */
 public final class ControlManager {
@@ -38,15 +37,13 @@ public final class ControlManager {
   private static ControlManager instance;
 
   public static ControlManager getInstance() {
-    if (instance == null)
-      instance = new ControlManager();
+    if (instance == null) instance = new ControlManager();
     return instance;
   }
 
   private final RobotState robotState = RobotState.getInstance();
 
-  private ControlManager() {
-  }
+  private ControlManager() {}
 
   // --------------- Intake ---------------
 
@@ -62,16 +59,15 @@ public final class ControlManager {
   }
 
   /**
-   * Lowers wrist to 0° and runs the intake wheel; single command so it only
-   * requires Intake once.
+   * Lowers wrist to 0° and runs the intake wheel; single command so it only requires Intake once.
    */
   public Command runIntakeLowerAndWheel(Intake intake) {
     return Commands.run(
-        () -> {
-          intake.setWristAngle(Degrees.of(120.0));
-          intake.setWheelOpenLoop(kIntakeVolts);
-        },
-        intake)
+            () -> {
+              intake.setWristAngle(Degrees.of(120.0));
+              intake.setWheelOpenLoop(kIntakeVolts);
+            },
+            intake)
         .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
         .finallyDo(
             interrupted -> {
@@ -91,19 +87,16 @@ public final class ControlManager {
 
   // --------------- Shooting ---------------
 
-  /**
-   * Runs serializer/feeder for shooting and sets
-   * {@link RobotState#setShooting(boolean)}
-   */
+  /** Runs serializer/feeder for shooting and sets {@link RobotState#setShooting(boolean)} */
   public Command runShooting(Serializer serializer) {
     return Commands.run(
-        () -> {
-          serializer.setFeederVoltage(kShootFeederVolts);
-          if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7)
-            serializer.setSerializerVoltage(kShootSerializerVolts);
-          else
-            serializer.setSerializerVoltage(0);
-        }, serializer)
+            () -> {
+              serializer.setFeederVoltage(kShootFeederVolts);
+              if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7)
+                serializer.setSerializerVoltage(kShootSerializerVolts);
+              else serializer.setSerializerVoltage(0);
+            },
+            serializer)
         .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
         .finallyDo(
             interrupted -> {
@@ -148,22 +141,21 @@ public final class ControlManager {
   private static final double kShootRpmTolerance = 200.0;
 
   /**
-   * Runs serializer/feeder for shooting only when shooter is within
-   * {@value #kShootRpmTolerance}
+   * Runs serializer/feeder for shooting only when shooter is within {@value #kShootRpmTolerance}
    * RPM of the requested speed.
    */
   public Command runShootAtSpeed(Shooter shooter, Serializer serializer) {
     return Commands.run(
-        () -> {
-          double current = shooter.getRPM();
-          double requested = shooter.getRequestedRPM();
-          if (Math.abs(current - requested) <= kShootRpmTolerance) {
-            serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
-          } else {
-            serializer.stopBoth();
-          }
-        },
-        serializer)
+            () -> {
+              double current = shooter.getRPM();
+              double requested = shooter.getRequestedRPM();
+              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+              } else {
+                serializer.stopBoth();
+              }
+            },
+            serializer)
         .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
         .finallyDo(
             interrupted -> {
@@ -173,21 +165,20 @@ public final class ControlManager {
   }
 
   /**
-   * Same behavior as {@link #runShootAtSpeed} but with no subsystem requirements
-   * for zoned events
+   * Same behavior as {@link #runShootAtSpeed} but with no subsystem requirements for zoned events
    * idk it was bugging
    */
   public Command runShootAtSpeedNoRequirements(Shooter shooter, Serializer serializer) {
     return Commands.run(
-        () -> {
-          double current = shooter.getRPM();
-          double requested = shooter.getRequestedRPM();
-          if (Math.abs(current - requested) <= kShootRpmTolerance) {
-            serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
-          } else {
-            serializer.stopBoth();
-          }
-        })
+            () -> {
+              double current = shooter.getRPM();
+              double requested = shooter.getRequestedRPM();
+              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+              } else {
+                serializer.stopBoth();
+              }
+            })
         .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
         .finallyDo(
             interrupted -> {
@@ -197,8 +188,7 @@ public final class ControlManager {
   }
 
   /**
-   * Registers named commands for PathPlanner/autonomous. Uses the same
-   * {@link RobotState} as teleop
+   * Registers named commands for PathPlanner/autonomous. Uses the same {@link RobotState} as teleop
    * so auto and teleop share auto-aim and hub mode state.
    */
   public void registerNamedCommands(Intake intake, Shooter shooter, Serializer serializer) {
@@ -287,8 +277,8 @@ public final class ControlManager {
 
     resetPoseTrigger.onTrue(
         Commands.runOnce(
-            () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-            drive)
+                () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+                drive)
             .ignoringDisable(true));
 
     turret.setDefaultCommand(
