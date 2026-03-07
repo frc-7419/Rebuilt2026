@@ -21,7 +21,7 @@
       },
       "prevControl": {
         "x": 8.282148503401325,
-        "y": 0.36180156415783293
+        "y": 0.3618015641578327
       },
       "nextControl": {
         "x": 8.256500099311442,
@@ -74,12 +74,6 @@
     {
       "name": "AutoShoot",
       "waypointRelativePos": 0,
-      "endWaypointRelativePos": 2.0,
-      "command": null
-    },
-    {
-      "name": "Intake",
-      "waypointRelativePos": 0.14090260152284262,
       "endWaypointRelativePos": 2.0,
       "command": null
     }

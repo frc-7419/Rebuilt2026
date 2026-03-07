@@ -17,9 +17,22 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "StartRightToPickupRight"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartRightToPickupRight"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
@@ -43,14 +56,33 @@
                 "data": {
                   "name": "AutoShoot"
                 }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
+                }
               }
             ]
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "RightMinShootToRightDeepPickup"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "RightMinShootToRightDeepPickup"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
@@ -67,6 +99,12 @@
                 "type": "named",
                 "data": {
                   "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
                 }
               }
             ]

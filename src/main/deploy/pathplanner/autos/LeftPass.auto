@@ -17,9 +17,22 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "LeftPass"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "LeftPass"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
@@ -30,6 +43,12 @@
                 "type": "named",
                 "data": {
                   "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
                 }
               }
             ]
