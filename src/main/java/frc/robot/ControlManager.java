@@ -87,24 +87,6 @@ public final class ControlManager {
 
   // --------------- Shooting ---------------
 
-  /** Runs serializer/feeder for shooting and sets {@link RobotState#setShooting(boolean)} */
-  public Command runShooting(Serializer serializer) {
-    return Commands.run(
-            () -> {
-              serializer.setFeederVoltage(kShootFeederVolts);
-              if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.5)
-                serializer.setSerializerVoltage(kShootSerializerVolts);
-              else serializer.setSerializerVoltage(0);
-            },
-            serializer)
-        .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
-        .finallyDo(
-            interrupted -> {
-              robotState.setShooting(false);
-              serializer.stopBoth();
-            });
-  }
-
   public Command stopShooting(Serializer serializer) {
     return Commands.runOnce(
         () -> {
@@ -319,7 +301,7 @@ public final class ControlManager {
     // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
-    shootTrigger.whileTrue(runShooting(serializer));
+    shootTrigger.whileTrue(runShootAtSpeed(shooter, serializer));
 
     intakeJerkingTrigger.whileTrue(
         IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), kIntakeVolts));
