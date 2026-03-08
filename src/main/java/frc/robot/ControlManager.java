@@ -23,6 +23,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
@@ -131,13 +132,15 @@ public final class ControlManager {
             () -> {
               double current = shooter.getRPM();
               double requested = shooter.getRequestedRPM();
-              if (Math.abs(current - requested) <= kShootRpmTolerance) {
-                serializer.setFeederVoltage(kShootFeederVolts);
-                if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
-                  serializer.setSerializerVoltage(kShootSerializerVolts);
-                } else serializer.setSerializerVoltage(0);
+              double diff = Math.abs(current - requested);
+              Logger.recordOutput("ControlManager/Diff", diff);
+              Logger.recordOutput("ControlManager/SignedDiff", current - requested);
+
+              serializer.setFeederVoltage(kShootFeederVolts);
+              if (diff <= kShootRpmTolerance) {
+                serializer.setSerializerVoltage(kShootSerializerVolts);
               } else {
-                serializer.stopBoth();
+                serializer.setSerializerVoltage(0);
               }
             },
             serializer)
