@@ -2,13 +2,13 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -23,6 +23,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
+import java.util.function.DoubleSupplier;
 
 /**
  * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
@@ -88,13 +89,16 @@ public final class ControlManager {
   // --------------- Shooting ---------------
 
   /** Runs serializer/feeder for shooting and sets {@link RobotState#setShooting(boolean)} */
-  public Command runShooting(Serializer serializer) {
+  public Command runShooting(Serializer serializer, DoubleSupplier rpsSupplier) {
     return Commands.run(
             () -> {
-              serializer.setFeederVoltage(kShootFeederVolts);
-              if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7)
-                serializer.setSerializerVoltage(kShootSerializerVolts);
-              else serializer.setSerializerVoltage(0);
+              if (Math.abs(
+                      rpsSupplier.getAsDouble()
+                          - RobotState.getInstance()
+                              .getLatestShooterVelocity()
+                              .in(RotationsPerSecond))
+                  < 100) serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+              else serializer.setBothVoltage(0, 0);
             },
             serializer)
         .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
@@ -313,7 +317,7 @@ public final class ControlManager {
     // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
-    shootTrigger.whileTrue(runShooting(serializer));
+    shootTrigger.whileTrue(runShooting(serializer, () -> shooter.getRPM() / 60));
 
     intakeJerkingTrigger.whileTrue(
         IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), kIntakeVolts));
