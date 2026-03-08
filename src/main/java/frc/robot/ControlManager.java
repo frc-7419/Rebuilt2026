@@ -32,7 +32,7 @@ public final class ControlManager {
 
   private static final double kShootSerializerVolts = 10.0;
   private static final double kShootFeederVolts = 10.0;
-  private static final double kIntakeVolts = 5;
+  private static final double kIntakeVolts = 6;
 
   private static ControlManager instance;
 
@@ -92,7 +92,7 @@ public final class ControlManager {
     return Commands.run(
             () -> {
               serializer.setFeederVoltage(kShootFeederVolts);
-              if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7)
+              if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.5)
                 serializer.setSerializerVoltage(kShootSerializerVolts);
               else serializer.setSerializerVoltage(0);
             },
@@ -150,7 +150,10 @@ public final class ControlManager {
               double current = shooter.getRPM();
               double requested = shooter.getRequestedRPM();
               if (Math.abs(current - requested) <= kShootRpmTolerance) {
-                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+                serializer.setFeederVoltage(kShootFeederVolts);
+                if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
+                  serializer.setSerializerVoltage(kShootSerializerVolts);
+                } else serializer.setSerializerVoltage(0);
               } else {
                 serializer.stopBoth();
               }
@@ -174,7 +177,10 @@ public final class ControlManager {
               double current = shooter.getRPM();
               double requested = shooter.getRequestedRPM();
               if (Math.abs(current - requested) <= kShootRpmTolerance) {
-                serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+                serializer.setFeederVoltage(kShootFeederVolts);
+                if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
+                  serializer.setSerializerVoltage(kShootSerializerVolts);
+                } else serializer.setSerializerVoltage(0);
               } else {
                 serializer.stopBoth();
               }

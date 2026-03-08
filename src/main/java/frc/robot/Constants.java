@@ -70,7 +70,7 @@ public final class Constants {
   public static final double kHubFunnelHeightMeters = 72 * 0.0254;
 
   /** Clearance above rim the ball must pass. FunnelClear Z = rim + this. */
-  public static final double kHubFunnelClearanceMeters = 0.1;
+  public static final double kHubFunnelClearanceMeters = 0.115;
 
   /** When true, sim tracks fuel stored (capacity) and only launches if fuelStored > 0. */
   public static final boolean kSimulateFuelCapacity = true;
