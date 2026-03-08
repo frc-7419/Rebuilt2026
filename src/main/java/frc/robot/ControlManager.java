@@ -9,6 +9,7 @@ import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -89,15 +90,22 @@ public final class ControlManager {
   // --------------- Shooting ---------------
 
   /** Runs serializer/feeder for shooting and sets {@link RobotState#setShooting(boolean)} */
-  public Command runShooting(Serializer serializer, DoubleSupplier rpsSupplier) {
+  public Command runShooting(Serializer serializer, DoubleSupplier targetRPSSupplier) {
     return Commands.run(
             () -> {
+              SmartDashboard.putNumber(
+                  "Diff",
+                  Math.abs(
+                      targetRPSSupplier.getAsDouble()
+                          - RobotState.getInstance()
+                              .getLatestShooterVelocity()
+                              .in(RotationsPerSecond)));
               if (Math.abs(
-                      rpsSupplier.getAsDouble()
+                      targetRPSSupplier.getAsDouble()
                           - RobotState.getInstance()
                               .getLatestShooterVelocity()
                               .in(RotationsPerSecond))
-                  < 100) serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
+                  < 1.6) serializer.setBothVoltage(kShootSerializerVolts, kShootFeederVolts);
               else serializer.setBothVoltage(0, 0);
             },
             serializer)
@@ -317,7 +325,7 @@ public final class ControlManager {
     // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
-    shootTrigger.whileTrue(runShooting(serializer, () -> shooter.getRPM() / 60));
+    shootTrigger.whileTrue(runShooting(serializer, () -> shooter.getRequestedRPM() / 60));
 
     intakeJerkingTrigger.whileTrue(
         IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), kIntakeVolts));
