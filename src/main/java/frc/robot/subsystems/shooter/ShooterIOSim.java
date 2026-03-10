@@ -1,10 +1,14 @@
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.math.MathUtil.*;
+import static edu.wpi.first.math.MathUtil.clamp;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static frc.robot.subsystems.shooter.ShooterConstants.*;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static frc.robot.subsystems.shooter.ShooterConstants.computeVelocityVolts;
+import static frc.robot.subsystems.shooter.ShooterConstants.kMaxVoltage;
+import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
+import static frc.robot.subsystems.shooter.ShooterConstants.kSimKn;
+import static frc.robot.subsystems.shooter.ShooterConstants.kSimKv;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -16,21 +20,12 @@ public class ShooterIOSim implements ShooterIO {
 
   private static final double SHOOTER_INERTIA = 0.1;
   private static final DCMotor MOTOR_MODEL = DCMotor.getKrakenX60Foc(2);
-  private static final double kV =
-      12.0 / (MOTOR_MODEL.freeSpeedRadPerSec / kMotorToShooterGearRatio); // Velocity feedforward
 
   private final DCMotorSim motorSim;
-  private final PIDController velocityController;
-
-  private boolean velocityControl = false;
-
-  /** Setpoint on the MECHANISM (wheel) side, in rad/s. */
-  private double targetShooterVelocityRadPerSec = 0.0;
-
-  /** Feedforward velocity term on the mechanism side, in rad/s (same structure as turret sim). */
-  private double feedforwardVelocityRadPerSec = 0.0;
 
   private double appliedVolts = 0.0;
+  /** Target mechanism velocity (rad/s); NaN when open-loop only. */
+  private double targetVelocityRadPerSec = Double.NaN;
 
   private double rotorVelocityRadPerSec = 0.0;
   private double shooterVelocityRadPerSec = 0.0;
@@ -43,23 +38,23 @@ public class ShooterIOSim implements ShooterIO {
             LinearSystemId.createDCMotorSystem(
                 MOTOR_MODEL, SHOOTER_INERTIA, kMotorToShooterGearRatio),
             MOTOR_MODEL);
-
-    velocityController = new PIDController(kSimP, kSimI, kSimD);
   }
 
   @Override
   public void updateInputs(ShooterIOInputs inputs) {
-    if (velocityControl) {
-      double pidOutput =
-          velocityController.calculate(shooterVelocityRadPerSec, targetShooterVelocityRadPerSec);
-      double feedforwardVolts = feedforwardVelocityRadPerSec * kV;
-      appliedVolts = clamp(pidOutput + feedforwardVolts, -kMaxVoltage, kMaxVoltage);
+    if (Double.isFinite(targetVelocityRadPerSec)) {
+      double targetRps = RadiansPerSecond.of(targetVelocityRadPerSec).in(RotationsPerSecond);
+      double actualRps = RadiansPerSecond.of(shooterVelocityRadPerSec).in(RotationsPerSecond);
+      appliedVolts =
+          clamp(
+              computeVelocityVolts(targetRps, actualRps, kSimKv, kSimKn),
+              -kMaxVoltage,
+              kMaxVoltage);
     }
 
     motorSim.setInputVoltage(appliedVolts);
     motorSim.update(SIMULATION_DT);
 
-    // Motor sim velocity is motor-side; convert to mechanism.
     rotorVelocityRadPerSec = motorSim.getAngularVelocityRadPerSec();
     shooterVelocityRadPerSec = rotorVelocityRadPerSec;
 
@@ -79,37 +74,29 @@ public class ShooterIOSim implements ShooterIO {
     inputs.connected = true;
     inputs.rotorVelocity = RadiansPerSecond.of(rotorVelocityRadPerSec);
     inputs.shooterVelocity = RadiansPerSecond.of(shooterVelocityRadPerSec);
-    inputs.requestedVelocity = RadiansPerSecond.of(targetShooterVelocityRadPerSec);
+    inputs.requestedVelocity =
+        Double.isFinite(targetVelocityRadPerSec)
+            ? RadiansPerSecond.of(targetVelocityRadPerSec)
+            : RadiansPerSecond.of(0.0);
     inputs.appliedVolts = appliedVolts;
     inputs.currentAmps = currentAmps;
   }
 
   @Override
   public void setOpenLoop(double volts) {
-    velocityControl = false;
-    velocityController.reset();
-    feedforwardVelocityRadPerSec = 0.0;
+    targetVelocityRadPerSec = Double.NaN;
     appliedVolts = clamp(volts, -kMaxVoltage, kMaxVoltage);
   }
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    velocityControl = true;
-    feedforwardVelocityRadPerSec = 0.0;
-
-    double targetRadPerSec = velocity.in(RadiansPerSecond);
-    targetRadPerSec =
-        clamp(
-            targetRadPerSec, kMinVelocity.in(RadiansPerSecond), kMaxVelocity.in(RadiansPerSecond));
-    targetShooterVelocityRadPerSec = targetRadPerSec;
+    targetVelocityRadPerSec = velocity.in(RadiansPerSecond);
   }
 
   @Override
   public void zeroRotor() {
     motorSim.setState(0.0, 0.0);
-    targetShooterVelocityRadPerSec = 0.0;
-    feedforwardVelocityRadPerSec = 0.0;
     appliedVolts = 0.0;
-    velocityController.reset();
+    targetVelocityRadPerSec = Double.NaN;
   }
 }
