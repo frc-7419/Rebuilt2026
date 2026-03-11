@@ -32,8 +32,14 @@ public class Shooter extends SubsystemBase {
     Logger.recordOutput("Shooter/RequestedRPM", inputs.requestedVelocity.in(RPM));
 
     double timestamp = getFPGATimestamp();
-    RobotState.getInstance()
-        .addShooterUpdates(timestamp, inputs.shooterVelocity, inputs.rotorVelocity);
+    RobotState state = RobotState.getInstance();
+    state.addShooterUpdates(timestamp, inputs.shooterVelocity, inputs.rotorVelocity);
+    double currentRpm = inputs.shooterVelocity.in(RPM);
+    double requestedRpm = inputs.requestedVelocity.in(RPM);
+    boolean atSpeed =
+        requestedRpm > 100
+            && Math.abs(currentRpm - requestedRpm) <= ShooterConstants.kRpmToleranceForReady;
+    state.setShooterRpmInRange(atSpeed);
 
     shooterDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
   }

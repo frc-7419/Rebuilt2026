@@ -22,6 +22,7 @@ import frc.robot.subsystems.hood.Hood;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
 
 /**
@@ -42,6 +43,8 @@ public final class ControlManager {
   }
 
   private final RobotState robotState = RobotState.getInstance();
+
+  private double lastWristAngleDeg = 0.0;
 
   private ControlManager() {}
 
@@ -120,18 +123,16 @@ public final class ControlManager {
     return robotState.isHubMode();
   }
 
-  private static final double kShootRpmTolerance = 200.0;
-
   /**
-   * Runs serializer/feeder for shooting only when shooter is within {@value #kShootRpmTolerance}
-   * RPM of the requested speed.
+   * Runs serializer/feeder for shooting only when shooter is within {@link
+   * ShooterConstants#kRpmToleranceForReady} RPM of the requested speed.
    */
   public Command runShootAtSpeed(Shooter shooter, Serializer serializer) {
     return Commands.run(
             () -> {
               double current = shooter.getRPM();
               double requested = shooter.getRequestedRPM();
-              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+              if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
                 serializer.setFeederVoltage(kShootFeederVolts);
                 if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
                   serializer.setSerializerVoltage(kShootSerializerVolts);
@@ -158,7 +159,7 @@ public final class ControlManager {
             () -> {
               double current = shooter.getRPM();
               double requested = shooter.getRequestedRPM();
-              if (Math.abs(current - requested) <= kShootRpmTolerance) {
+              if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
                 serializer.setFeederVoltage(kShootFeederVolts);
                 if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
                   serializer.setSerializerVoltage(kShootSerializerVolts);
@@ -303,8 +304,12 @@ public final class ControlManager {
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
     shootTrigger.whileTrue(runShootAtSpeed(shooter, serializer));
 
-    intakeJerkingTrigger.whileTrue(
-        IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), kIntakeVolts));
+    intakeJerkingTrigger
+        .whileTrue(
+            IntakeCommands.setWristAngleWiggle(
+                intake, Degrees.of(70), Degrees.of(20), kIntakeVolts))
+        .onFalse(
+            Commands.runOnce(() -> intake.setWristAngle(Degrees.of(lastWristAngleDeg)), intake));
 
     reverseSerializerTrigger
         .whileTrue(
@@ -312,8 +317,20 @@ public final class ControlManager {
                 serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
-    wristStowTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
-    wristDeployTrigger.onTrue(IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+    wristStowTrigger.onTrue(
+        Commands.runOnce(
+            () -> {
+              lastWristAngleDeg = 0.0;
+              intake.setWristAngle(Degrees.of(0.0));
+            },
+            intake));
+    wristDeployTrigger.onTrue(
+        Commands.runOnce(
+            () -> {
+              lastWristAngleDeg = 120.0;
+              intake.setWristAngle(Degrees.of(120.0));
+            },
+            intake));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
