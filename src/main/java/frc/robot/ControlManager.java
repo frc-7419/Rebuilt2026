@@ -31,19 +31,23 @@ import frc.robot.subsystems.turret.Turret;
  */
 public final class ControlManager {
 
+  // --------------- Constants ---------------
   private static final double kShootSerializerVolts = 10.0;
   private static final double kShootFeederVolts = 10.0;
   private static final double kIntakeVolts = 6;
 
+  // --------------- Singleton ---------------
   private static ControlManager instance;
 
   public static ControlManager getInstance() {
-    if (instance == null) instance = new ControlManager();
+    if (instance == null) {
+      instance = new ControlManager();
+    }
     return instance;
   }
 
+  // --------------- State ---------------
   private final RobotState robotState = RobotState.getInstance();
-
   private double lastWristAngleDeg = 0.0;
 
   private ControlManager() {}
@@ -128,46 +132,37 @@ public final class ControlManager {
    * ShooterConstants#kRpmToleranceForReady} RPM of the requested speed.
    */
   public Command runShootAtSpeed(Shooter shooter, Serializer serializer) {
-    return Commands.run(
-            () -> {
-              double current = shooter.getRPM();
-              double requested = shooter.getRequestedRPM();
-              if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
-                serializer.setFeederVoltage(kShootFeederVolts);
-                if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
-                  serializer.setSerializerVoltage(kShootSerializerVolts);
-                } else serializer.setSerializerVoltage(0);
-              } else {
-                serializer.stopBoth();
-              }
-            },
-            serializer)
-        .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
-        .finallyDo(
-            interrupted -> {
-              robotState.setShooting(false);
-              serializer.stopBoth();
-            });
+    return buildShootAtSpeedCommand(shooter, serializer, true);
   }
 
   /**
-   * Same behavior as {@link #runShootAtSpeed} but with no subsystem requirements for zoned events
-   * idk it was bugging
+   * Same as {@link #runShootAtSpeed} but with no subsystem requirements (for PathPlanner event
+   * zones that conflict with requirement scheduling).
    */
   public Command runShootAtSpeedNoRequirements(Shooter shooter, Serializer serializer) {
-    return Commands.run(
-            () -> {
-              double current = shooter.getRPM();
-              double requested = shooter.getRequestedRPM();
-              if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
-                serializer.setFeederVoltage(kShootFeederVolts);
-                if (Timer.getFPGATimestamp() - (int) Timer.getFPGATimestamp() < 0.7) {
-                  serializer.setSerializerVoltage(kShootSerializerVolts);
-                } else serializer.setSerializerVoltage(0);
-              } else {
-                serializer.stopBoth();
-              }
-            })
+    return buildShootAtSpeedCommand(shooter, serializer, false);
+  }
+
+  private Command buildShootAtSpeedCommand(
+      Shooter shooter, Serializer serializer, boolean requireSerializer) {
+    Runnable run =
+        () -> {
+          double current = shooter.getRPM();
+          double requested = shooter.getRequestedRPM();
+          if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
+            serializer.setFeederVoltage(kShootFeederVolts);
+            double t = Timer.getFPGATimestamp();
+            serializer.setSerializerVoltage(
+                (t - (int) t) < 0.7 ? kShootSerializerVolts : 0);
+          } else {
+            serializer.stopBoth();
+          }
+        };
+    Command base =
+        requireSerializer
+            ? Commands.run(run, serializer)
+            : Commands.run(run);
+    return base
         .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
         .finallyDo(
             interrupted -> {
@@ -210,47 +205,32 @@ public final class ControlManager {
       Hood hood,
       Intake intake,
       Serializer serializer) {
-    // New Controls
-    /*
-     * Trigger stopSwerveTrigger = driver.x();
-     * Trigger lockPushOrientationTrigger = driver.a();
-     * Trigger resetPoseTrigger = driver.leftBumper();
-     * Trigger hubModeTrigger = operator.start();
-     * Trigger autoAimTrigger = operator.x();
-     * Trigger intakeWheelTrigger = operator.leftBumper();
-     * Trigger shootTrigger = operator.rightTrigger();
-     * Trigger reverseSerializerTrigger = operator.leftTrigger();
-     * Trigger wristStowTrigger = operator.b();
-     * Trigger wristDeployTrigger = operator.a();
-     * Trigger wristUpTrigger = operator.povUp();
-     * Trigger wristDownTrigger = operator.povDown();
-     * Trigger revShooterTrigger = operator.rightBumper();
-     * Trigger hoodPositionDownTrigger = operator.y();
-     * Trigger hoodPositionUpTrigger = operator.back();
-     * Trigger reverseIntakeTrigger = operator.povLeft();
-     */
-
+    // Driver triggers
     Trigger stopSwerveTrigger = driver.x();
     Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
 
-    Trigger reverseSerializerTrigger = operator.leftTrigger();
-    Trigger shootTrigger = operator.rightTrigger();
-    Trigger reverseIntakeTrigger = operator.leftBumper();
-    Trigger intakeWheelTrigger = operator.rightBumper();
+    // Operator triggers: mode toggles
+    Trigger hubModeTrigger = operator.start();
+    Trigger autoAimTrigger = operator.x();
 
+    // Operator triggers: intake & shooting
+    Trigger intakeWheelTrigger = operator.rightBumper();
+    Trigger reverseIntakeTrigger = operator.leftBumper();
+    Trigger shootTrigger = operator.rightTrigger();
+    Trigger reverseSerializerTrigger = operator.leftTrigger();
+    Trigger intakeJerkingTrigger = operator.povLeft();
+
+    // Operator triggers: wrist
+    Trigger wristStowTrigger = operator.b();
+    Trigger wristDeployTrigger = operator.a();
     Trigger wristUpTrigger = operator.povUp();
     Trigger wristDownTrigger = operator.povDown();
 
+    // Operator triggers: shooter
     Trigger revShooterTrigger = operator.y();
-    Trigger autoAimTrigger = operator.x();
-    Trigger wristStowTrigger = operator.b();
-    Trigger wristDeployTrigger = operator.a();
 
-    Trigger hubModeTrigger = operator.start();
-    Trigger intakeJerkingTrigger = operator.povLeft();
-
-    // -------- Driver --------
+    // -------- Driver: drive & pose --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
@@ -270,6 +250,7 @@ public final class ControlManager {
                 drive)
             .ignoringDisable(true));
 
+    // -------- Operator: turret & hood (default commands) --------
     turret.setDefaultCommand(
         Commands.run(
             () -> {
@@ -299,7 +280,6 @@ public final class ControlManager {
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    // intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
     shootTrigger.whileTrue(runShootAtSpeed(shooter, serializer));
@@ -317,6 +297,7 @@ public final class ControlManager {
                 serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
+    // -------- Operator: wrist --------
     wristStowTrigger.onTrue(
         Commands.runOnce(
             () -> {
@@ -340,6 +321,7 @@ public final class ControlManager {
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
         .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
+    // -------- Operator: shooter --------
     revShooterTrigger
         .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(1700)), shooter))
         .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
