@@ -152,18 +152,13 @@ public final class ControlManager {
           if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
             serializer.setFeederVoltage(kShootFeederVolts);
             double t = Timer.getFPGATimestamp();
-            serializer.setSerializerVoltage(
-                (t - (int) t) < 0.7 ? kShootSerializerVolts : 0);
+            serializer.setSerializerVoltage((t - (int) t) < 0.7 ? kShootSerializerVolts : 0);
           } else {
             serializer.stopBoth();
           }
         };
-    Command base =
-        requireSerializer
-            ? Commands.run(run, serializer)
-            : Commands.run(run);
-    return base
-        .beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
+    Command base = requireSerializer ? Commands.run(run, serializer) : Commands.run(run);
+    return base.beforeStarting(Commands.runOnce(() -> robotState.setShooting(true)))
         .finallyDo(
             interrupted -> {
               robotState.setShooting(false);
