@@ -54,7 +54,7 @@ public class IntakeIOTalonFX implements IntakeIO {
     tryUntilOk(5, () -> wristMotor.getConfigurator().apply(IntakeConstants.wristMotorConfig, 0.25));
 
     wheelMotorRight.setControl(
-        new Follower(IntakeConstants.kIntakeWheelMotorLeftId, MotorAlignmentValue.Aligned));
+        new Follower(IntakeConstants.kIntakeWheelMotorLeftId, MotorAlignmentValue.Opposed));
 
     // Set up wheel motor status signals
     wheelAppliedVolts = wheelMotorLeft.getMotorVoltage();
