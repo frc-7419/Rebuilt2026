@@ -7,10 +7,12 @@ import static frc.robot.util.PhoenixUtil.tryUntilOk;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -18,7 +20,8 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 
 public class IntakeIOTalonFX implements IntakeIO {
-  private final TalonFX wheelMotor;
+  private final TalonFX wheelMotorLeft;
+  private final TalonFX wheelMotorRight;
   private final TalonFX wristMotor;
 
   // Wheel motor signals
@@ -40,16 +43,23 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final PositionVoltage wristPositionRequest = new PositionVoltage(0.0);
 
   public IntakeIOTalonFX() {
-    wheelMotor = new TalonFX(IntakeConstants.kIntakeWheelMotorId);
+    wheelMotorLeft = new TalonFX(IntakeConstants.kIntakeWheelMotorLeftId);
+    wheelMotorRight = new TalonFX(IntakeConstants.kIntakeWheelMotorRightId);
     wristMotor = new TalonFX(IntakeConstants.kIntakeWristMotorId);
 
-    tryUntilOk(5, () -> wheelMotor.getConfigurator().apply(IntakeConstants.wheelMotorConfig, 0.25));
+    tryUntilOk(
+        5, () -> wheelMotorLeft.getConfigurator().apply(IntakeConstants.wheelMotorConfig, 0.25));
+    tryUntilOk(
+        5, () -> wheelMotorRight.getConfigurator().apply(IntakeConstants.wheelMotorConfig, 0.25));
     tryUntilOk(5, () -> wristMotor.getConfigurator().apply(IntakeConstants.wristMotorConfig, 0.25));
 
+    wheelMotorRight.setControl(
+        new Follower(IntakeConstants.kIntakeWheelMotorLeftId, MotorAlignmentValue.Aligned));
+
     // Set up wheel motor status signals
-    wheelAppliedVolts = wheelMotor.getMotorVoltage();
-    wheelCurrent = wheelMotor.getStatorCurrent();
-    wheelVelocity = wheelMotor.getVelocity();
+    wheelAppliedVolts = wheelMotorLeft.getMotorVoltage();
+    wheelCurrent = wheelMotorLeft.getStatorCurrent();
+    wheelVelocity = wheelMotorLeft.getVelocity();
 
     // Set up wrist motor status signals
     wristAppliedVolts = wristMotor.getMotorVoltage();
@@ -87,12 +97,12 @@ public class IntakeIOTalonFX implements IntakeIO {
 
   @Override
   public void setWheelOpenLoop(double volts) {
-    wheelMotor.setControl(wheelVoltageRequest.withOutput(volts));
+    wheelMotorLeft.setControl(wheelVoltageRequest.withOutput(volts));
   }
 
   @Override
   public void setWheelVelocity(AngularVelocity velocity) {
-    wheelMotor.setControl(
+    wheelMotorLeft.setControl(
         wheelMotionMagicVelocityVoltageRequest
             .withVelocity(velocity.times(kWheelMotorToWheelGearRatio))
             .withAcceleration(Units.RotationsPerSecondPerSecond.of(100)));

@@ -12,7 +12,8 @@ public final class IntakeConstants {
   private IntakeConstants() {}
 
   // Motor IDs
-  public static final int kIntakeWheelMotorId = 25;
+  public static final int kIntakeWheelMotorLeftId = 25;
+  public static final int kIntakeWheelMotorRightId = 26;
   public static final int kIntakeWristMotorId = 23;
 
   // Wrist configuration
