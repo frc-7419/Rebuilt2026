@@ -147,7 +147,7 @@ public final class ControlManager {
       Shooter shooter, Serializer serializer, boolean requireSerializer) {
     Runnable run =
         () -> {
-          double current = shooter.getRPM();
+          double current = shooter.getRotorRPM();
           double requested = shooter.getRequestedRPM();
           if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
             serializer.setFeederVoltage(kShootFeederVolts);
@@ -318,7 +318,7 @@ public final class ControlManager {
 
     // -------- Operator: shooter --------
     revShooterTrigger
-        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(1700)), shooter))
+        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(4000)), shooter))
         .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
   }
 }

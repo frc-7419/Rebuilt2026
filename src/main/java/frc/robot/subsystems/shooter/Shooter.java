@@ -78,4 +78,8 @@ public class Shooter extends SubsystemBase {
   public double getRPM() {
     return inputs.shooterVelocity.in(RPM);
   }
+
+  public double getRotorRPM() {
+    return inputs.rotorVelocity.in(RPM);
+  }
 }

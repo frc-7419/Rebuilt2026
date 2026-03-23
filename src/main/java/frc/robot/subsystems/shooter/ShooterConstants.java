@@ -46,9 +46,9 @@ public final class ShooterConstants {
   }
 
   /** kV in V/RPS */
-  public static final double kShooterKv = 0.1369;
+  public static final double kShooterKv = 0.1467;
 
-  public static final double kShooterKn = 0.01;
+  public static final double kShooterKn = 1;
 
   private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
   private static final double kTwoPi = 2.0 * Math.PI;

@@ -69,7 +69,7 @@ public class RobotState {
   private boolean isShooting = false;
   private boolean isIntaking = false;
   private boolean intakeDown = false;
-  private boolean autoAimEnabled = true; // change to true in comp
+  private boolean autoAimEnabled = false; // change to true in comp
   private boolean hubMode = true;
   private boolean autoAimArcValid = false;
   private boolean shooterRpmInRange = false;
