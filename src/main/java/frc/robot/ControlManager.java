@@ -228,7 +228,10 @@ public final class ControlManager {
     // -------- Driver: drive & pose --------
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> -driver.getLeftY(), () -> -driver.getLeftX(), () -> -driver.getRightX()));
+            drive,
+            () -> -driver.getLeftY() * (robotState.isShooting() ? 0.25 : 1.0),
+            () -> -driver.getLeftX() * (robotState.isShooting() ? 0.25 : 1.0),
+            () -> -driver.getRightX()));
 
     lockPushOrientationTrigger.whileTrue(
         DriveCommands.joystickDriveAtAngle(
