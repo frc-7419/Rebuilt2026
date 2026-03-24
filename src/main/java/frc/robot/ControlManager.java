@@ -34,7 +34,7 @@ public final class ControlManager {
   // --------------- Constants ---------------
   private static final double kShootSerializerVolts = 10.0;
   private static final double kShootFeederVolts = 10.0;
-  private static final double kIntakeVolts = 6;
+  private static final double kIntakeVolts = 7.5;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -311,13 +311,16 @@ public final class ControlManager {
             },
             intake));
 
-    wristUpTrigger
-        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+    // wristUpTrigger
+    //    .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
+    //    .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
-    wristDownTrigger
-        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+    // wristDownTrigger
+    //    .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
+    //    .onFalse(Commands.runOnce(intake::stopWrist, intake));
+
+    wristUpTrigger.whileTrue(Commands.run(() -> hood.setAngle(Degrees.of(0)), hood));
+    wristDownTrigger.whileTrue(Commands.run(() -> hood.setAngle(Degrees.of(100)), hood));
 
     // -------- Operator: shooter --------
     revShooterTrigger
