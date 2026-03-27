@@ -69,9 +69,10 @@ public class RobotState {
   private boolean isShooting = false;
   private boolean isIntaking = false;
   private boolean intakeDown = false;
-  private boolean autoAimEnabled = true; // change to true in comp
+  private boolean autoAimEnabled = false; // change to true in comp
   private boolean hubMode = true;
   private boolean autoAimArcValid = false;
+  private boolean shooterRpmInRange = false;
 
   @AutoLogOutput private Pose2d estimatedPose = Pose2d.kZero;
 
@@ -452,6 +453,15 @@ public class RobotState {
 
   public void setAutoAimArcValid(boolean valid) {
     autoAimArcValid = valid;
+  }
+
+  @AutoLogOutput
+  public boolean isShooterRpmInRange() {
+    return shooterRpmInRange;
+  }
+
+  public void setShooterRpmInRange(boolean inRange) {
+    shooterRpmInRange = inRange;
   }
 
   @AutoLogOutput(key = "RobotState/Status")

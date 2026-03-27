@@ -1,14 +1,18 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static frc.robot.subsystems.shooter.ShooterConstants.computeVelocityVolts;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
+import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKn;
+import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKv;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -25,7 +29,9 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final StatusSignal<AngularVelocity> motorVelocity;
 
   private final VoltageOut voltageRequest = new VoltageOut(0);
-  private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0);
+
+  /** Target mechanism velocity (rad/s); NaN when open-loop only. */
+  private double targetVelocityRadPerSec = Double.NaN;
 
   public ShooterIOTalonFX() {
     motor = new TalonFX(ShooterConstants.kShooterMotorId);
@@ -48,23 +54,32 @@ public class ShooterIOTalonFX implements ShooterIO {
     var status = BaseStatusSignal.refreshAll(motorAppliedVolts, motorCurrent, motorVelocity);
     inputs.connected = status.equals(StatusCode.OK);
 
-    inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
-    inputs.currentAmps = motorCurrent.getValueAsDouble();
-
     inputs.rotorVelocity = motorVelocity.getValue();
     inputs.shooterVelocity = motorVelocity.getValue().div(kMotorToShooterGearRatio);
-    inputs.requestedVelocity =
-        RotationsPerSecond.of(velocityVoltage.Velocity).div(kMotorToShooterGearRatio);
+
+    if (Double.isFinite(targetVelocityRadPerSec)) {
+      double targetRps = RadiansPerSecond.of(targetVelocityRadPerSec).in(RotationsPerSecond);
+      double actualRps = inputs.shooterVelocity.in(RotationsPerSecond);
+      double volts = computeVelocityVolts(targetRps, actualRps, kShooterKv, kShooterKn);
+      motor.setControl(voltageRequest.withOutput(volts));
+      inputs.appliedVolts = volts;
+      inputs.requestedVelocity = RadiansPerSecond.of(targetVelocityRadPerSec);
+    } else {
+      inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
+      inputs.requestedVelocity = RPM.of(0.0);
+    }
+    inputs.currentAmps = motorCurrent.getValueAsDouble();
   }
 
   @Override
   public void setOpenLoop(double volts) {
+    targetVelocityRadPerSec = Double.NaN;
     motor.setControl(voltageRequest.withOutput(volts));
   }
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    motor.setControl(velocityVoltage.withVelocity(velocity.times(kMotorToShooterGearRatio)));
+    targetVelocityRadPerSec = velocity.in(RadiansPerSecond);
   }
 
   @Override

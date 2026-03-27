@@ -164,7 +164,7 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
-    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 4);
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, Constants.kLimelightMode);
   }
 
   /** This function is called periodically during autonomous. */
@@ -179,7 +179,7 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
-    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 4);
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, Constants.kLimelightMode);
   }
 
   /** This function is called periodically during operator control. */

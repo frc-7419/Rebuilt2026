@@ -16,10 +16,10 @@ public final class HoodConstants {
   public static final double kMaxVoltage = 12.0;
   public static final double kDeadband = 0.05;
 
-  public static final double kMotorToHoodGearRatio = (50.0 / 8.0) * (144.0 / 10.0);
+  public static final double kMotorToHoodGearRatio = (54.0 / 10.0) * (144.0 / 10.0);
 
-  public static final Angle kMinAngle = Degrees.of(50.0);
-  public static final Angle kMaxAngle = Degrees.of(64.0);
+  public static final Angle kMinAngle = Degrees.of(45.0);
+  public static final Angle kMaxAngle = Degrees.of(75.0);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;

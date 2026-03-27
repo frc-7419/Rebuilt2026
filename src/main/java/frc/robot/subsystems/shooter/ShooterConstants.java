@@ -8,7 +8,9 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -43,9 +45,26 @@ public final class ShooterConstants {
     motorSlot0Configs.kS = 0.2;
   }
 
-  public static final double kSimP = 1.0;
-  public static final double kSimI = 0.0;
-  public static final double kSimD = 0.0;
+  /** kV in V/RPS */
+  public static final double kShooterKv = 0.1467;
+
+  public static final double kShooterKn = 1;
+
+  private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
+  private static final double kTwoPi = 2.0 * Math.PI;
+
+  /** Ideal kV for sim */
+  public static final double kSimKv =
+      12.0 / (kSimMotor.freeSpeedRadPerSec * kMotorToShooterGearRatio / kTwoPi);
+
+  public static final double kSimKn = 0.01;
+
+  public static double computeVelocityVolts(
+      double targetRps, double actualRps, double kv, double kn) {
+    double negErrorRps = Math.max(0.0, targetRps - actualRps);
+    double volts = kv * targetRps + kn * negErrorRps * negErrorRps;
+    return MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
+  }
 
   public static final Angle kHoodZeroed = Degrees.of(0.0);
 
@@ -67,4 +86,7 @@ public final class ShooterConstants {
 
   /** Hardware bound */
   public static final double kAutoAimRPMMax = 3500.0;
+
+  /** RPM tolerance for "at speed" */
+  public static final double kRpmToleranceForReady = 200.0;
 }

@@ -7,8 +7,10 @@ public final class LEDConstants {
   private LEDConstants() {}
 
   public static final int kPort = 0;
-  public static final int kLength = 30;
+  public static final int kLength = 64;
   public static final Color kPurple = new Color(128, 0, 128);
   public static final Color kNavyBlue = new Color(0, 0, 80);
   public static final Color kGold = new Color(255, 200, 50);
+  public static final Color kOrange = new Color(255, 120, 0);
+  public static final Color kBrightGreen = new Color(0, 255, 80);
 }
