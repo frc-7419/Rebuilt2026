@@ -8,7 +8,6 @@ import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -32,9 +31,9 @@ import frc.robot.subsystems.turret.Turret;
 public final class ControlManager {
 
   // --------------- Constants ---------------
-  private static final double kShootSerializerVolts = 10.0;
+  private static final double kShootSerializerVolts = 5.0;
   private static final double kShootFeederVolts = 10.0;
-  private static final double kIntakeVolts = 7.5;
+  private static final double kIntakeVolts = 10;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -151,8 +150,7 @@ public final class ControlManager {
           double requested = shooter.getRequestedRPM();
           if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
             serializer.setFeederVoltage(kShootFeederVolts);
-            double t = Timer.getFPGATimestamp();
-            serializer.setSerializerVoltage((t - (int) t) < 0.7 ? kShootSerializerVolts : 0);
+            serializer.setSerializerVoltage(kShootSerializerVolts);
           } else {
             serializer.stopBoth();
           }
@@ -229,8 +227,8 @@ public final class ControlManager {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -driver.getLeftY() * (robotState.isShooting() ? 0.25 : 1.0),
-            () -> -driver.getLeftX() * (robotState.isShooting() ? 0.25 : 1.0),
+            () -> -driver.getLeftY() * (robotState.isShooting() ? 1 : 1.0),
+            () -> -driver.getLeftX() * (robotState.isShooting() ? 1 : 1.0),
             () -> -driver.getRightX()));
 
     lockPushOrientationTrigger.whileTrue(
@@ -291,7 +289,8 @@ public final class ControlManager {
 
     reverseSerializerTrigger
         .whileTrue(
-            SerializerCommands.runBothVoltage(serializer, kShootSerializerVolts, kShootFeederVolts))
+            SerializerCommands.runBothVoltage(
+                serializer, -kShootSerializerVolts, -kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
     // -------- Operator: wrist --------

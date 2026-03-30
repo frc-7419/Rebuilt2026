@@ -10,6 +10,8 @@ import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPo
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourTable;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeTable;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoTable;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -38,10 +40,13 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
   private static boolean camerasInitialized = false;
   private static PhotonCamera leftCamera;
   private static PhotonCamera rightCamera;
+  private static PhotonCamera rearCamera;
   private static PhotonCameraSim leftCameraSim;
   private static PhotonCameraSim rightCameraSim;
+  private static PhotonCameraSim rearCameraSim;
   private static Transform3d leftCameraOffset;
   private static Transform3d rightCameraOffset;
+  private static Transform3d rearCameraOffset;
 
   private final SimulatedRobotState simulatedRobotState;
 
@@ -52,6 +57,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
     if (!camerasInitialized) {
       leftCamera = new PhotonCamera(kLimelightFourTable);
       rightCamera = new PhotonCamera(kLimelightThreeTable);
+      rearCamera = new PhotonCamera(kLimelightTwoTable);
 
       SimCameraProperties cameraProps = new SimCameraProperties();
       cameraProps.setCalibration(1280, 800, Rotation2d.fromDegrees(82));
@@ -61,6 +67,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
 
       leftCameraSim = new PhotonCameraSim(leftCamera, cameraProps);
       rightCameraSim = new PhotonCameraSim(rightCamera, cameraProps);
+      rearCameraSim = new PhotonCameraSim(rearCamera, cameraProps);
 
       leftCameraOffset =
           new Transform3d(
@@ -82,13 +89,26 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
                   Units.degreesToRadians(kLimelightThreeCameraPose[4]),
                   Units.degreesToRadians(kLimelightThreeCameraPose[5])));
 
+      rearCameraOffset =
+          new Transform3d(
+              kLimelightTwoCameraPose[0],
+              kLimelightTwoCameraPose[1],
+              kLimelightTwoCameraPose[2],
+              new Rotation3d(
+                  Units.degreesToRadians(kLimelightTwoCameraPose[3]),
+                  Units.degreesToRadians(kLimelightTwoCameraPose[4]),
+                  Units.degreesToRadians(kLimelightTwoCameraPose[5])));
+
       leftCameraSim.enableProcessedStream(true);
       leftCameraSim.enableRawStream(true);
       rightCameraSim.enableProcessedStream(true);
       rightCameraSim.enableRawStream(true);
+      rearCameraSim.enableProcessedStream(true);
+      rearCameraSim.enableRawStream(true);
 
       leftCameraSim.enableDrawWireframe(true);
       rightCameraSim.enableDrawWireframe(true);
+      rearCameraSim.enableDrawWireframe(true);
 
       if (!visionSimInitialized) {
         visionSim = new VisionSystemSim("main");
@@ -98,6 +118,7 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
 
       visionSim.addCamera(leftCameraSim, leftCameraOffset);
       visionSim.addCamera(rightCameraSim, rightCameraOffset);
+      visionSim.addCamera(rearCameraSim, rearCameraOffset);
       camerasInitialized = true;
     }
   }
@@ -114,9 +135,11 @@ public class VisionIOPhotonVisionSim extends VisionIOLimelight {
 
     NetworkTable leftTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
     NetworkTable rightTable = NetworkTableInstance.getDefault().getTable(kLimelightThreeTable);
+    NetworkTable rearTable = NetworkTableInstance.getDefault().getTable(kLimelightTwoTable);
 
     writeToTable(leftCamera.getAllUnreadResults(), leftTable, leftCameraOffset);
     writeToTable(rightCamera.getAllUnreadResults(), rightTable, rightCameraOffset);
+    writeToTable(rearCamera.getAllUnreadResults(), rearTable, rearCameraOffset);
 
     super.updateInputs(inputs);
   }

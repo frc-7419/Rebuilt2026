@@ -2,6 +2,7 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoCameraPose;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -29,6 +30,7 @@ import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 public class Vision extends SubsystemBase {
   private static final String LOG_FOUR = "Vision/LimelightFour/";
   private static final String LOG_THREE = "Vision/LimelightThree/";
+  private static final String LOG_TWO = "Vision/LimelightTwo/";
 
   private static final LoggedNetworkBoolean overrideMegatag1Only =
       new LoggedNetworkBoolean("Vision/OverrideMegatag1Only", false);
@@ -43,11 +45,15 @@ public class Vision extends SubsystemBase {
       new Alert("Disconnected left vision camera (limelight-four).", AlertType.kError);
   private final Alert rightVisionDisconnectedAlert =
       new Alert("Disconnected right vision camera (limelight-three).", AlertType.kError);
+  private final Alert rearVisionDisconnectedAlert =
+      new Alert("Disconnected rear vision camera (limelight-two).", AlertType.kError);
 
   private double lastFourMT1Timestamp = 0.0;
   private double lastFourMT2Timestamp = 0.0;
   private double lastThreeMT1Timestamp = 0.0;
   private double lastThreeMT2Timestamp = 0.0;
+  private double lastTwoMT1Timestamp = 0.0;
+  private double lastTwoMT2Timestamp = 0.0;
 
   public Vision(VisionIO io) {
     this.io = io;
@@ -73,12 +79,15 @@ public class Vision extends SubsystemBase {
 
     Logger.recordOutput("Vision/leftConnected", inputs.leftConnected);
     Logger.recordOutput("Vision/rightConnected", inputs.rightConnected);
+    Logger.recordOutput("Vision/rearConnected", inputs.rearConnected);
     if (Constants.currentMode != Mode.SIM) {
       leftVisionDisconnectedAlert.set(!inputs.leftConnected);
       rightVisionDisconnectedAlert.set(!inputs.rightConnected);
+      rearVisionDisconnectedAlert.set(!inputs.rearConnected);
     }
     Logger.recordOutput("Vision/limelightFourHasTarget", inputs.limelightFourHasTarget);
     Logger.recordOutput("Vision/limelightThreeHasTarget", inputs.limelightThreeHasTarget);
+    Logger.recordOutput("Vision/limelightTwoHasTarget", inputs.limelightTwoHasTarget);
     Logger.recordOutput("Vision/useMegatag2Mode", useMegatag2Mode);
     Logger.recordOutput("Vision/overrideMegatag1Only", overrideMegatag1Only.get());
 
@@ -97,6 +106,11 @@ public class Vision extends SubsystemBase {
         processMegatag2(inputs.limelightThreeMT2Pose, LOG_THREE);
         lastThreeMT2Timestamp = inputs.limelightThreeMT2Pose.timestampSeconds;
       }
+      if (inputs.limelightTwoMT2Pose != null
+          && inputs.limelightTwoMT2Pose.timestampSeconds != lastTwoMT2Timestamp) {
+        processMegatag2(inputs.limelightTwoMT2Pose, LOG_TWO);
+        lastTwoMT2Timestamp = inputs.limelightTwoMT2Pose.timestampSeconds;
+      }
     } else {
       if (inputs.limelightFourMT1Pose != null
           && inputs.limelightFourMT1Pose.timestampSeconds != lastFourMT1Timestamp) {
@@ -107,6 +121,11 @@ public class Vision extends SubsystemBase {
           && inputs.limelightThreeMT1Pose.timestampSeconds != lastThreeMT1Timestamp) {
         processMegatag1(inputs.limelightThreeMT1Pose, LOG_THREE);
         lastThreeMT1Timestamp = inputs.limelightThreeMT1Pose.timestampSeconds;
+      }
+      if (inputs.limelightTwoMT1Pose != null
+          && inputs.limelightTwoMT1Pose.timestampSeconds != lastTwoMT1Timestamp) {
+        processMegatag1(inputs.limelightTwoMT1Pose, LOG_TWO);
+        lastTwoMT1Timestamp = inputs.limelightTwoMT1Pose.timestampSeconds;
       }
     }
 
@@ -119,16 +138,21 @@ public class Vision extends SubsystemBase {
   @AutoLogOutput(key = "Vision/LimelightThreePose")
   private Pose3d limelightThreeCamPose = new Pose3d();
 
+  @AutoLogOutput(key = "Vision/LimelightTwoPose")
+  private Pose3d limelightTwoCamPose = new Pose3d();
+
   private void logCameraPoses() {
     var latestRobotPose = robotState.getLatestFieldToRobot();
     if (latestRobotPose == null) {
       limelightFourCamPose = new Pose3d();
       limelightThreeCamPose = new Pose3d();
+      limelightTwoCamPose = new Pose3d();
       return;
     }
     Pose3d robotPose3d = new Pose3d(latestRobotPose.getValue());
-    limelightFourCamPose = robotPose3d.transformBy(getCameraTransform(true));
-    limelightThreeCamPose = robotPose3d.transformBy(getCameraTransform(false));
+    limelightFourCamPose = robotPose3d.transformBy(getCameraTransform(0));
+    limelightThreeCamPose = robotPose3d.transformBy(getCameraTransform(1));
+    limelightTwoCamPose = robotPose3d.transformBy(getCameraTransform(2));
   }
 
   private void processMegatag1(PoseObservation observation, String logPrefix) {
@@ -211,8 +235,21 @@ public class Vision extends SubsystemBase {
     return acceptable;
   }
 
-  private Transform3d getCameraTransform(boolean isLimelightFour) {
-    double[] p = isLimelightFour ? kLimelightFourCameraPose : kLimelightThreeCameraPose;
+  private Transform3d getCameraTransform(int cameraIndex) {
+    double[] p;
+    switch (cameraIndex) {
+      case 0:
+        p = kLimelightFourCameraPose;
+        break;
+      case 1:
+        p = kLimelightThreeCameraPose;
+        break;
+      case 2:
+        p = kLimelightTwoCameraPose;
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid camera index: " + cameraIndex);
+    }
     return new Transform3d(
         new Translation3d(p[0], p[1], p[2]),
         new Rotation3d(

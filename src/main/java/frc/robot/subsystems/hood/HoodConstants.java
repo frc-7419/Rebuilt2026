@@ -35,9 +35,9 @@ public final class HoodConstants {
     motorSlot0Configs.kV = 0.0;
     motorSlot0Configs.kS = 0.0;
 
-    double cruiseRotPerSec = 0.5;
+    double cruiseRotPerSec = 1;
     motionMagicConfigs.MotionMagicCruiseVelocity = cruiseRotPerSec * kMotorToHoodGearRatio;
-    motionMagicConfigs.MotionMagicAcceleration = motionMagicConfigs.MotionMagicCruiseVelocity / 0.2;
+    motionMagicConfigs.MotionMagicAcceleration = motionMagicConfigs.MotionMagicCruiseVelocity / 0.4;
   }
 
   public static final double kSimP = 20.0;

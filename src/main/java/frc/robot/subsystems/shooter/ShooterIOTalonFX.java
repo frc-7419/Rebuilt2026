@@ -4,7 +4,8 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.computeVelocityVolts;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
-import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKn;
+import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKp;
+import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKs;
 import static frc.robot.subsystems.shooter.ShooterConstants.kShooterKv;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
@@ -59,7 +60,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     if (Double.isFinite(targetVelocityRotPerSec)) {
       double targetRps = RotationsPerSecond.of(targetVelocityRotPerSec).in(RotationsPerSecond);
       double actualRps = inputs.rotorVelocity.in(RotationsPerSecond);
-      double volts = computeVelocityVolts(targetRps, actualRps, kShooterKv, kShooterKn);
+      double volts = computeVelocityVolts(targetRps, actualRps, kShooterKv, kShooterKp, kShooterKs);
       motor.setControl(voltageRequest.withOutput(volts));
       inputs.appliedVolts = volts;
       inputs.requestedVelocity = RotationsPerSecond.of(targetVelocityRotPerSec);

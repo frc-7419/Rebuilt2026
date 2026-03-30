@@ -6,7 +6,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.computeVelocityVolts;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMaxVoltage;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
-import static frc.robot.subsystems.shooter.ShooterConstants.kSimKn;
+import static frc.robot.subsystems.shooter.ShooterConstants.kSimKp;
 import static frc.robot.subsystems.shooter.ShooterConstants.kSimKv;
 
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -47,7 +47,7 @@ public class ShooterIOSim implements ShooterIO {
       double actualRps = RadiansPerSecond.of(shooterVelocityRadPerSec).in(RotationsPerSecond);
       appliedVolts =
           clamp(
-              computeVelocityVolts(targetRps, actualRps, kSimKv, kSimKn),
+              computeVelocityVolts(targetRps, actualRps, kSimKv, kSimKp),
               -kMaxVoltage,
               kMaxVoltage);
     }

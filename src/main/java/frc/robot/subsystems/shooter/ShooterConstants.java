@@ -46,9 +46,10 @@ public final class ShooterConstants {
   }
 
   /** kV in V/RPS */
-  public static final double kShooterKv = 0.1964;
+  public static final double kShooterKv = 0.13;
 
-  public static final double kShooterKn = 0.01;
+  public static final double kShooterKp = 0.4;
+  public static final double kShooterKs = 0.47;
 
   private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
   private static final double kTwoPi = 2.0 * Math.PI;
@@ -57,13 +58,19 @@ public final class ShooterConstants {
   public static final double kSimKv =
       12.0 / (kSimMotor.freeSpeedRadPerSec * kMotorToShooterGearRatio / kTwoPi);
 
-  public static final double kSimKn = 0.01;
+  public static final double kSimKp = 0.01;
+  public static final double kSimKs = 0.2;
 
   public static double computeVelocityVolts(
-      double targetRps, double actualRps, double kv, double kn) {
+      double targetRps, double actualRps, double kv, double kP, double kS) {
     double negErrorRps = Math.max(0.0, targetRps - actualRps);
-    double volts = kv * targetRps + kn * negErrorRps * negErrorRps;
+    double volts = kv * targetRps + kP * negErrorRps + kS;
     return MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
+  }
+
+  public static double computeVelocityVolts(
+      double targetRps, double actualRps, double kv, double kP) {
+    return computeVelocityVolts(targetRps, actualRps, kv, kP, 0.0);
   }
 
   public static final Angle kHoodZeroed = Degrees.of(0.0);

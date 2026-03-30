@@ -4,6 +4,8 @@ import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPo
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourTable;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeTable;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoTable;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -18,16 +20,20 @@ public class VisionIOLimelight implements VisionIO {
 
   private final NetworkTable limelightFourTable;
   private final NetworkTable limelightThreeTable;
+  private final NetworkTable limelightTwoTable;
   private final RobotState robotState;
 
   private long lastChangeFour = 0;
   private long lastChangeThree = 0;
+  private long lastChangeTwo = 0;
   private double lastConnectedFourSec = 0;
   private double lastConnectedThreeSec = 0;
+  private double lastConnectedTwoSec = 0;
 
   public VisionIOLimelight() {
     limelightFourTable = NetworkTableInstance.getDefault().getTable(kLimelightFourTable);
     limelightThreeTable = NetworkTableInstance.getDefault().getTable(kLimelightThreeTable);
+    limelightTwoTable = NetworkTableInstance.getDefault().getTable(kLimelightTwoTable);
     robotState = RobotState.getInstance();
     configureLimelightSettings();
   }
@@ -39,6 +45,7 @@ public class VisionIOLimelight implements VisionIO {
     limelightThreeTable
         .getEntry("camerapose_robotspace_set")
         .setDoubleArray(kLimelightThreeCameraPose);
+    limelightTwoTable.getEntry("camerapose_robotspace_set").setDoubleArray(kLimelightTwoCameraPose);
   }
 
   private void updateRobotOrientation() {
@@ -53,6 +60,8 @@ public class VisionIOLimelight implements VisionIO {
         kLimelightFourTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
     LimelightHelpers.SetRobotOrientation(
         kLimelightThreeTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
+    LimelightHelpers.SetRobotOrientation(
+        kLimelightTwoTable, robotRotation.getDegrees(), robotYawRateDegPerS, 0.0, 0.0, 0.0, 0.0);
   }
 
   @Override
@@ -62,6 +71,7 @@ public class VisionIOLimelight implements VisionIO {
     double nowSec = Timer.getFPGATimestamp();
     long changeFour = limelightFourTable.getEntry("tl").getLastChange();
     long changeThree = limelightThreeTable.getEntry("tl").getLastChange();
+    long changeTwo = limelightTwoTable.getEntry("tl").getLastChange();
     if (changeFour != lastChangeFour) {
       lastChangeFour = changeFour;
       lastConnectedFourSec = nowSec;
@@ -70,14 +80,21 @@ public class VisionIOLimelight implements VisionIO {
       lastChangeThree = changeThree;
       lastConnectedThreeSec = nowSec;
     }
+    if (changeTwo != lastChangeTwo) {
+      lastChangeTwo = changeTwo;
+      lastConnectedTwoSec = nowSec;
+    }
     inputs.leftConnected = (nowSec - lastConnectedFourSec) < kConnectionTimeoutSec;
     inputs.rightConnected = (nowSec - lastConnectedThreeSec) < kConnectionTimeoutSec;
+    inputs.rearConnected = (nowSec - lastConnectedTwoSec) < kConnectionTimeoutSec;
 
     boolean limelightFourSeesTarget = limelightFourTable.getEntry("tv").getDouble(0) == 1.0;
     boolean limelightThreeSeesTarget = limelightThreeTable.getEntry("tv").getDouble(0) == 1.0;
+    boolean limelightTwoSeesTarget = limelightTwoTable.getEntry("tv").getDouble(0) == 1.0;
 
     inputs.limelightFourHasTarget = limelightFourSeesTarget;
     inputs.limelightThreeHasTarget = limelightThreeSeesTarget;
+    inputs.limelightTwoHasTarget = limelightTwoSeesTarget;
 
     if (limelightFourSeesTarget) {
       var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kLimelightFourTable);
@@ -103,6 +120,19 @@ public class VisionIOLimelight implements VisionIO {
     } else {
       inputs.limelightThreeMT1Pose = null;
       inputs.limelightThreeMT2Pose = null;
+    }
+
+    if (limelightTwoSeesTarget) {
+      var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(kLimelightTwoTable);
+      inputs.limelightTwoMT1Pose =
+          (mt1 != null && mt1.tagCount > 0) ? PoseObservation.fromLimelight(mt1) : null;
+
+      var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(kLimelightTwoTable);
+      inputs.limelightTwoMT2Pose =
+          (mt2 != null && mt2.tagCount > 0) ? PoseObservation.fromLimelight(mt2) : null;
+    } else {
+      inputs.limelightTwoMT1Pose = null;
+      inputs.limelightTwoMT2Pose = null;
     }
   }
 }
