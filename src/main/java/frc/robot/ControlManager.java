@@ -31,7 +31,7 @@ import frc.robot.subsystems.turret.Turret;
 public final class ControlManager {
 
   // --------------- Constants ---------------
-  private static final double kShootSerializerVolts = 5.0;
+  private static final double kShootSerializerVolts = 3.0;
   private static final double kShootFeederVolts = 10.0;
   private static final double kIntakeVolts = 10;
 
