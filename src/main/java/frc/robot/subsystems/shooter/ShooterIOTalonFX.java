@@ -1,7 +1,6 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.subsystems.shooter.ShooterConstants.computeVelocityVolts;
 import static frc.robot.subsystems.shooter.ShooterConstants.kMotorToShooterGearRatio;
@@ -31,7 +30,7 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final VoltageOut voltageRequest = new VoltageOut(0);
 
   /** Target mechanism velocity (rad/s); NaN when open-loop only. */
-  private double targetVelocityRadPerSec = Double.NaN;
+  private double targetVelocityRotPerSec = Double.NaN;
 
   public ShooterIOTalonFX() {
     motor = new TalonFX(ShooterConstants.kShooterMotorId);
@@ -57,13 +56,13 @@ public class ShooterIOTalonFX implements ShooterIO {
     inputs.rotorVelocity = motorVelocity.getValue();
     inputs.shooterVelocity = motorVelocity.getValue().div(kMotorToShooterGearRatio);
 
-    if (Double.isFinite(targetVelocityRadPerSec)) {
-      double targetRps = RadiansPerSecond.of(targetVelocityRadPerSec).in(RotationsPerSecond);
-      double actualRps = inputs.shooterVelocity.in(RotationsPerSecond);
+    if (Double.isFinite(targetVelocityRotPerSec)) {
+      double targetRps = RotationsPerSecond.of(targetVelocityRotPerSec).in(RotationsPerSecond);
+      double actualRps = inputs.rotorVelocity.in(RotationsPerSecond);
       double volts = computeVelocityVolts(targetRps, actualRps, kShooterKv, kShooterKn);
       motor.setControl(voltageRequest.withOutput(volts));
       inputs.appliedVolts = volts;
-      inputs.requestedVelocity = RadiansPerSecond.of(targetVelocityRadPerSec);
+      inputs.requestedVelocity = RotationsPerSecond.of(targetVelocityRotPerSec);
     } else {
       inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
       inputs.requestedVelocity = RPM.of(0.0);
@@ -73,13 +72,13 @@ public class ShooterIOTalonFX implements ShooterIO {
 
   @Override
   public void setOpenLoop(double volts) {
-    targetVelocityRadPerSec = Double.NaN;
+    targetVelocityRotPerSec = Double.NaN;
     motor.setControl(voltageRequest.withOutput(volts));
   }
 
   @Override
   public void setVelocity(AngularVelocity velocity) {
-    targetVelocityRadPerSec = velocity.in(RadiansPerSecond);
+    targetVelocityRotPerSec = velocity.in(RotationsPerSecond) * kMotorToShooterGearRatio;
   }
 
   @Override

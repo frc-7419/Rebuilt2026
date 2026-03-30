@@ -291,8 +291,7 @@ public final class ControlManager {
 
     reverseSerializerTrigger
         .whileTrue(
-            SerializerCommands.runBothVoltage(
-                serializer, -kShootSerializerVolts, -kShootFeederVolts))
+            SerializerCommands.runBothVoltage(serializer, kShootSerializerVolts, kShootFeederVolts))
         .onFalse(SerializerCommands.stopBoth(serializer));
 
     // -------- Operator: wrist --------
@@ -311,20 +310,17 @@ public final class ControlManager {
             },
             intake));
 
-    // wristUpTrigger
-    //    .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
-    //    .onFalse(Commands.runOnce(intake::stopWrist, intake));
+    wristUpTrigger
+        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
+        .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
-    // wristDownTrigger
-    //    .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
-    //    .onFalse(Commands.runOnce(intake::stopWrist, intake));
-
-    wristUpTrigger.whileTrue(Commands.run(() -> hood.setAngle(Degrees.of(0)), hood));
-    wristDownTrigger.whileTrue(Commands.run(() -> hood.setAngle(Degrees.of(100)), hood));
+    wristDownTrigger
+        .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
+        .onFalse(Commands.runOnce(intake::stopWrist, intake));
 
     // -------- Operator: shooter --------
     revShooterTrigger
-        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(4000)), shooter))
+        .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(2500)), shooter))
         .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
   }
 }
