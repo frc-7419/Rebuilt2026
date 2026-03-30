@@ -147,6 +147,7 @@ public class Robot extends LoggedRobot {
   public void disabledInit() {
     robotContainer.getVision().useMegatag1();
     LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 1);
+    LimelightHelpers.SetIMUAssistAlpha(VisionConstants.kLimelightFourTable, 0.005);
   }
 
   /** This function is called periodically when disabled. */

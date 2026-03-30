@@ -23,6 +23,7 @@ import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
