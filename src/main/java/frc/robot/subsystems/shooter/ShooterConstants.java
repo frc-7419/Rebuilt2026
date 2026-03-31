@@ -34,22 +34,25 @@ public final class ShooterConstants {
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
 
-  static {
-    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-
-    motorSlot0Configs.kP = 0.6;
-    motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 0;
-    motorSlot0Configs.kV = 0.1425;
-    motorSlot0Configs.kS = 0.2;
-  }
-
   /** kV in V/RPS */
   public static final double kShooterKv = 0.13;
 
   public static final double kShooterKp = 0.4;
-  public static final double kShooterKs = 0.47;
+  public static final double kShooterKs = 0.467;
+
+  public static final double kShooterBangHandoffFraction = 0.95;
+  public static final double kShooterBangStatorAmps = 80.0;
+
+  static {
+    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+    motorSlot0Configs.kP = kShooterKp;
+    motorSlot0Configs.kI = 0;
+    motorSlot0Configs.kD = 0;
+    motorSlot0Configs.kV = kShooterKv;
+    motorSlot0Configs.kS = kShooterKs;
+  }
 
   private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
   private static final double kTwoPi = 2.0 * Math.PI;
@@ -80,7 +83,7 @@ public final class ShooterConstants {
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
   /** Estimated velocity, tune to robot */
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.22;
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.18;
 
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;
