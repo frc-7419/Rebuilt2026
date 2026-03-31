@@ -38,10 +38,10 @@ public final class ShooterConstants {
   public static final double kShooterKv = 0.13;
 
   public static final double kShooterKp = 0.4;
-  public static final double kShooterKs = 0.47;
+  public static final double kShooterKs = 0.467;
 
-  public static final double kShooterBangHandoffFraction = 0.9;
-  public static final double kShooterBangStatorAmps = 120.0;
+  public static final double kShooterBangHandoffFraction = 0.95;
+  public static final double kShooterBangStatorAmps = 80.0;
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
@@ -83,7 +83,7 @@ public final class ShooterConstants {
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
   /** Estimated velocity, tune to robot */
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.22;
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.18;
 
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;

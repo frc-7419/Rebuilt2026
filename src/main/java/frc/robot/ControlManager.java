@@ -36,9 +36,9 @@ import frc.robot.subsystems.turret.Turret;
 public final class ControlManager {
 
   // --------------- Constants ---------------
-  private static final double kShootSerializerVolts = 3.67;
-  private static final double kShootFeederVolts = 10.0;
-  private static final double kIntakeVolts = 10;
+  private static final double kShootSerializerVolts = 10;
+  private static final double kShootFeederVolts = 11.0;
+  private static final double kIntakeVolts = 7;
   /** Linear speed multiplier while driver left trigger is held (precision / creep). */
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
