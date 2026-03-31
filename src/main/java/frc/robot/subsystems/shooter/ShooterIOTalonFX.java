@@ -72,8 +72,8 @@ public class ShooterIOTalonFX implements ShooterIO {
       double actualRps = inputs.rotorVelocity.in(RotationsPerSecond);
 
       if (Math.abs(targetRps) < 1e-6) {
-        motor.setControl(velocityFocLead.withVelocity(0).withEnableFOC(true));
-        followerMotor.setControl(velocityFocFollow.withVelocity(0).withEnableFOC(true));
+        motor.setControl(velocityFocLead.withVelocity(0).withEnableFOC(false));
+        followerMotor.setControl(velocityFocFollow.withVelocity(0).withEnableFOC(false));
       } else if (inBangPhase(targetRps, actualRps)) {
         double bangAmps = Math.copySign(kShooterBangStatorAmps, targetRps);
         motor.setControl(torqueBangLead.withOutput(bangAmps));
@@ -84,7 +84,7 @@ public class ShooterIOTalonFX implements ShooterIO {
       }
 
       inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
-      inputs.requestedVelocity = RotationsPerSecond.of(targetRotorRps / kMotorToShooterGearRatio);
+      inputs.requestedVelocity = RotationsPerSecond.of(targetRotorRps);
     } else {
       inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
       inputs.requestedVelocity = RotationsPerSecond.of(0.0);
