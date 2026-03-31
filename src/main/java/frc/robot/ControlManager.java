@@ -8,6 +8,11 @@ import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -34,6 +39,10 @@ public final class ControlManager {
   private static final double kShootSerializerVolts = 3.0;
   private static final double kShootFeederVolts = 10.0;
   private static final double kIntakeVolts = 10;
+  /** Linear speed multiplier while driver left trigger is held (precision / creep). */
+  private static final double kSlowDriveLinearScale = 0.35;
+  /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
+  private static final double kDriveJoystickDeadband = 0.1;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -49,7 +58,57 @@ public final class ControlManager {
   private final RobotState robotState = RobotState.getInstance();
   private double lastWristAngleDeg = 0.0;
 
+  /** Updated by driver trigger {@code whileTrue} / {@code startEnd} bindings. */
+  private final double[] driveLinearScale = {1.0};
+
+  private final boolean[] driveRobotCentric = {false};
+
   private ControlManager() {}
+
+  /** Same mapping as {@link frc.robot.commands.DriveCommands} (package-local there). */
+  private static Translation2d linearVelocityFromJoysticks(double x, double y) {
+    double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), kDriveJoystickDeadband);
+    Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
+    linearMagnitude = linearMagnitude * linearMagnitude;
+    return new Pose2d(Translation2d.kZero, linearDirection)
+        .transformBy(new Transform2d(linearMagnitude, 0.0, Rotation2d.kZero))
+        .getTranslation();
+  }
+
+  /**
+   * Teleop drive: field-relative by default; robot-centric while right trigger held; linear speed
+   * scaled while left trigger held. Kept here so {@link frc.robot.commands.DriveCommands} stays
+   * unchanged.
+   */
+  private Command driverTeleopDrive(Drive drive, CommandXboxController driver) {
+    return Commands.run(
+        () -> {
+          Translation2d linearVelocity =
+              linearVelocityFromJoysticks(-driver.getLeftY(), -driver.getLeftX());
+          double omega = MathUtil.applyDeadband(-driver.getRightX(), kDriveJoystickDeadband);
+          omega = Math.copySign(omega * omega, omega);
+          double scale = driveLinearScale[0];
+          ChassisSpeeds speeds =
+              new ChassisSpeeds(
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * scale,
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * scale,
+                  omega * drive.getMaxAngularSpeedRadPerSec() * scale);
+          if (driveRobotCentric[0]) {
+            drive.runVelocity(speeds);
+          } else {
+            boolean isFlipped =
+                DriverStation.getAlliance().isPresent()
+                    && DriverStation.getAlliance().get() == Alliance.Red;
+            drive.runVelocity(
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    speeds,
+                    isFlipped
+                        ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                        : drive.getRotation()));
+          }
+        },
+        drive);
+  }
 
   // --------------- Intake ---------------
 
@@ -202,6 +261,8 @@ public final class ControlManager {
     Trigger stopSwerveTrigger = driver.x();
     Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
+    Trigger driverSlowDriveTrigger = driver.leftTrigger();
+    Trigger driverRobotCentricTrigger = driver.rightTrigger();
 
     // Operator triggers: mode toggles
     Trigger hubModeTrigger = operator.start();
@@ -224,12 +285,13 @@ public final class ControlManager {
     Trigger revShooterTrigger = operator.y();
 
     // -------- Driver: drive & pose --------
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> -driver.getLeftY() * (robotState.isShooting() ? 1 : 1.0),
-            () -> -driver.getLeftX() * (robotState.isShooting() ? 1 : 1.0),
-            () -> -driver.getRightX()));
+    driverSlowDriveTrigger.whileTrue(
+        Commands.startEnd(
+            () -> driveLinearScale[0] = kSlowDriveLinearScale, () -> driveLinearScale[0] = 1.0));
+    driverRobotCentricTrigger.whileTrue(
+        Commands.startEnd(() -> driveRobotCentric[0] = true, () -> driveRobotCentric[0] = false));
+
+    drive.setDefaultCommand(driverTeleopDrive(drive, driver));
 
     lockPushOrientationTrigger.whileTrue(
         DriveCommands.joystickDriveAtAngle(
