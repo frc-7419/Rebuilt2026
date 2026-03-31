@@ -30,11 +30,13 @@ import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 public final class AutoAim {
 
   private static final double kFieldLengthMeters = 16.54;
+  private static final double kAllianceLineXBlue = 4.5;
   private static final double kLaunchOffsetMeters = 0.28;
   private static final double kGravity = 9.81;
   private static final double kTrajectoryDt = 0.02;
   private static final int kTrajectoryMaxPts = 128;
   private static final int kLeadIterations = 3;
+  private static final double kSidePassRPMDefault = 2500.0;
 
   private AutoAim() {}
 
@@ -54,7 +56,9 @@ public final class AutoAim {
     }
 
     Pose2d robotPose = latestPose.getValue();
-    Translation3d staticTarget = resolveTarget(robotPose, state, hubMode);
+    boolean pastAllianceLine = isPastAllianceLine(robotPose, state.isRedAlliance());
+    boolean effectiveHubMode = hubMode && !pastAllianceLine;
+    Translation3d staticTarget = resolveTarget(robotPose, state, effectiveHubMode);
 
     Translation2d turretPivotFieldEarly = KinematicsHelper.getTurretPivotTranslation(robotPose);
     double staticDistM = turretPivotFieldEarly.getDistance(staticTarget.toTranslation2d());
@@ -90,7 +94,7 @@ public final class AutoAim {
       aimTarget = KinematicsHelper.predictTargetPos(staticTarget, pivotVx, pivotVy, tof);
       double dist = turretPivotField.getDistance(aimTarget.toTranslation2d());
 
-      if (hubMode) {
+      if (effectiveHubMode) {
         double scaledFunnelRadius =
             staticDistM > 1e-6
                 ? Constants.kHubFunnelRadiusMeters * dist / staticDistM
@@ -118,27 +122,27 @@ public final class AutoAim {
         lastFunnelClearHeightM = solved.effectiveFunnelClearHeightM();
         lastFunnelConstraintMet = solved.funnelConstraintMet();
       } else {
-        double[] highArc =
-            KinematicsHelper.solveForTargetHighArc(
-                dist, launchHeight, aimTarget.getZ(), maxHoodRad);
-        hoodAngleRad = highArc[0];
-        launchSpeedMps = highArc[1];
-        tof = highArc[2];
+        if (isPassCenter()) {
+          double[] highArc =
+              KinematicsHelper.solveForTargetHighArc(
+                  dist, launchHeight, aimTarget.getZ(), maxHoodRad);
+          hoodAngleRad = highArc[0];
+          launchSpeedMps = highArc[1];
+          tof = highArc[2];
+        } else {
+          double[] lowArc =
+              KinematicsHelper.solveForTargetHighArc(
+                  dist, launchHeight, aimTarget.getZ(), HoodConstants.kMinAngle.in(Radians));
+          hoodAngleRad = lowArc[0];
+          launchSpeedMps = lowArc[1];
+          tof = lowArc[2];
+        }
       }
     }
 
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
-    if (!hubMode && !isPassCenter()) rpm = Math.min(rpm, getPassRPM());
-    double allianceLineXBlue = 4.5;
-    boolean pastAllianceLine =
-        state.isRedAlliance()
-            ? robotPose.getX() < (kFieldLengthMeters - allianceLineXBlue)
-            : robotPose.getX() > allianceLineXBlue;
-    if (hubMode && pastAllianceLine) {
-      rpm = ShooterConstants.kIdleRPM;
-      hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
-    }
+    if (!effectiveHubMode && !isPassCenter()) rpm = Math.min(rpm, getSidePassRPMLimit());
 
     final double kObstacleZoneXMin = 4.472;
     final double kObstacleZoneXMax = 5.0;
@@ -161,7 +165,7 @@ public final class AutoAim {
     else hood.setAngle(HoodConstants.kMaxAngle);
 
     Translation2d aimPoint2d = aimTarget.toTranslation2d();
-    if (hubMode && lastEffectiveDistFromLaunchM > 0) {
+    if (effectiveHubMode && lastEffectiveDistFromLaunchM > 0) {
       Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
       double norm = toHub.getNorm();
       if (norm >= 1e-6) {
@@ -193,12 +197,15 @@ public final class AutoAim {
     boolean turretClamped =
         (desiredTurretRad - minAngle < 1e-4) || (maxAngle - desiredTurretRad < 1e-4);
 
-    boolean arcValid = (hubMode ? lastFunnelConstraintMet : true) && !turretClamped;
+    boolean arcValid = (effectiveHubMode ? lastFunnelConstraintMet : true) && !turretClamped;
     state.setAutoAimArcValid(arcValid);
     Logger.recordOutput("AutoAim/ValidShot", arcValid);
-    Logger.recordOutput("AutoAim/FunnelConstraintMet", hubMode ? lastFunnelConstraintMet : true);
+    Logger.recordOutput(
+        "AutoAim/FunnelConstraintMet", effectiveHubMode ? lastFunnelConstraintMet : true);
     Logger.recordOutput("AutoAim/Inputs/RobotPose", robotPose);
-    Logger.recordOutput("AutoAim/Inputs/HubMode", hubMode);
+    Logger.recordOutput("AutoAim/Inputs/HubModeRequested", hubMode);
+    Logger.recordOutput("AutoAim/Inputs/HubModeEffective", effectiveHubMode);
+    Logger.recordOutput("AutoAim/Inputs/PastAllianceLine", pastAllianceLine);
     Logger.recordOutput(
         "AutoAim/Inputs/PassMode", isPassCenter() ? PassMode.CENTER.name() : PassMode.SIDES.name());
     Logger.recordOutput("AutoAim/Inputs/StaticTarget", staticTarget);
@@ -216,7 +223,7 @@ public final class AutoAim {
     Logger.recordOutput("AutoAim/AimTarget", aimTarget);
     Logger.recordOutput("AutoAim/AimPoint", aimPoint2d);
 
-    if (hubMode && lastDistM > 1e-6) {
+    if (effectiveHubMode && lastDistM > 1e-6) {
       Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
       double norm = toHub.getNorm();
       double effectivePivotToHub =
@@ -308,19 +315,30 @@ public final class AutoAim {
 
   private static boolean isPassCenter() {
     PassMode mode = passModeChooser.get();
-    return mode == null || mode == PassMode.SIDES;
+    return mode == PassMode.CENTER;
   }
 
-  private static double getPassRPM() {
+  private static double getSidePassRPMLimit() {
     double override = passRPMOverride.get();
     if (override >= ShooterConstants.kAutoAimRPMMin) {
       return Math.min(override, ShooterConstants.kAutoAimRPMMax);
     }
-    return ShooterConstants.kAutoAimRPM;
+    return kSidePassRPMDefault;
   }
 
   public static double getLaunchVelConstant() {
     return launchVelConstant.get();
+  }
+
+  public static boolean isPastAllianceLine(Pose2d robotPose, boolean isRedAlliance) {
+    return isRedAlliance
+        ? robotPose.getX() < (kFieldLengthMeters - kAllianceLineXBlue)
+        : robotPose.getX() > kAllianceLineXBlue;
+  }
+
+  public static boolean useHubMode(
+      boolean requestedHubMode, Pose2d robotPose, boolean isRedAlliance) {
+    return requestedHubMode && !isPastAllianceLine(robotPose, isRedAlliance);
   }
 
   private static final double kLaunchVelConstantStep = 0.01;

@@ -58,8 +58,8 @@ public final class ShooterConstants {
   public static final double kSimKv =
       12.0 / (kSimMotor.freeSpeedRadPerSec * kMotorToShooterGearRatio / kTwoPi);
 
-  public static final double kSimKp = 0.01;
-  public static final double kSimKs = 0.2;
+  public static final double kSimKp = 0.4;
+  public static final double kSimKs = 0;
 
   public static double computeVelocityVolts(
       double targetRps, double actualRps, double kv, double kP, double kS) {

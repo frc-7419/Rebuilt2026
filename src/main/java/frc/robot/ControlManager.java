@@ -23,7 +23,6 @@ import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
-import org.littletonrobotics.junction.Logger;
 
 /**
  * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
@@ -253,8 +252,10 @@ public final class ControlManager {
             () -> {
               if (robotState.isAutoAimEnabled()) {
                 boolean allowFullRange = robotState.isShooting();
-                AutoAim.updateAutoAim(
-                    turret, shooter, hood, robotState.isHubMode(), allowFullRange);
+                boolean effectiveHubMode =
+                    AutoAim.useHubMode(
+                        robotState.isHubMode(), drive.getPose(), robotState.isRedAlliance());
+                AutoAim.updateAutoAim(turret, shooter, hood, effectiveHubMode, allowFullRange);
               } else {
                 double v = MathUtil.applyDeadband(operator.getRightX(), 0.05);
                 turret.setOpenLoop(v * 12.0);
