@@ -34,22 +34,25 @@ public final class ShooterConstants {
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
 
-  static {
-    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-
-    motorSlot0Configs.kP = 0.6;
-    motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 0;
-    motorSlot0Configs.kV = 0.1425;
-    motorSlot0Configs.kS = 0.2;
-  }
-
   /** kV in V/RPS */
   public static final double kShooterKv = 0.13;
 
   public static final double kShooterKp = 0.4;
   public static final double kShooterKs = 0.47;
+
+  public static final double kShooterBangHandoffFraction = 0.9;
+  public static final double kShooterBangStatorAmps = 120.0;
+
+  static {
+    motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+    motorSlot0Configs.kP = kShooterKp;
+    motorSlot0Configs.kI = 0;
+    motorSlot0Configs.kD = 0;
+    motorSlot0Configs.kV = kShooterKv;
+    motorSlot0Configs.kS = kShooterKs;
+  }
 
   private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
   private static final double kTwoPi = 2.0 * Math.PI;
