@@ -310,9 +310,9 @@ public class RobotContainer {
     var fieldSpeeds = state.getLatestMeasuredFieldRelativeChassisSpeeds();
     double robotVx = fieldSpeeds.vxMetersPerSecond;
     double robotVy = fieldSpeeds.vyMetersPerSecond;
-    double robotOmega = fieldSpeeds.omegaRadiansPerSecond;
-    double pivotVx = robotVx - robotOmega * pivotOffset.getY();
-    double pivotVy = robotVy + robotOmega * pivotOffset.getX();
+    double headingRate = state.getHeadingRateRadPerSec();
+    double pivotVx = robotVx - headingRate * pivotOffset.getY();
+    double pivotVy = robotVy + headingRate * pivotOffset.getX();
 
     Translation3d[] traj =
         AutoAim.buildTrajectoryFromState(

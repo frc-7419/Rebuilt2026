@@ -66,10 +66,12 @@ public class RobotState {
   private final AtomicReference<ChassisSpeeds> desiredFieldRelativeChassisSpeeds =
       new AtomicReference<>(new ChassisSpeeds());
 
+  private final AtomicReference<Double> headingRateRadPerSec = new AtomicReference<>(0.0);
+
   private boolean isShooting = false;
   private boolean isIntaking = false;
   private boolean intakeDown = false;
-  private boolean autoAimEnabled = false; // change to true in comp
+  private boolean autoAimEnabled = true; // change to true in comp
   private boolean hubMode = true;
   private boolean autoAimArcValid = false;
   private boolean shooterRpmInRange = false;
@@ -162,6 +164,14 @@ public class RobotState {
 
   public ChassisSpeeds getLatestDesiredFieldRelativeChassisSpeed() {
     return desiredFieldRelativeChassisSpeeds.get();
+  }
+
+  public void setHeadingRateRadPerSec(double radPerSec) {
+    headingRateRadPerSec.set(radPerSec);
+  }
+
+  public double getHeadingRateRadPerSec() {
+    return headingRateRadPerSec.get();
   }
 
   public TimeInterpolatableBuffer<Pose2d> getPoseBuffer() {

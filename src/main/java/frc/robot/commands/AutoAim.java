@@ -72,10 +72,11 @@ public final class AutoAim {
     double robotVx = fieldSpeeds != null ? fieldSpeeds.vxMetersPerSecond : 0.0;
     double robotVy = fieldSpeeds != null ? fieldSpeeds.vyMetersPerSecond : 0.0;
     double robotOmega = fieldSpeeds != null ? fieldSpeeds.omegaRadiansPerSecond : 0.0;
+    double headingRate = state.getHeadingRateRadPerSec();
 
     Translation2d pivotOffset = turretPivotField.minus(robotPose.getTranslation());
-    double pivotVx = robotVx - robotOmega * pivotOffset.getY();
-    double pivotVy = robotVy + robotOmega * pivotOffset.getX();
+    double pivotVx = robotVx - headingRate * pivotOffset.getY();
+    double pivotVy = robotVy + headingRate * pivotOffset.getX();
 
     double maxHoodRad = HoodConstants.kMaxAngle.in(Radians);
 
@@ -188,7 +189,8 @@ public final class AutoAim {
     }
     desiredTurretRad = MathUtil.clamp(desiredTurretRad, minAngleRad, maxAngleRad);
 
-    double turretOmega = -robotOmega; // counter-rotate to hold field heading
+    double turretOmega =
+        -headingRate; // feedforward tracks moving setpoint (same ω as pose rotation)
 
     turret.setAngleWithVelocity(Radians.of(desiredTurretRad), RadiansPerSecond.of(turretOmega));
 
@@ -218,6 +220,7 @@ public final class AutoAim {
     Logger.recordOutput("AutoAim/Inputs/RobotVx", robotVx);
     Logger.recordOutput("AutoAim/Inputs/RobotVy", robotVy);
     Logger.recordOutput("AutoAim/Inputs/RobotOmega", robotOmega);
+    Logger.recordOutput("AutoAim/Inputs/HeadingRateRadPerSec", headingRate);
     Logger.recordOutput("AutoAim/Inputs/PivotVx", pivotVx);
     Logger.recordOutput("AutoAim/Inputs/PivotVy", pivotVy);
     Logger.recordOutput("AutoAim/AimTarget", aimTarget);

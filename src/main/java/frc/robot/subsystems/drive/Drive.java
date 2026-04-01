@@ -233,6 +233,11 @@ public class Drive extends SubsystemBase {
     ChassisSpeeds measuredFieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
             measuredRobotRelativeSpeeds, visionCorrectedPose.getRotation());
+    double headingRateRadPerSec =
+        gyroInputs.connected
+            ? gyroInputs.yawVelocityRadPerSec
+            : measuredRobotRelativeSpeeds.omegaRadiansPerSecond;
+    robotState.setHeadingRateRadPerSec(headingRateRadPerSec);
     double timestamp = Timer.getFPGATimestamp();
     robotState.addDriveMotionMeasurements(
         timestamp,
