@@ -43,6 +43,7 @@ public final class ControlManager {
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
   private static final double kDriveJoystickDeadband = 0.1;
+  private static final double kShootTurretAlignToleranceDeg = 2.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -186,28 +187,34 @@ public final class ControlManager {
   }
 
   /**
-   * Runs serializer/feeder for shooting only when shooter is within {@link
-   * ShooterConstants#kRpmToleranceForReady} RPM of the requested speed.
+   * Runs serializer/feeder only when shooter RPM is within {@link
+   * ShooterConstants#kRpmToleranceForReady} of the request and the turret is within {@link
+   * #kShootTurretAlignToleranceDeg} of its setpoint (see {@link
+   * RobotState#isTurretWithinSetpoint}).
    */
-  public Command runShootAtSpeed(Shooter shooter, Serializer serializer) {
-    return buildShootAtSpeedCommand(shooter, serializer, true);
+  public Command runShootWhenReady(Shooter shooter, Serializer serializer) {
+    return buildShootWhenReadyCommand(shooter, serializer, true);
   }
 
   /**
-   * Same as {@link #runShootAtSpeed} but with no subsystem requirements (for PathPlanner event
+   * Same as {@link #runShootWhenReady} but with no subsystem requirements (for PathPlanner event
    * zones that conflict with requirement scheduling).
    */
-  public Command runShootAtSpeedNoRequirements(Shooter shooter, Serializer serializer) {
-    return buildShootAtSpeedCommand(shooter, serializer, false);
+  public Command runShootWhenReadyNoRequirements(Shooter shooter, Serializer serializer) {
+    return buildShootWhenReadyCommand(shooter, serializer, false);
   }
 
-  private Command buildShootAtSpeedCommand(
+  private Command buildShootWhenReadyCommand(
       Shooter shooter, Serializer serializer, boolean requireSerializer) {
     Runnable run =
         () -> {
           double current = shooter.getRotorRPM();
           double requested = shooter.getRequestedRPM();
-          if (Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady) {
+          boolean shooterReady =
+              Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady;
+          boolean turretReady =
+              robotState.isTurretWithinSetpoint(Degrees.of(kShootTurretAlignToleranceDeg));
+          if (shooterReady && turretReady) {
             serializer.setFeederVoltage(kShootFeederVolts);
             serializer.setSerializerVoltage(kShootSerializerVolts);
           } else {
@@ -235,7 +242,7 @@ public final class ControlManager {
     NamedCommands.registerCommand("EnableHubMode", Commands.runOnce(() -> setHubMode(true)));
     NamedCommands.registerCommand("DisableHubMode", Commands.runOnce(() -> setHubMode(false)));
     NamedCommands.registerCommand("Intake", runIntakeLowerAndWheel(intake));
-    NamedCommands.registerCommand("AutoShoot", runShootAtSpeed(shooter, serializer));
+    NamedCommands.registerCommand("AutoShoot", runShootWhenReady(shooter, serializer));
     NamedCommands.registerCommand(
         "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
     NamedCommands.registerCommand(
@@ -244,7 +251,7 @@ public final class ControlManager {
 
     new EventTrigger("Intake").whileTrue(runIntakeLowerAndWheel(intake));
     new EventTrigger("WiggleIntake").whileTrue(wiggle);
-    new EventTrigger("AutoShoot").whileTrue(runShootAtSpeedNoRequirements(shooter, serializer));
+    new EventTrigger("AutoShoot").whileTrue(runShootWhenReadyNoRequirements(shooter, serializer));
   }
 
   /** Configures driver and operator button bindings. */
@@ -342,7 +349,7 @@ public final class ControlManager {
     // -------- Operator: intake & shooting --------
     intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
     reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
-    shootTrigger.whileTrue(runShootAtSpeed(shooter, serializer));
+    shootTrigger.whileTrue(runShootWhenReady(shooter, serializer));
 
     intakeJerkingTrigger
         .whileTrue(

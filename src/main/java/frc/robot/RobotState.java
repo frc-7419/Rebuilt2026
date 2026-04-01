@@ -39,6 +39,8 @@ public class RobotState {
       TimeInterpolatableBuffer.createBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> turretAngle =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> turretRequestedAngle =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> turretAngularVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> hoodPosition =
@@ -84,6 +86,7 @@ public class RobotState {
     }
     fieldToRobot.addSample(0.0, Pose2d.kZero);
     turretAngle.addSample(0.0, 0.0);
+    turretRequestedAngle.addSample(0.0, 0.0);
     turretAngularVelocity.addSample(0.0, 0.0);
     hoodPosition.addSample(0.0, 0.0);
     shooterVelocity.addSample(0.0, 0.0);
@@ -191,9 +194,31 @@ public class RobotState {
   }
 
   public void addTurretUpdates(
-      double timestamp, Angle turretRotation, AngularVelocity turretAngularVelocityMeasure) {
+      double timestamp,
+      Angle turretRotation,
+      AngularVelocity turretAngularVelocityMeasure,
+      Angle turretRequestedRotation) {
     turretAngle.addSample(timestamp, turretRotation.in(Radians));
+    turretRequestedAngle.addSample(timestamp, turretRequestedRotation.in(Radians));
     turretAngularVelocity.addSample(timestamp, turretAngularVelocityMeasure.baseUnitMagnitude());
+  }
+
+  public Map.Entry<Double, Angle> getLatestTurretRequestedAngle() {
+    var buffer = turretRequestedAngle.getInternalBuffer();
+    if (buffer.isEmpty()) return null;
+    var last = buffer.lastEntry();
+    return Map.entry(last.getKey(), Radians.of(last.getValue()));
+  }
+
+  /**
+   * True when |actual − requested| is within {@code tolerance} (same mechanism frame as turret).
+   */
+  public boolean isTurretWithinSetpoint(Angle tolerance) {
+    var actualEntry = getLatestTurretAngle();
+    var requestedEntry = getLatestTurretRequestedAngle();
+    if (actualEntry == null || requestedEntry == null) return false;
+    double errRad = Math.abs(actualEntry.getValue().minus(requestedEntry.getValue()).in(Radians));
+    return errRad <= tolerance.in(Radians);
   }
 
   public void addShooterUpdates(

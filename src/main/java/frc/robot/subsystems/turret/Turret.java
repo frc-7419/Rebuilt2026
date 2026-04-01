@@ -61,7 +61,9 @@ public class Turret extends SubsystemBase {
     Logger.processInputs("Turret", inputs);
 
     double timestamp = Timer.getFPGATimestamp();
-    RobotState.getInstance().addTurretUpdates(timestamp, inputs.turretPosition, inputs.velocity);
+    RobotState.getInstance()
+        .addTurretUpdates(
+            timestamp, inputs.turretPosition, inputs.velocity, inputs.requestedPosition);
 
     if (!seeded && !seedTimedOut) {
       double elapsed = timestamp - seedStartTimeSec;

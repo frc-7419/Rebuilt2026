@@ -112,6 +112,11 @@ public class TurretIOSim implements TurretIO {
     inputs.currentAmps = currentAmps;
     inputs.rightEncoderPosition = Radians.of(rightEncoderPosition);
     inputs.leftEncoderPosition = Radians.of(leftEncoderPosition);
+
+    if (!positionControl) {
+      inputs.requestedPosition = Radians.of(turretPositionRad);
+      inputs.requestedVelocity = RadiansPerSecond.of(velocityRadPerSec);
+    }
   }
 
   @Override
