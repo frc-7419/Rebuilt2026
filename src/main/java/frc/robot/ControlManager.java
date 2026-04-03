@@ -28,6 +28,7 @@ import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
+import frc.robot.subsystems.vision.Vision;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -266,6 +267,7 @@ public final class ControlManager {
       Shooter shooter,
       Hood hood,
       Intake intake,
+      Vision vision,
       Serializer serializer) {
     // Driver triggers
     Trigger stopSwerveTrigger = driver.x();
@@ -273,6 +275,7 @@ public final class ControlManager {
     Trigger resetPoseTrigger = driver.leftBumper();
     Trigger driverSlowDriveTrigger = driver.leftTrigger();
     Trigger driverRobotCentricTrigger = driver.rightTrigger();
+    Trigger visionModeTrigger = driver.rightBumper();
 
     // Operator triggers: mode toggles
     Trigger hubModeTrigger = operator.start();
@@ -317,6 +320,12 @@ public final class ControlManager {
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                 drive)
             .ignoringDisable(true));
+    visionModeTrigger.onTrue(
+        Commands.runOnce(
+            () -> {
+              if (vision.isMegatag2()) vision.useMegatag1();
+              else vision.useMegatag2();
+            }));
 
     // -------- Operator: turret & hood (default commands) --------
     turret.setDefaultCommand(
