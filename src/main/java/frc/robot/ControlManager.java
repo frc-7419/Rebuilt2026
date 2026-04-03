@@ -28,6 +28,7 @@ import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Central manager for control state (intaking, shooting, auto-aim mode, hub mode). Updates {@link
@@ -36,14 +37,15 @@ import frc.robot.subsystems.turret.Turret;
 public final class ControlManager {
 
   // --------------- Constants ---------------
-  private static final double kShootSerializerVolts = 10;
+  private static final double kShootSerializerVolts = 12;
   private static final double kShootFeederVolts = 11.0;
-  private static final double kIntakeVolts = 7;
+  private static final double kIntakeVolts = 6;
   /** Linear speed multiplier while driver left trigger is held (precision / creep). */
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
   private static final double kDriveJoystickDeadband = 0.1;
-  private static final double kShootTurretAlignToleranceDeg = 2.0;
+
+  private static final double kShootTurretAlignToleranceDeg = 5.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -210,10 +212,11 @@ public final class ControlManager {
         () -> {
           double current = shooter.getRotorRPM();
           double requested = shooter.getRequestedRPM();
-          boolean shooterReady =
-              Math.abs(current - requested) <= ShooterConstants.kRpmToleranceForReady;
+          boolean shooterReady = (requested - current) <= ShooterConstants.kRpmToleranceForReady;
+          Logger.recordOutput("Shooter/Ready", shooterReady);
           boolean turretReady =
               robotState.isTurretWithinSetpoint(Degrees.of(kShootTurretAlignToleranceDeg));
+          Logger.recordOutput("Shooter/TurretReady", turretReady);
           if (shooterReady && turretReady) {
             serializer.setFeederVoltage(kShootFeederVolts);
             serializer.setSerializerVoltage(kShootSerializerVolts);
@@ -235,7 +238,7 @@ public final class ControlManager {
    * so auto and teleop share auto-aim and hub mode state.
    */
   public void registerNamedCommands(Intake intake, Shooter shooter, Serializer serializer) {
-    Command wiggle = IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(20), 7);
+    Command wiggle = IntakeCommands.setWristAngleWiggle(intake, Degrees.of(70), Degrees.of(60), 7);
     NamedCommands.registerCommand("EnableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(true)));
     NamedCommands.registerCommand(
         "DisableAutoAim", Commands.runOnce(() -> setAutoAimEnabled(false)));
@@ -354,7 +357,7 @@ public final class ControlManager {
     intakeJerkingTrigger
         .whileTrue(
             IntakeCommands.setWristAngleWiggle(
-                intake, Degrees.of(70), Degrees.of(20), kIntakeVolts))
+                intake, Degrees.of(100), Degrees.of(70), kIntakeVolts))
         .onFalse(
             Commands.runOnce(() -> intake.setWristAngle(Degrees.of(lastWristAngleDeg)), intake));
 

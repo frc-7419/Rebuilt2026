@@ -41,7 +41,7 @@ public final class ShooterConstants {
   public static final double kShooterKs = 0.467;
 
   public static final double kShooterBangHandoffFraction = 0.95;
-  public static final double kShooterBangStatorAmps = 80.0;
+  public static final double kShooterBangStatorAmps = 120.0;
 
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
@@ -98,5 +98,5 @@ public final class ShooterConstants {
   public static final double kAutoAimRPMMax = 3500.0;
 
   /** RPM tolerance for "at speed" */
-  public static final double kRpmToleranceForReady = 200.0;
+  public static final double kRpmToleranceForReady = 300.0;
 }

@@ -54,8 +54,8 @@ public final class IntakeCommands {
         () -> {
           intake.setWristAngle(
               Degrees.of(
-                  wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 8) + midpoint.in(Degrees)));
-          intake.setWheelOpenLoop(volts);
+                  wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 16) + midpoint.in(Degrees)));
+          // intake.setWheelOpenLoop(volts);
         },
         intake);
   }

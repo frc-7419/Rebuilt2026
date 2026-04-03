@@ -16,6 +16,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import org.littletonrobotics.junction.Logger;
 
 public class ShooterIOTalonFX implements ShooterIO {
   private final TalonFX motor;
@@ -46,7 +47,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     motorCurrent = motor.getStatorCurrent();
     motorVelocity = motor.getVelocity();
 
-    BaseStatusSignal.setUpdateFrequencyForAll(4.0, motorAppliedVolts, motorCurrent, motorVelocity);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, motorAppliedVolts, motorCurrent, motorVelocity);
   }
 
   private static boolean inBangPhase(double targetRps, double actualRps) {
@@ -78,9 +79,11 @@ public class ShooterIOTalonFX implements ShooterIO {
         double bangAmps = Math.copySign(kShooterBangStatorAmps, targetRps);
         motor.setControl(torqueBangLead.withOutput(bangAmps));
         followerMotor.setControl(torqueBangFollow.withOutput(-bangAmps));
+        Logger.recordOutput("Shooter/BangPhase", true);
       } else {
         motor.setControl(velocityFocLead.withVelocity(targetRps).withEnableFOC(true));
         followerMotor.setControl(velocityFocFollow.withVelocity(-targetRps).withEnableFOC(true));
+        Logger.recordOutput("Shooter/BangPhase", false);
       }
 
       inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
