@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.wpilibj2.command.Commands.run;
+import static frc.robot.subsystems.shooter.ShooterConstants.kAutoAimRPMMax;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -143,7 +144,7 @@ public final class AutoAim {
 
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
-    if (!effectiveHubMode && !isPassCenter()) rpm = Math.min(rpm, getSidePassRPMLimit());
+    if (!effectiveHubMode && !isPassCenter()) rpm = Math.min(rpm, 1700);
 
     final double kObstacleZoneXMin = 4.472;
     final double kObstacleZoneXMax = 5.0;
@@ -294,9 +295,6 @@ public final class AutoAim {
         hood);
   }
 
-  private static final LoggedNetworkNumber passRPMOverride =
-      new LoggedNetworkNumber("AutoAim/PassRPMOverride", -1.0);
-
   private static final LoggedNetworkNumber launchVelConstant =
       new LoggedNetworkNumber(
           "AutoAim/LaunchVelConstant", ShooterConstants.kFuelLaunchVelMetersPerSecPerRotPerSec);
@@ -319,14 +317,6 @@ public final class AutoAim {
   private static boolean isPassCenter() {
     PassMode mode = passModeChooser.get();
     return mode == PassMode.CENTER;
-  }
-
-  private static double getSidePassRPMLimit() {
-    double override = passRPMOverride.get();
-    if (override >= ShooterConstants.kAutoAimRPMMin) {
-      return Math.min(override, ShooterConstants.kAutoAimRPMMax);
-    }
-    return kSidePassRPMDefault;
   }
 
   public static double getLaunchVelConstant() {

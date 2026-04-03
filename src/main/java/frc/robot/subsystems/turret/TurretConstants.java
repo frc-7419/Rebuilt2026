@@ -27,7 +27,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kAbsoluteTurretMaxRotations = 540;
+  public static final double kAbsoluteTurretMaxRotations = 500d;
 
   /**
    * The absolute min and max angles are the physical limits of the turret, which is set based on

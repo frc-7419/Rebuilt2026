@@ -9,23 +9,23 @@
       "prevControl": null,
       "nextControl": {
         "x": 6.241988764044943,
-        "y": 0.16241573033707946
+        "y": 0.1624157303370799
       },
       "isLocked": false,
       "linkedName": "RightDeepPickup"
     },
     {
       "anchor": {
-        "x": 4.12225842696311,
-        "y": 0.5598651685404115
+        "x": 3.9648592715231787,
+        "y": 0.5792715231788088
       },
       "prevControl": {
-        "x": 6.425426966292135,
-        "y": 0.5394831460674163
+        "x": 6.268027810852204,
+        "y": 0.5588895007058137
       },
       "nextControl": {
-        "x": 0.7226570581812042,
-        "y": 0.589950136407298
+        "x": 0.5652579027412732,
+        "y": 0.6093564910456953
       },
       "isLocked": false,
       "linkedName": "ShootRight"
@@ -76,7 +76,7 @@
   ],
   "globalConstraints": {
     "maxVelocity": 5.0,
-    "maxAcceleration": 6.0,
+    "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
