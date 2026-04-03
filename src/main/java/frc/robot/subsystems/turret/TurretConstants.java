@@ -27,7 +27,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kAbsoluteTurretMaxRotations = 600;
+  public static final double kAbsoluteTurretMaxRotations = 540;
 
   /**
    * The absolute min and max angles are the physical limits of the turret, which is set based on
@@ -68,8 +68,8 @@ public final class TurretConstants {
   public static final int kEncoderRightId = 6;
   public static final int kEncoderLeftId = 7;
 
-  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.092041);
-  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.357666);
+  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.070068);
+  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.504639);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
