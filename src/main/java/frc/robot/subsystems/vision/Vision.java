@@ -64,6 +64,10 @@ public class Vision extends SubsystemBase {
     this.drive = drive;
   }
 
+  public boolean isMegatag2() {
+    return useMegatag2Mode;
+  }
+
   public void useMegatag1() {
     useMegatag2Mode = false;
   }
