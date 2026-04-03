@@ -215,7 +215,7 @@ public class RobotContainer {
         "Shooter SysId (Dynamic Reverse)", shooter.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     controlManager.configureButtonBindings(
-        driver, operator, drive, turret, shooter, hood, intake, serializer);
+        driver, operator, drive, turret, shooter, hood, intake, vision, serializer);
 
     if (Constants.currentMode == Constants.Mode.SIM) {
       fuelSim = new FuelSim("FuelSim");

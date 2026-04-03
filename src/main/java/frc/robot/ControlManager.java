@@ -28,6 +28,7 @@ import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
+import frc.robot.subsystems.vision.Vision;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -319,12 +320,12 @@ public final class ControlManager {
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                 drive)
             .ignoringDisable(true));
-    visionModeTrigger.onTrue(() -> {
-      if(vision.isMegatag2())
-        vision.useMegatag1();
-      else 
-        vision.useMegatag2();
-    });
+    visionModeTrigger.onTrue(
+        Commands.runOnce(
+            () -> {
+              if (vision.isMegatag2()) vision.useMegatag1();
+              else vision.useMegatag2();
+            }));
 
     // -------- Operator: turret & hood (default commands) --------
     turret.setDefaultCommand(
