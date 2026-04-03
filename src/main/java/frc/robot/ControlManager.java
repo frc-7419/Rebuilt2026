@@ -45,7 +45,7 @@ public final class ControlManager {
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
   private static final double kDriveJoystickDeadband = 0.1;
 
-  private static final double kShootTurretAlignToleranceDeg = 5.0;
+  private static final double kShootTurretAlignToleranceDeg = 20.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;

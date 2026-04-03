@@ -38,6 +38,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -103,6 +105,8 @@ public class Drive extends SubsystemBase {
   private SwerveDriveOdometry odometryOnly =
       new SwerveDriveOdometry(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
   private ChassisSpeeds desiredFieldRelativeSpeeds = new ChassisSpeeds();
+
+  private Field2d robotField = new Field2d();
 
   public Drive(
       GyroIO gyroIO,
@@ -214,6 +218,8 @@ public class Drive extends SubsystemBase {
 
       // Apply update to pose estimator (includes vision corrections)
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+
+      robotField.setRobotPose(poseEstimator.getEstimatedPosition());
     }
 
     Pose2d visionCorrectedPose = poseEstimator.getEstimatedPosition();
@@ -223,6 +229,7 @@ public class Drive extends SubsystemBase {
     Pose2d odometryOnlyPose = odometryOnly.getPoseMeters();
     Logger.recordOutput("Odometry/OdometryOnly", odometryOnlyPose);
     Logger.recordOutput("Odometry/VisionCorrected", visionCorrectedPose);
+    SmartDashboard.putData(robotField);
     Logger.recordOutput(
         "Odometry/VisionCorrection",
         new Pose2d(

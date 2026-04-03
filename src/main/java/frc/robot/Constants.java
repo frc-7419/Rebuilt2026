@@ -52,10 +52,10 @@ public final class Constants {
   public static final Pose2d kHubPoseBlue = new Pose2d(4.620, 4.030, Rotation2d.kZero);
 
   /** Passing target high field */
-  public static final Pose2d kPassingPoseHighBlue = new Pose2d(2.25, 6.25, Rotation2d.kZero);
+  public static final Pose2d kPassingPoseHighBlue = new Pose2d(0, 6.25, Rotation2d.kZero);
 
   /** Passing target low field */
-  public static final Pose2d kPassingPoseLowBlue = new Pose2d(2.25, 1.25, Rotation2d.kZero);
+  public static final Pose2d kPassingPoseLowBlue = new Pose2d(0, 1.25, Rotation2d.kZero);
 
   /** Field midpoint */
   public static final double kPassingYThresholdMeters = 4.0;

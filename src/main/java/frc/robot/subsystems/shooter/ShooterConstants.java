@@ -95,7 +95,7 @@ public final class ShooterConstants {
   public static final double kAutoAimRPMMin = 1000.0;
 
   /** Hardware bound */
-  public static final double kAutoAimRPMMax = 3500.0;
+  public static final double kAutoAimRPMMax = 4500.0;
 
   /** RPM tolerance for "at speed" */
   public static final double kRpmToleranceForReady = 300.0;
