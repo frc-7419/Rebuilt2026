@@ -62,8 +62,9 @@ public class TurretIOTalonFX implements TurretIO {
 
     zeroRotor(Degrees.of(0));
 
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        4.0, motorAppliedVolts, motorCurrent, turretVelocity, turretPosition, rotorPosition);
+    BaseStatusSignal.setUpdateFrequencyForAll(4.0, motorAppliedVolts, motorCurrent);
+
+    BaseStatusSignal.setUpdateFrequencyForAll(40.0, turretVelocity, turretPosition, rotorPosition);
 
     BaseStatusSignal.setUpdateFrequencyForAll(4.0, rightEncoderPosition, leftEncoderPosition);
   }

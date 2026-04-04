@@ -40,7 +40,7 @@ public final class ControlManager {
   // --------------- Constants ---------------
   private static final double kShootSerializerVolts = 12;
   private static final double kShootFeederVolts = 11.0;
-  private static final double kIntakeVolts = 6.5;
+  private static final double kIntakeVolts = 5.5;
   /** Linear speed multiplier while driver left trigger is held (precision / creep). */
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
@@ -275,7 +275,6 @@ public final class ControlManager {
     Trigger resetPoseTrigger = driver.leftBumper();
     Trigger driverSlowDriveTrigger = driver.leftTrigger();
     Trigger driverRobotCentricTrigger = driver.rightTrigger();
-    Trigger visionModeTrigger = driver.rightBumper();
 
     // Operator triggers: mode toggles
     Trigger hubModeTrigger = operator.start();
@@ -320,17 +319,6 @@ public final class ControlManager {
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                 drive)
             .ignoringDisable(true));
-    visionModeTrigger
-        .whileTrue(
-            Commands.runOnce(
-                () -> {
-                  vision.useMegatag1();
-                }))
-        .onFalse(
-            Commands.runOnce(
-                () -> {
-                  vision.useMegatag2();
-                }));
 
     // -------- Operator: turret & hood (default commands) --------
     turret.setDefaultCommand(
