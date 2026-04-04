@@ -40,7 +40,7 @@ public final class ControlManager {
   // --------------- Constants ---------------
   private static final double kShootSerializerVolts = 12;
   private static final double kShootFeederVolts = 11.0;
-  private static final double kIntakeVolts = 6;
+  private static final double kIntakeVolts = 6.5;
   /** Linear speed multiplier while driver left trigger is held (precision / creep). */
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */

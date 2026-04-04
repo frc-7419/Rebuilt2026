@@ -7,12 +7,10 @@ import static frc.robot.util.PhoenixUtil.tryUntilOk;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -53,8 +51,8 @@ public class IntakeIOTalonFX implements IntakeIO {
         5, () -> wheelMotorRight.getConfigurator().apply(IntakeConstants.wheelMotorConfig, 0.25));
     tryUntilOk(5, () -> wristMotor.getConfigurator().apply(IntakeConstants.wristMotorConfig, 0.25));
 
-    wheelMotorRight.setControl(
-        new Follower(IntakeConstants.kIntakeWheelMotorLeftId, MotorAlignmentValue.Opposed));
+    // wheelMotorRight.setControl(
+    //    new Follower(IntakeConstants.kIntakeWheelMotorLeftId, MotorAlignmentValue.Opposed));
 
     // Set up wheel motor status signals
     wheelAppliedVolts = wheelMotorLeft.getMotorVoltage();
@@ -97,7 +95,8 @@ public class IntakeIOTalonFX implements IntakeIO {
 
   @Override
   public void setWheelOpenLoop(double volts) {
-    wheelMotorLeft.setControl(wheelVoltageRequest.withOutput(volts));
+    wheelMotorLeft.setControl(wheelVoltageRequest.withOutput(volts).withEnableFOC(true));
+    wheelMotorRight.setControl(wheelVoltageRequest.withOutput(-volts).withEnableFOC(true));
   }
 
   @Override
@@ -105,6 +104,10 @@ public class IntakeIOTalonFX implements IntakeIO {
     wheelMotorLeft.setControl(
         wheelMotionMagicVelocityVoltageRequest
             .withVelocity(velocity.times(kWheelMotorToWheelGearRatio))
+            .withAcceleration(Units.RotationsPerSecondPerSecond.of(100)));
+    wheelMotorRight.setControl(
+        wheelMotionMagicVelocityVoltageRequest
+            .withVelocity(velocity.times(-kWheelMotorToWheelGearRatio))
             .withAcceleration(Units.RotationsPerSecondPerSecond.of(100)));
   }
 

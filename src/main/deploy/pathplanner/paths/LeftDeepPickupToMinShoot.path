@@ -8,27 +8,32 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.225010770909927,
-        "y": 5.684370930989584
+        "x": 6.759933774834436,
+        "y": 6.713915562913908
       },
       "isLocked": false,
       "linkedName": "LeftDeepPickup"
     },
     {
       "anchor": {
-        "x": 3.959202247191011,
-        "y": 7.459179775280899
+        "x": 3.6018625827814574,
+        "y": 7.497988410596026
       },
       "prevControl": {
-        "x": 7.358869714654691,
-        "y": 7.480526498318631
+        "x": 8.31195669320634,
+        "y": 7.703775522732344
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "MinShootLeft"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": -178.44162098163335
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],

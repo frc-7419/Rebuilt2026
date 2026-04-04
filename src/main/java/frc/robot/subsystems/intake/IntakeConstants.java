@@ -37,7 +37,7 @@ public final class IntakeConstants {
 
   static {
     wheelMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    wheelMotorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    wheelMotorConfig.CurrentLimits.StatorCurrentLimit = 50;
     wheelMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     wheelSlot0Configs.kP = 0.43;
     wheelSlot0Configs.kI = 0.0;

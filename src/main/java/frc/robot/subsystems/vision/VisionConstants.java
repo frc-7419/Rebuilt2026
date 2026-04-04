@@ -52,8 +52,8 @@ public class VisionConstants {
   public static final double kLimelightTwoCameraSideM = -0.327042;
   public static final double kLimelightTwoCameraHeightM = 0.337597;
   public static final double kLimelightTwoCameraRollDeg = 180;
-  public static final double kLimelightTwoCameraPitchDeg = -10;
-  public static final double kLimelightTwoCameraYawDeg = 75.233;
+  public static final double kLimelightTwoCameraPitchDeg = 10;
+  public static final double kLimelightTwoCameraYawDeg = 75;
   public static final double[] kLimelightTwoCameraPose = {
     kLimelightTwoCameraForwardM,
     kLimelightTwoCameraSideM,
