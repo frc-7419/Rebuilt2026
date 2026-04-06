@@ -84,6 +84,8 @@ public class Vision extends SubsystemBase {
     Logger.recordOutput("Vision/leftConnected", inputs.leftConnected);
     Logger.recordOutput("Vision/rightConnected", inputs.rightConnected);
     Logger.recordOutput("Vision/rearConnected", inputs.rearConnected);
+    robotState.setVisionDeviceConnections(
+        inputs.leftConnected, inputs.rightConnected, inputs.rearConnected);
     if (Constants.currentMode != Mode.SIM) {
       leftVisionDisconnectedAlert.set(!inputs.leftConnected);
       rightVisionDisconnectedAlert.set(!inputs.rightConnected);

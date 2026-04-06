@@ -38,6 +38,9 @@ public class Intake extends SubsystemBase {
     double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
     RobotState state = RobotState.getInstance();
     state.addIntakeUpdates(timestamp, inputs.wristPosition, inputs.wristVelocity);
+    state.addIntakeWheelUpdates(timestamp, inputs.wheelVelocity);
+    state.setIntakeWheelAppliedVolts(inputs.wheelAppliedVolts);
+    state.setIntakeDeviceConnections(inputs.wheelConnected, inputs.wristConnected);
     state.setIntakeDown(inputs.wristPosition.in(Degrees) >= kIntakeDownThresholdDeg);
 
     if (Constants.currentMode != Mode.SIM) {

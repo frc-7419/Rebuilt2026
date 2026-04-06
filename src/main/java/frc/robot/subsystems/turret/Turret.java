@@ -81,6 +81,7 @@ public class Turret extends SubsystemBase {
     }
 
     turretDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
+    RobotState.getInstance().setTurretDeviceConnected(inputs.connected);
   }
 
   /** Sets the turret in open loop (volts). Cancels any position hold. */

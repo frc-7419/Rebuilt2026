@@ -35,7 +35,14 @@ public class Serializer extends SubsystemBase {
     Logger.processInputs("Serializer", inputs);
 
     double timestamp = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
-    RobotState.getInstance().addHopperUpdates(timestamp, inputs.serializerVelocity);
+    RobotState robotState = RobotState.getInstance();
+    robotState.addHopperUpdates(timestamp, inputs.serializerVelocity);
+    robotState.setIndexerAppliedTelemetry(
+        inputs.serializerAppliedVolts,
+        inputs.feederAppliedVolts,
+        inputs.feederVelocity,
+        inputs.serializerConnected,
+        inputs.feederConnected);
 
     if (Constants.currentMode != Mode.SIM) {
       serializerDisconnectedAlert.set(!inputs.serializerConnected);
