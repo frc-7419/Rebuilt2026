@@ -56,6 +56,8 @@ public class RobotState {
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
   private final TimeInterpolatableBuffer<Double> intakeWristVelocity =
       TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
+  private final TimeInterpolatableBuffer<Double> intakeWheelVelocity =
+      TimeInterpolatableBuffer.createDoubleBuffer(LOOKBACK_TIME_SEC);
 
   // Hopper buffers
   private final TimeInterpolatableBuffer<Double> hopperVelocity =
@@ -78,6 +80,31 @@ public class RobotState {
   private boolean autoAimArcValid = false;
   private boolean shooterRpmInRange = false;
 
+  /** Latest intake wheel applied volts (for LED stall detection). */
+  private double intakeWheelAppliedVolts = 0.0;
+
+  private boolean intakeWheelDeviceConnected = true;
+  private boolean intakeWristDeviceConnected = true;
+
+  private double serializerAppliedVolts = 0.0;
+  private double feederAppliedVolts = 0.0;
+  private double feederVelocityRadPerSec = 0.0;
+  private boolean serializerDeviceConnected = true;
+  private boolean feederDeviceConnected = true;
+
+  private boolean gyroDeviceConnected = true;
+  private final boolean[] swerveDriveDeviceConnected = new boolean[4];
+  private final boolean[] swerveTurnDeviceConnected = new boolean[4];
+  private final boolean[] swerveTurnEncoderDeviceConnected = new boolean[4];
+
+  private boolean turretDeviceConnected = true;
+  private boolean shooterDeviceConnected = true;
+  private boolean hoodDeviceConnected = true;
+
+  private boolean visionLeftDeviceConnected = true;
+  private boolean visionRightDeviceConnected = true;
+  private boolean visionRearDeviceConnected = true;
+
   @AutoLogOutput private Pose2d estimatedPose = Pose2d.kZero;
 
   private RobotState() {
@@ -93,7 +120,13 @@ public class RobotState {
     shooterRotorVelocity.addSample(0.0, 0.0);
     intakeWristPosition.addSample(0.0, 0.0);
     intakeWristVelocity.addSample(0.0, 0.0);
+    intakeWheelVelocity.addSample(0.0, 0.0);
     hopperVelocity.addSample(0.0, 0.0);
+    for (int i = 0; i < 4; i++) {
+      swerveDriveDeviceConnected[i] = true;
+      swerveTurnDeviceConnected[i] = true;
+      swerveTurnEncoderDeviceConnected[i] = true;
+    }
   }
 
   public void resetPose(Pose2d pose) {
@@ -403,6 +436,133 @@ public class RobotState {
       double timestamp, Angle wristPosition, AngularVelocity wristVelocity) {
     intakeWristPosition.addSample(timestamp, wristPosition.baseUnitMagnitude());
     intakeWristVelocity.addSample(timestamp, wristVelocity.baseUnitMagnitude());
+  }
+
+  public void addIntakeWheelUpdates(double timestamp, AngularVelocity wheelVelocity) {
+    intakeWheelVelocity.addSample(timestamp, wheelVelocity.baseUnitMagnitude());
+  }
+
+  public AngularVelocity getLatestIntakeWheelVelocity() {
+    var buffer = intakeWheelVelocity.getInternalBuffer();
+    double value = buffer.isEmpty() ? 0.0 : buffer.lastEntry().getValue();
+    return RadiansPerSecond.of(value);
+  }
+
+  public void setIntakeWheelAppliedVolts(double volts) {
+    intakeWheelAppliedVolts = volts;
+  }
+
+  public double getIntakeWheelAppliedVolts() {
+    return intakeWheelAppliedVolts;
+  }
+
+  public void setIntakeDeviceConnections(boolean wheelConnected, boolean wristConnected) {
+    intakeWheelDeviceConnected = wheelConnected;
+    intakeWristDeviceConnected = wristConnected;
+  }
+
+  public boolean isIntakeWheelDeviceConnected() {
+    return intakeWheelDeviceConnected;
+  }
+
+  public boolean isIntakeWristDeviceConnected() {
+    return intakeWristDeviceConnected;
+  }
+
+  public void setIndexerAppliedTelemetry(
+      double serializerVolts,
+      double feederVolts,
+      AngularVelocity feederVelocity,
+      boolean serializerConnected,
+      boolean feederConnected) {
+    serializerAppliedVolts = serializerVolts;
+    feederAppliedVolts = feederVolts;
+    feederVelocityRadPerSec = feederVelocity.baseUnitMagnitude();
+    serializerDeviceConnected = serializerConnected;
+    feederDeviceConnected = feederConnected;
+  }
+
+  public double getSerializerAppliedVolts() {
+    return serializerAppliedVolts;
+  }
+
+  public double getFeederAppliedVolts() {
+    return feederAppliedVolts;
+  }
+
+  public AngularVelocity getLatestFeederVelocity() {
+    return RadiansPerSecond.of(feederVelocityRadPerSec);
+  }
+
+  public boolean isSerializerDeviceConnected() {
+    return serializerDeviceConnected;
+  }
+
+  public boolean isFeederDeviceConnected() {
+    return feederDeviceConnected;
+  }
+
+  public void setGyroDeviceConnected(boolean connected) {
+    gyroDeviceConnected = connected;
+  }
+
+  public void setSwerveModuleDeviceConnections(
+      int moduleIndex,
+      boolean driveConnected,
+      boolean turnConnected,
+      boolean turnEncoderConnected) {
+    if (moduleIndex < 0 || moduleIndex >= 4) {
+      return;
+    }
+    swerveDriveDeviceConnected[moduleIndex] = driveConnected;
+    swerveTurnDeviceConnected[moduleIndex] = turnConnected;
+    swerveTurnEncoderDeviceConnected[moduleIndex] = turnEncoderConnected;
+  }
+
+  public void setTurretDeviceConnected(boolean connected) {
+    turretDeviceConnected = connected;
+  }
+
+  public void setShooterDeviceConnected(boolean connected) {
+    shooterDeviceConnected = connected;
+  }
+
+  public void setHoodDeviceConnected(boolean connected) {
+    hoodDeviceConnected = connected;
+  }
+
+  public void setVisionDeviceConnections(boolean left, boolean right, boolean rear) {
+    visionLeftDeviceConnected = left;
+    visionRightDeviceConnected = right;
+    visionRearDeviceConnected = rear;
+  }
+
+  /**
+   * True if any hardware IO reports disconnected (intake, serializer, swerve, gyro, aim/shooter
+   * chain, vision). Used for status LEDs; not asserted in SIM by {@link
+   * frc.robot.subsystems.leds.StatusLEDs}.
+   */
+  public boolean isAnySubsystemDeviceDisconnected() {
+    if (!intakeWheelDeviceConnected || !intakeWristDeviceConnected) {
+      return true;
+    }
+    if (!serializerDeviceConnected || !feederDeviceConnected) {
+      return true;
+    }
+    if (!gyroDeviceConnected) {
+      return true;
+    }
+    for (int i = 0; i < 4; i++) {
+      if (!swerveDriveDeviceConnected[i]
+          || !swerveTurnDeviceConnected[i]
+          || !swerveTurnEncoderDeviceConnected[i]) {
+        return true;
+      }
+    }
+    if (!turretDeviceConnected || !shooterDeviceConnected || !hoodDeviceConnected) {
+      return true;
+    }
+    return !visionLeftDeviceConnected || !visionRightDeviceConnected || !visionRearDeviceConnected;
   }
 
   public Optional<Angle> getIntakeWristPosition(double timestamp) {

@@ -65,6 +65,7 @@ public class Shooter extends SubsystemBase {
     state.setShooterRpmInRange(atSpeed);
 
     shooterDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
+    state.setShooterDeviceConnected(inputs.connected);
   }
 
   /** Sets the shooter in open loop (volts). */
