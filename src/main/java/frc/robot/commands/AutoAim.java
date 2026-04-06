@@ -160,6 +160,7 @@ public final class AutoAim {
       hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
     }
 
+    if (!RobotState.getInstance().isShooting()) rpm = 0;
     shooter.setVelocity(RPM.of(rpm));
 
     if (RobotState.getInstance().isShooting()) hood.setAngle(Radians.of(hoodAngleRad));
