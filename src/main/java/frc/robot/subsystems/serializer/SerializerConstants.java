@@ -41,6 +41,8 @@ public class SerializerConstants {
     serializerSlot0Configs.kS = 0.0;
     serializerMotorConfig.CurrentLimits.StatorCurrentLimit = 60.0;
     serializerMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    serializerMotorConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
+    serializerMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     feederMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     feederMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
@@ -51,6 +53,8 @@ public class SerializerConstants {
     feederSlot0Configs.kS = 0.0;
     feederMotorConfig.CurrentLimits.StatorCurrentLimit = 40.0;
     feederMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    serializerMotorConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
+    feederMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
   }
 
   // Simulation PID gains

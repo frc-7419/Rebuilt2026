@@ -52,6 +52,11 @@ public final class ShooterConstants {
     motorSlot0Configs.kD = 0;
     motorSlot0Configs.kV = kShooterKv;
     motorSlot0Configs.kS = kShooterKs;
+
+    motorConfig.CurrentLimits.StatorCurrentLimit = 120;
+    motorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    motorConfig.CurrentLimits.SupplyCurrentLimit = 60;
+    motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
   }
 
   private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
