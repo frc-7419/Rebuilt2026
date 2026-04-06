@@ -70,6 +70,16 @@ task(replayWatch, type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+tasks.register('generateShotWarmstartTable', JavaExec) {
+    group = 'utility'
+    description = 'Print Java literals for ShotWarmstartTable via KinematicsHelper.solveFunnelClearance'
+    dependsOn extractReleaseNative
+    def jniReleaseDir = layout.buildDirectory.dir('jni/release')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'frc.robot.tools.GenerateShotWarmstartTable'
+    systemProperty 'java.library.path', jniReleaseDir.get().asFile.absolutePath
+}
+
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 4.
 dependencies {
