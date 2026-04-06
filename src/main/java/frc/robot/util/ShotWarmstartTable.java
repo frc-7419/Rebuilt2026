@@ -18,7 +18,9 @@ public final class ShotWarmstartTable {
     0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0
   };
 
-  /** From {@code ./gradlew generateShotWarmstartTable} (default launch vel + hub geometry). */
+  /**
+   * From {@code ./gradlew generateShotWarmstartTable} (hub geometry + existing table warm-start).
+   */
   public static final double[] HOOD_GUESS_RAD = {
     1.308997, 1.308997, 1.307596, 1.242112, 1.192364, 1.154971, 1.125826, 1.102476, 1.083352,
     1.067407, 1.053911, 1.042341,

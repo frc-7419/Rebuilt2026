@@ -73,7 +73,7 @@ task(replayWatch, type: JavaExec) {
 tasks.register('generateShotWarmstartTable', JavaExec) {
     group = 'utility'
     description = 'Print Java literals for ShotWarmstartTable via KinematicsHelper.solveFunnelClearance'
-    dependsOn extractReleaseNative
+    dependsOn compileJava, extractReleaseNative
     def jniReleaseDir = layout.buildDirectory.dir('jni/release')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'frc.robot.tools.GenerateShotWarmstartTable'
