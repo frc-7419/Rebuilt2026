@@ -116,9 +116,30 @@ public final class ControlManager {
 
   // --------------- Intake ---------------
 
-  /** Runs the intake wheel and sets {@link RobotState#setIntaking(boolean)} */
+  /** Runs the intake wheel and sets {@link RobotState#setIntaking(boolean)}. */
   public Command runIntakeWheel(Intake intake, double volts) {
-    return Commands.run(() -> intake.setWheelOpenLoop(volts), intake)
+    return Commands.run(() -> intake.setWheelOpenLoop(volts))
+        .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
+        .finallyDo(
+            interrupted -> {
+              robotState.setIntaking(false);
+              intake.stopWheel();
+            });
+  }
+
+  private Command runIntakeWheelTeleop(Intake intake, CommandXboxController operator) {
+    return Commands.run(
+            () -> {
+              boolean forward = operator.rightBumper().getAsBoolean();
+              boolean reverse = operator.leftBumper().getAsBoolean();
+              if (forward && reverse) {
+                intake.stopWheel();
+              } else if (forward) {
+                intake.setWheelOpenLoop(kIntakeVolts);
+              } else {
+                intake.setWheelOpenLoop(-kIntakeVolts);
+              }
+            })
         .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
         .finallyDo(
             interrupted -> {
@@ -282,8 +303,7 @@ public final class ControlManager {
     Trigger autoAimTrigger = operator.x();
 
     // Operator triggers: intake & shooting
-    Trigger intakeWheelTrigger = operator.rightBumper();
-    Trigger reverseIntakeTrigger = operator.leftBumper();
+    Trigger intakeWheelTeleopTrigger = operator.rightBumper().or(operator.leftBumper());
     Trigger shootTrigger = operator.rightTrigger();
     Trigger reverseSerializerTrigger = operator.leftTrigger();
     Trigger intakeJerkingTrigger = operator.povLeft();
@@ -364,8 +384,7 @@ public final class ControlManager {
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    intakeWheelTrigger.whileTrue(runIntakeWheel(intake, kIntakeVolts));
-    reverseIntakeTrigger.whileTrue(runIntakeWheel(intake, -kIntakeVolts));
+    intakeWheelTeleopTrigger.whileTrue(runIntakeWheelTeleop(intake, operator));
     shootTrigger.whileTrue(runShootWhenReady(shooter, serializer));
 
     intakeJerkingTrigger
