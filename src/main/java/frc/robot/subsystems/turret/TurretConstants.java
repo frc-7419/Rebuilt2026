@@ -80,12 +80,12 @@ public final class TurretConstants {
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    motorConfig.CurrentLimits.StatorCurrentLimit = 30;
-    motorSlot0Configs.kP = 300;
+    motorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    motorSlot0Configs.kP = 200;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 10.2;
-    motorSlot0Configs.kV = 8.99;
-    motorSlot0Configs.kS = 0.44;
+    motorSlot0Configs.kD = 4;
+    motorSlot0Configs.kV = 8.91129;
+    motorSlot0Configs.kS = 0.22268;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToRightEncoderGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio = kRightEncoderToTurretGearRatio;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kAbsoluteMaxAngle.in(Rotations);
