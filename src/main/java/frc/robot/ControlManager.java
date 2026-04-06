@@ -295,8 +295,7 @@ public final class ControlManager {
     Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
     Trigger driverSlowDriveTrigger = driver.leftTrigger();
-    Trigger driverRobotCentricTrigger = driver.rightTrigger();
-    Trigger visionModeTrigger = driver.rightBumper();
+    Trigger driverRobotCentricTrigger = driver.rightBumper();
 
     // Operator triggers: mode toggles
     Trigger hubModeTrigger = operator.start();
@@ -304,7 +303,7 @@ public final class ControlManager {
 
     // Operator triggers: intake & shooting
     Trigger intakeWheelTeleopTrigger = operator.rightBumper().or(operator.leftBumper());
-    Trigger shootTrigger = operator.rightTrigger();
+    Trigger shootTrigger = operator.rightTrigger().or(driver.rightTrigger());
     Trigger reverseSerializerTrigger = operator.leftTrigger();
     Trigger intakeJerkingTrigger = operator.povLeft();
 
@@ -340,17 +339,6 @@ public final class ControlManager {
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                 drive)
             .ignoringDisable(true));
-    visionModeTrigger
-        .whileTrue(
-            Commands.runOnce(
-                () -> {
-                  vision.useMegatag1();
-                }))
-        .onFalse(
-            Commands.runOnce(
-                () -> {
-                  vision.useMegatag2();
-                }));
 
     // -------- Operator: turret & hood (default commands) --------
     turret.setDefaultCommand(
