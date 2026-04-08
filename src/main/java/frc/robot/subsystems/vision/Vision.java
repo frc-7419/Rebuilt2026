@@ -3,6 +3,8 @@ package frc.robot.subsystems.vision;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightFourCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightThreeCameraPose;
 import static frc.robot.subsystems.vision.VisionConstants.kLimelightTwoCameraPose;
+import static frc.robot.subsystems.vision.VisionConstants.kMaxMT1MultiTagAmbiguity;
+import static frc.robot.subsystems.vision.VisionConstants.kMaxMT1SingleTagAmbiguity;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -167,6 +169,10 @@ public class Vision extends SubsystemBase {
       Logger.recordOutput(logPrefix + "MT1Rejected", observation.estimatedPose);
       return;
     }
+    if (!isMT1AmbiguityAcceptable(observation, logPrefix)) {
+      Logger.recordOutput(logPrefix + "MT1Rejected", observation.estimatedPose);
+      return;
+    }
 
     double xyStdDevMeters;
     double thetaStdDevRad;
@@ -238,6 +244,16 @@ public class Vision extends SubsystemBase {
         Math.abs(robotState.getLatestRobotRelativeChassisSpeed().omegaRadiansPerSecond);
     boolean acceptable = yawRate <= kMaxYawRateRadPerS;
     Logger.recordOutput(logPrefix + "motionAcceptable", acceptable);
+    return acceptable;
+  }
+
+  private boolean isMT1AmbiguityAcceptable(PoseObservation observation, String logPrefix) {
+    double maxAllowedAmbiguity =
+        (observation.tagCount >= 2) ? kMaxMT1MultiTagAmbiguity : kMaxMT1SingleTagAmbiguity;
+    boolean acceptable = observation.maxTagAmbiguity <= maxAllowedAmbiguity;
+    Logger.recordOutput(logPrefix + "MT1MaxTagAmbiguity", observation.maxTagAmbiguity);
+    Logger.recordOutput(logPrefix + "MT1AmbiguityThreshold", maxAllowedAmbiguity);
+    Logger.recordOutput(logPrefix + "MT1AmbiguityAcceptable", acceptable);
     return acceptable;
   }
 

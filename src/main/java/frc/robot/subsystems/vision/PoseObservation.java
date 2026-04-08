@@ -12,6 +12,7 @@ public class PoseObservation implements StructSerializable {
   public double latency;
   public int tagCount;
   public boolean isMegaTag2;
+  public double maxTagAmbiguity;
 
   public int[] fiducialIds;
 
@@ -35,12 +36,12 @@ public class PoseObservation implements StructSerializable {
 
     @Override
     public int getSize() {
-      return Pose2d.struct.getSize() + kSizeDouble * 2 + kSizeInt32 + kSizeBool;
+      return Pose2d.struct.getSize() + kSizeDouble * 3 + kSizeInt32 + kSizeBool;
     }
 
     @Override
     public String getSchema() {
-      return "Pose2d estimatedPose;double timestampSeconds;double latency;int32 tagCount;bool isMegaTag2";
+      return "Pose2d estimatedPose;double timestampSeconds;double latency;int32 tagCount;bool isMegaTag2;double maxTagAmbiguity";
     }
 
     @Override
@@ -55,6 +56,7 @@ public class PoseObservation implements StructSerializable {
       buffer.putDouble(o.latency);
       buffer.putInt(o.tagCount);
       buffer.put(o.isMegaTag2 ? (byte) 1 : (byte) 0);
+      buffer.putDouble(o.maxTagAmbiguity);
     }
 
     @Override
@@ -65,6 +67,7 @@ public class PoseObservation implements StructSerializable {
       o.latency = buffer.getDouble();
       o.tagCount = buffer.getInt();
       o.isMegaTag2 = buffer.get() != 0;
+      o.maxTagAmbiguity = buffer.getDouble();
       return o;
     }
   }
@@ -83,6 +86,7 @@ public class PoseObservation implements StructSerializable {
     if (estimate.rawFiducials != null) {
       int count = estimate.rawFiducials.length;
       o.tagCount = count;
+      o.maxTagAmbiguity = 0.0;
 
       if (o.fiducialIds == null || o.fiducialIds.length < count) {
         o.fiducialIds = new int[count];
@@ -90,6 +94,7 @@ public class PoseObservation implements StructSerializable {
 
       for (int i = 0; i < count; i++) {
         o.fiducialIds[i] = estimate.rawFiducials[i].id;
+        o.maxTagAmbiguity = Math.max(o.maxTagAmbiguity, estimate.rawFiducials[i].ambiguity);
       }
     }
 
