@@ -96,7 +96,7 @@ public class TurretIOTalonFX implements TurretIO {
       inputs.requestedPosition = Rotations.of(goalPositionRotations).plus(positionOffset);
       inputs.requestedVelocity = RotationsPerSecond.of(goalVelocityRotPerSec);
 
-      motor.setControl(positionVoltageRequest);
+      motor.setControl(positionVoltageRequest.withEnableFOC(true));
     } else {
       inputs.requestedPosition = inputs.turretPosition;
       inputs.requestedVelocity = turretVelocity.getValue();

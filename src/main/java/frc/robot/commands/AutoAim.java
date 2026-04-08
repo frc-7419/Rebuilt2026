@@ -38,7 +38,6 @@ public final class AutoAim {
   private static final double kTrajectoryDt = 0.02;
   private static final int kTrajectoryMaxPts = 128;
   private static final int kLeadIterations = 3;
-  private static final double kSidePassRPMDefault = 2500.0;
   private static final double kConvergeThresholdDist = 0.01;
   private static final double kStationarySpeedThreshold = 0.1;
   private static final double kPoseLatencyMaxSec = 0.1;
@@ -285,8 +284,9 @@ public final class AutoAim {
     desiredTurretRad = filteredAimAngle;
     desiredTurretRad = MathUtil.clamp(desiredTurretRad, minAngleRad, maxAngleRad);
 
+    double turretOmegaAlpha = getTurretOmegaAlpha();
     double turretOmega =
-        -headingRate; // feedforward tracks moving setpoint (same ω as pose rotation)
+        -headingRate * turretOmegaAlpha; // scale counter-rotation feedforward for on-robot tuning
 
     turret.setAngleWithVelocity(Radians.of(desiredTurretRad), RadiansPerSecond.of(turretOmega));
 
@@ -339,6 +339,7 @@ public final class AutoAim {
       Logger.recordOutput("AutoAim/Inputs/RobotVy", robotVy);
       Logger.recordOutput("AutoAim/Inputs/RobotOmega", robotOmega);
       Logger.recordOutput("AutoAim/Inputs/HeadingRateRadPerSec", headingRate);
+      Logger.recordOutput("AutoAim/Inputs/TurretOmegaAlpha", turretOmegaAlpha);
       Logger.recordOutput("AutoAim/Inputs/PivotVx", pivotVx);
       Logger.recordOutput("AutoAim/Inputs/PivotVy", pivotVy);
       Logger.recordOutput("AutoAim/Inputs/PoseAgeSec", poseAgeSec);
@@ -411,6 +412,8 @@ public final class AutoAim {
   private static final LoggedNetworkNumber launchVelConstant =
       new LoggedNetworkNumber(
           "AutoAim/LaunchVelConstant", ShooterConstants.kFuelLaunchVelMetersPerSecPerRotPerSec);
+  private static final LoggedNetworkNumber turretOmegaAlpha =
+      new LoggedNetworkNumber("AutoAim/TurretOmegaAlpha", 1.0);
 
   public enum PassMode {
     CENTER,
@@ -434,6 +437,10 @@ public final class AutoAim {
 
   public static double getLaunchVelConstant() {
     return launchVelConstant.get();
+  }
+
+  public static double getTurretOmegaAlpha() {
+    return turretOmegaAlpha.get();
   }
 
   public static boolean isPastAllianceLine(Pose2d robotPose, boolean isRedAlliance) {
