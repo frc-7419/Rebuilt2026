@@ -46,7 +46,7 @@ public final class ControlManager {
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
   private static final double kDriveJoystickDeadband = 0.1;
 
-  private static final double kShootTurretAlignToleranceDeg = 20.0;
+  private static final double kShootTurretAlignToleranceDeg = 10.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -60,7 +60,6 @@ public final class ControlManager {
 
   // --------------- State ---------------
   private final RobotState robotState = RobotState.getInstance();
-  private double lastWristAngleDeg = 0.0;
 
   /** Updated by driver trigger {@code whileTrue} / {@code startEnd} bindings. */
   private final double[] driveLinearScale = {1.0};
@@ -380,7 +379,7 @@ public final class ControlManager {
             IntakeCommands.setWristAngleWiggle(
                 intake, Degrees.of(100), Degrees.of(70), kIntakeVolts))
         .onFalse(
-            Commands.runOnce(() -> intake.setWristAngle(Degrees.of(lastWristAngleDeg)), intake));
+            Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
 
     reverseSerializerTrigger
         .whileTrue(
@@ -391,17 +390,11 @@ public final class ControlManager {
     // -------- Operator: wrist --------
     wristStowTrigger.onTrue(
         Commands.runOnce(
-            () -> {
-              lastWristAngleDeg = 0.0;
-              intake.setWristAngle(Degrees.of(0.0));
-            },
+            () -> intake.setWristAngle(Degrees.of(0.0)),
             intake));
     wristDeployTrigger.onTrue(
         Commands.runOnce(
-            () -> {
-              lastWristAngleDeg = 120.0;
-              intake.setWristAngle(Degrees.of(120.0));
-            },
+            () -> intake.setWristAngle(Degrees.of(120.0)),
             intake));
 
     wristUpTrigger
