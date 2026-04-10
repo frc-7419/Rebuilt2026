@@ -41,6 +41,7 @@ public final class IntakeConstants {
     wheelMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     wheelMotorConfig.CurrentLimits.SupplyCurrentLimit = 20;
     wheelMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    wheelMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     wheelSlot0Configs.kP = 0.43;
     wheelSlot0Configs.kI = 0.0;
     wheelSlot0Configs.kD = 0.0;

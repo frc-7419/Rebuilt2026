@@ -231,7 +231,7 @@ public final class AutoAim {
 
     double rpm = (launchSpeedMps / velConstant) * 60.0;
     rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
-    if (!effectiveHubMode && !isPassCenter()) rpm = Math.min(rpm, 6000);
+    if (!effectiveHubMode && !isPassCenter()) rpm = Math.min(rpm, ShooterConstants.kAutoAimRPMMax);
 
     final double kObstacleZoneXMin = 4.472;
     final double kObstacleZoneXMax = 5.0;

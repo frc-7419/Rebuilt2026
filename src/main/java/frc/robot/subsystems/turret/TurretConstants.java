@@ -81,7 +81,7 @@ public final class TurretConstants {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     motorConfig.CurrentLimits.StatorCurrentLimit = 80;
-    motorSlot0Configs.kP = 200;
+    motorSlot0Configs.kP = 100;
     motorSlot0Configs.kI = 0;
     motorSlot0Configs.kD = 4;
     motorSlot0Configs.kV = 8.91129;

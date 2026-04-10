@@ -40,7 +40,7 @@ public final class ControlManager {
   // --------------- Constants ---------------
   private static final double kShootSerializerVolts = 12;
   private static final double kShootFeederVolts = 11.0;
-  private static final double kIntakeVolts = 12.0;
+  private static final double kIntakeVolts = 8.0;
   /** Linear speed multiplier while driver left trigger is held (precision / creep). */
   private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
@@ -378,8 +378,7 @@ public final class ControlManager {
         .whileTrue(
             IntakeCommands.setWristAngleWiggle(
                 intake, Degrees.of(100), Degrees.of(70), kIntakeVolts))
-        .onFalse(
-            Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
+        .onFalse(Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
 
     reverseSerializerTrigger
         .whileTrue(
@@ -388,14 +387,9 @@ public final class ControlManager {
         .onFalse(SerializerCommands.stopBoth(serializer));
 
     // -------- Operator: wrist --------
-    wristStowTrigger.onTrue(
-        Commands.runOnce(
-            () -> intake.setWristAngle(Degrees.of(0.0)),
-            intake));
+    wristStowTrigger.onTrue(Commands.runOnce(() -> intake.setWristAngle(Degrees.of(0.0)), intake));
     wristDeployTrigger.onTrue(
-        Commands.runOnce(
-            () -> intake.setWristAngle(Degrees.of(120.0)),
-            intake));
+        Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
