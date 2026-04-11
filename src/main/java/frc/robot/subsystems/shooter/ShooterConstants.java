@@ -35,7 +35,7 @@ public final class ShooterConstants {
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
 
   /** kV in V/RPS */
-  public static final double kShooterKv = 0.18;
+  public static final double kShooterKv = 0.13;
 
   public static final double kShooterKp = 0.4;
   public static final double kShooterKs = 0.467;
@@ -88,7 +88,7 @@ public final class ShooterConstants {
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
   /** Estimated velocity, tune to robot */
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.16;
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.172;
 
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;

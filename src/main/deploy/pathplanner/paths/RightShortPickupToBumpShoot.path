@@ -1,0 +1,63 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 8.237549194991056,
+        "y": 3.21561717352415
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 5.721763245033113,
+        "y": 2.8298509933774825
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.006548013245033,
+        "y": 2.524933774834436
+      },
+      "prevControl": {
+        "x": 4.189917218543046,
+        "y": 2.553973509933772
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "BumpShoot"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.046190761847631406,
+      "rotationDegrees": 0.0
+    },
+    {
+      "waypointRelativePos": 0.6280743851229749,
+      "rotationDegrees": 90.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 5.0,
+    "maxAcceleration": 5.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 46.97493401088199
+  },
+  "reversed": false,
+  "folder": "Shoot",
+  "idealStartingState": {
+    "velocity": 0.0,
+    "rotation": -78.72468732811893
+  },
+  "useDefaultConstraints": false
+}

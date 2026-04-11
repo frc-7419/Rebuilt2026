@@ -265,7 +265,7 @@ public class Drive extends SubsystemBase {
   public void runVelocity(ChassisSpeeds speeds) {
     desiredFieldRelativeSpeeds = speeds;
     desiredFieldRelativeSpeeds.omegaRadiansPerSecond =
-        -desiredFieldRelativeSpeeds.omegaRadiansPerSecond;
+        desiredFieldRelativeSpeeds.omegaRadiansPerSecond;
 
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
