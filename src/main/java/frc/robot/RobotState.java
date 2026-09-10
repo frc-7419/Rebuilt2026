@@ -319,11 +319,11 @@ public class RobotState {
     UNKNOWN
   }
 
-  private static final double BOUNDARY_TELEOP = 105.0;
-  private static final double BOUNDARY_SHIFT_1 = 80.0;
-  private static final double BOUNDARY_SHIFT_2 = 55.0;
-  private static final double BOUNDARY_SHIFT_3 = 30.0;
-  private static final double BOUNDARY_SHIFT_4 = 0.0;
+  private static final double BOUNDARY_TELEOP = 130.0;
+  private static final double BOUNDARY_SHIFT_1 = 105.0;
+  private static final double BOUNDARY_SHIFT_2 = 80.0;
+  private static final double BOUNDARY_SHIFT_3 = 55.0;
+  private static final double BOUNDARY_SHIFT_4 = 30.0;
 
   public MatchShift getCurrentShift() {
     if (!DriverStation.isEnabled()) {
