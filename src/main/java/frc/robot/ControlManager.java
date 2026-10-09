@@ -64,8 +64,6 @@ public final class ControlManager {
   /** Updated by driver trigger {@code whileTrue} / {@code startEnd} bindings. */
   private final double[] driveLinearScale = {1.0};
 
-  private final boolean[] driveRobotCentric = {false};
-
   private ControlManager() {}
 
   /** Same mapping as {@link frc.robot.commands.DriveCommands} (package-local there). */
@@ -79,9 +77,8 @@ public final class ControlManager {
   }
 
   /**
-   * Teleop drive: field-relative by default; robot-centric while right trigger held; linear speed
-   * scaled while left trigger held. Kept here so {@link frc.robot.commands.DriveCommands} stays
-   * unchanged.
+   * Teleop drive: field-relative, with linear speed scaled while the left trigger is held. Kept
+   * here so {@link frc.robot.commands.DriveCommands} stays unchanged.
    */
   private Command driverTeleopDrive(Drive drive, CommandXboxController driver) {
     return Commands.run(
@@ -96,19 +93,15 @@ public final class ControlManager {
                   linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * scale,
                   linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * scale,
                   omega * drive.getMaxAngularSpeedRadPerSec() * scale);
-          if (driveRobotCentric[0]) {
-            drive.runVelocity(speeds);
-          } else {
-            boolean isFlipped =
-                DriverStation.getAlliance().isPresent()
-                    && DriverStation.getAlliance().get() == Alliance.Red;
-            drive.runVelocity(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    speeds,
-                    isFlipped
-                        ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                        : drive.getRotation()));
-          }
+          boolean isFlipped =
+              DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get() == Alliance.Red;
+          drive.runVelocity(
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  speeds,
+                  isFlipped
+                      ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                      : drive.getRotation()));
         },
         drive);
   }
@@ -126,10 +119,16 @@ public final class ControlManager {
             });
   }
 
-  private Command runIntakeWheelTeleop(Intake intake, CommandXboxController operator) {
+  /**
+   * Forward intake on driver or operator right bumper; reverse on operator left bumper. Both
+   * directions at once stops the wheel.
+   */
+  private Command runIntakeWheelTeleop(
+      Intake intake, CommandXboxController driver, CommandXboxController operator) {
     return Commands.run(
             () -> {
-              boolean forward = operator.rightBumper().getAsBoolean();
+              boolean forward =
+                  driver.rightBumper().getAsBoolean() || operator.rightBumper().getAsBoolean();
               boolean reverse = operator.leftBumper().getAsBoolean();
               if (forward && reverse) {
                 intake.stopWheel();
@@ -294,14 +293,14 @@ public final class ControlManager {
     Trigger lockPushOrientationTrigger = driver.a();
     Trigger resetPoseTrigger = driver.leftBumper();
     Trigger driverSlowDriveTrigger = driver.leftTrigger();
-    Trigger driverRobotCentricTrigger = driver.rightBumper();
 
     // Operator triggers: mode toggles
     Trigger hubModeTrigger = operator.start();
     Trigger autoAimTrigger = operator.x();
 
     // Operator triggers: intake & shooting
-    Trigger intakeWheelTeleopTrigger = operator.rightBumper().or(operator.leftBumper());
+    Trigger intakeWheelTeleopTrigger =
+        operator.rightBumper().or(operator.leftBumper()).or(driver.rightBumper());
     Trigger shootTrigger = operator.rightTrigger().or(driver.rightTrigger());
     Trigger reverseSerializerTrigger = operator.leftTrigger();
     Trigger intakeJerkingTrigger = operator.povLeft();
@@ -319,8 +318,6 @@ public final class ControlManager {
     driverSlowDriveTrigger.whileTrue(
         Commands.startEnd(
             () -> driveLinearScale[0] = kSlowDriveLinearScale, () -> driveLinearScale[0] = 1.0));
-    driverRobotCentricTrigger.whileTrue(
-        Commands.startEnd(() -> driveRobotCentric[0] = true, () -> driveRobotCentric[0] = false));
 
     drive.setDefaultCommand(driverTeleopDrive(drive, driver));
 
@@ -371,7 +368,7 @@ public final class ControlManager {
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    intakeWheelTeleopTrigger.whileTrue(runIntakeWheelTeleop(intake, operator));
+    intakeWheelTeleopTrigger.whileTrue(runIntakeWheelTeleop(intake, driver, operator));
     shootTrigger.whileTrue(runShootWhenReady(shooter, serializer));
 
     intakeJerkingTrigger
