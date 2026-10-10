@@ -48,16 +48,16 @@ public final class IntakeCommands {
     return runOnce(() -> intake.setWristAngle(angle), intake);
   }
 
+  /** Oscillate the wrist around {@code midpoint} by {@code amplitude}. Does not run the wheel. */
+  public static void applyWristWiggle(Intake intake, Angle midpoint, Angle amplitude) {
+    intake.setWristAngle(
+        Degrees.of(
+            amplitude.in(Degrees) * Math.sin(Timer.getTimestamp() * 16) + midpoint.in(Degrees)));
+  }
+
   public static Command setWristAngleWiggle(
       Intake intake, Angle midpoint, Angle wiggle, double volts) {
-    return run(
-        () -> {
-          intake.setWristAngle(
-              Degrees.of(
-                  wiggle.in(Degrees) * Math.sin(Timer.getTimestamp() * 16) + midpoint.in(Degrees)));
-          // intake.setWheelOpenLoop(volts);
-        },
-        intake);
+    return run(() -> applyWristWiggle(intake, midpoint, wiggle), intake);
   }
 
   /** Stop both wheel and wrist. */

@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -47,6 +48,17 @@ public final class ControlManager {
   private static final double kDriveJoystickDeadband = 0.1;
 
   private static final double kShootTurretAlignToleranceDeg = 10.0;
+
+  /** Stowed wrist. The wheel must not run here. */
+  private static final double kIntakeUpDeg = 0.0;
+  /**
+   * Deployed wrist. Matches {@link frc.robot.subsystems.intake.IntakeConstants#kMaxWristAngle}. The
+   * wheel runs only once {@link RobotState#isIntakeDown()} is true.
+   */
+  private static final double kIntakeDownDeg = 120.0;
+  /** Same profile as the operator wiggle on pov-left. */
+  private static final double kWiggleMidpointDeg = 100.0;
+  private static final double kWiggleAmplitudeDeg = 70.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -108,37 +120,86 @@ public final class ControlManager {
 
   // --------------- Intake ---------------
 
-  /** Runs the intake wheel and sets {@link RobotState#setIntaking(boolean)}. */
+  private static boolean intakeBumpersHeld(
+      CommandXboxController driver, CommandXboxController operator) {
+    return driver.rightBumper().getAsBoolean()
+        || operator.rightBumper().getAsBoolean()
+        || operator.leftBumper().getAsBoolean();
+  }
+
+  /** Manual wrist buttons and their release actions stay idle while intake or shooting owns it. */
+  private boolean manualWristIdle(CommandXboxController driver, CommandXboxController operator) {
+    return !intakeBumpersHeld(driver, operator)
+        && !robotState.isIntaking()
+        && !robotState.isShooting();
+  }
+
+  /** Commands the deployed wrist angle. Does not run the wheel. */
+  private void holdIntakeDown(Intake intake) {
+    intake.setWristAngle(Degrees.of(kIntakeDownDeg));
+  }
+
+  /**
+   * Holds the wrist down and runs the wheel only after the measured angle is down. {@link
+   * RobotState#isIntaking()} stays false while the wrist is still up.
+   */
+  private void runWheelIfDown(Intake intake, double volts) {
+    holdIntakeDown(intake);
+    if (robotState.isIntakeDown()) {
+      robotState.setIntaking(true);
+      intake.setWheelOpenLoop(volts);
+    } else {
+      robotState.setIntaking(false);
+      intake.stopWheel();
+    }
+  }
+
+  /**
+   * Lowers the wrist and runs the wheel once it is down. Requires Intake and refuses incoming
+   * commands so a manual wrist binding cannot cancel an in-progress intake.
+   */
   public Command runIntakeWheel(Intake intake, double volts) {
-    return Commands.run(() -> intake.setWheelOpenLoop(volts))
-        .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
+    return Commands.run(() -> runWheelIfDown(intake, volts), intake)
         .finallyDo(
             interrupted -> {
               robotState.setIntaking(false);
               intake.stopWheel();
-            });
+            })
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 
   /**
-   * Forward intake on driver or operator right bumper; reverse on operator left bumper. Both
-   * directions at once stops the wheel.
+   * Single Intake owner for teleop and for shooting outside an auto intake command.
+   *
+   * <p>Priority: bumper intake (wrist down, wheel only when down), then shoot wiggle while not
+   * intaking, then hold the last wrist setpoint. Idle does not clear a stow or deploy angle.
    */
-  private Command runIntakeWheelTeleop(
+  private Command intakeModeCommand(
       Intake intake, CommandXboxController driver, CommandXboxController operator) {
     return Commands.run(
             () -> {
               boolean forward =
                   driver.rightBumper().getAsBoolean() || operator.rightBumper().getAsBoolean();
               boolean reverse = operator.leftBumper().getAsBoolean();
-              if (forward && reverse) {
+              if (forward || reverse) {
+                if (forward && reverse) {
+                  holdIntakeDown(intake);
+                  robotState.setIntaking(false);
+                  intake.stopWheel();
+                } else {
+                  runWheelIfDown(intake, forward ? kIntakeVolts : -kIntakeVolts);
+                }
+              } else if (robotState.isShooting()) {
+                robotState.setIntaking(false);
                 intake.stopWheel();
-              } else if (forward) {
-                intake.setWheelOpenLoop(kIntakeVolts);
+                IntakeCommands.applyWristWiggle(
+                    intake, Degrees.of(kWiggleMidpointDeg), Degrees.of(kWiggleAmplitudeDeg));
               } else {
-                intake.setWheelOpenLoop(-kIntakeVolts);
+                robotState.setIntaking(false);
+                intake.stopWheel();
               }
-            })
-        .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
+            },
+            intake)
         .finallyDo(
             interrupted -> {
               robotState.setIntaking(false);
@@ -147,21 +208,11 @@ public final class ControlManager {
   }
 
   /**
-   * Lowers wrist to 0° and runs the intake wheel; single command so it only requires Intake once.
+   * Lowers the wrist and runs the intake wheel once it is down. One command so PathPlanner does
+   * not schedule a second Intake requirement. Incoming commands cannot cancel it.
    */
   public Command runIntakeLowerAndWheel(Intake intake) {
-    return Commands.run(
-            () -> {
-              intake.setWristAngle(Degrees.of(120.0));
-              intake.setWheelOpenLoop(kIntakeVolts);
-            },
-            intake)
-        .beforeStarting(Commands.runOnce(() -> robotState.setIntaking(true)))
-        .finallyDo(
-            interrupted -> {
-              robotState.setIntaking(false);
-              intake.stopWheel();
-            });
+    return runIntakeWheel(intake, kIntakeVolts);
   }
 
   public Command stopIntake(Intake intake) {
@@ -250,7 +301,8 @@ public final class ControlManager {
             interrupted -> {
               robotState.setShooting(false);
               serializer.stopBoth();
-            });
+            })
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 
   /**
@@ -267,9 +319,9 @@ public final class ControlManager {
     NamedCommands.registerCommand("Intake", runIntakeLowerAndWheel(intake));
     NamedCommands.registerCommand("AutoShoot", runShootWhenReady(shooter, serializer));
     NamedCommands.registerCommand(
-        "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(120.0)));
+        "LowerIntake", IntakeCommands.setWristAngle(intake, Degrees.of(kIntakeDownDeg)));
     NamedCommands.registerCommand(
-        "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(0.0)));
+        "RaiseIntake", IntakeCommands.setWristAngle(intake, Degrees.of(kIntakeUpDeg)));
     NamedCommands.registerCommand("WiggleIntake", wiggle);
 
     new EventTrigger("Intake").whileTrue(runIntakeLowerAndWheel(intake));
@@ -298,21 +350,30 @@ public final class ControlManager {
     Trigger hubModeTrigger = operator.start();
     Trigger autoAimTrigger = operator.x();
 
-    // Operator triggers: intake & shooting
-    Trigger intakeWheelTeleopTrigger =
+    // Intake request and shooting. Manual wrist is off while either owns the wrist, so those
+    // bindings cannot cancel the intake default command or a kCancelIncoming auto intake.
+    Trigger intakeRequestedTrigger =
         operator.rightBumper().or(operator.leftBumper()).or(driver.rightBumper());
     Trigger shootTrigger = operator.rightTrigger().or(driver.rightTrigger());
-    Trigger reverseSerializerTrigger = operator.leftTrigger();
-    Trigger intakeJerkingTrigger = operator.povLeft();
+    Trigger shootingTrigger = new Trigger(robotState::isShooting);
+    Trigger manualWristAllowed =
+        intakeRequestedTrigger
+            .negate()
+            .and(new Trigger(robotState::isIntaking).negate())
+            .and(shootingTrigger.negate());
+    // Left trigger must not steal Serializer from a shot, or its onFalse stop would cancel it.
+    Trigger reverseSerializerTrigger =
+        operator.leftTrigger().and(shootTrigger.negate()).and(shootingTrigger.negate());
 
     // Operator triggers: wrist
-    Trigger wristStowTrigger = operator.b();
-    Trigger wristDeployTrigger = operator.a();
-    Trigger wristUpTrigger = operator.povUp();
-    Trigger wristDownTrigger = operator.povDown();
+    Trigger intakeJerkingTrigger = operator.povLeft().and(manualWristAllowed);
+    Trigger wristStowTrigger = operator.b().and(manualWristAllowed);
+    Trigger wristDeployTrigger = operator.a().and(manualWristAllowed);
+    Trigger wristUpTrigger = operator.povUp().and(manualWristAllowed);
+    Trigger wristDownTrigger = operator.povDown().and(manualWristAllowed);
 
-    // Operator triggers: shooter
-    Trigger revShooterTrigger = operator.y();
+    // Operator triggers: shooter. Auto-aim already writes shooter RPM from the turret command.
+    Trigger revShooterTrigger = operator.y().and(new Trigger(robotState::isAutoAimEnabled).negate());
 
     // -------- Driver: drive & pose --------
     driverSlowDriveTrigger.whileTrue(
@@ -368,37 +429,70 @@ public final class ControlManager {
     autoAimTrigger.onTrue(Commands.runOnce(this::toggleAutoAim));
 
     // -------- Operator: intake & shooting --------
-    intakeWheelTeleopTrigger.whileTrue(runIntakeWheelTeleop(intake, driver, operator));
+    // Default command restarts after a manual wrist command ends. A whileTrue on the bumpers
+    // would not, so intake lives here instead of on its own trigger.
+    intake.setDefaultCommand(intakeModeCommand(intake, driver, operator));
     shootTrigger.whileTrue(runShootWhenReady(shooter, serializer));
 
     intakeJerkingTrigger
         .whileTrue(
             IntakeCommands.setWristAngleWiggle(
-                intake, Degrees.of(100), Degrees.of(70), kIntakeVolts))
-        .onFalse(Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
+                intake, Degrees.of(kWiggleMidpointDeg), Degrees.of(kWiggleAmplitudeDeg), 0.0))
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  if (manualWristIdle(driver, operator)) {
+                    intake.setWristAngle(Degrees.of(kIntakeDownDeg));
+                  }
+                }));
 
     reverseSerializerTrigger
         .whileTrue(
             SerializerCommands.runBothVoltage(
                 serializer, -kShootSerializerVolts, -kShootFeederVolts))
-        .onFalse(SerializerCommands.stopBoth(serializer));
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  if (!shootTrigger.getAsBoolean() && !robotState.isShooting()) {
+                    serializer.stopBoth();
+                  }
+                }));
 
     // -------- Operator: wrist --------
-    wristStowTrigger.onTrue(Commands.runOnce(() -> intake.setWristAngle(Degrees.of(0.0)), intake));
+    wristStowTrigger.onTrue(
+        Commands.runOnce(() -> intake.setWristAngle(Degrees.of(kIntakeUpDeg)), intake));
     wristDeployTrigger.onTrue(
-        Commands.runOnce(() -> intake.setWristAngle(Degrees.of(120.0)), intake));
+        Commands.runOnce(() -> intake.setWristAngle(Degrees.of(kIntakeDownDeg)), intake));
 
     wristUpTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(-2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  if (manualWristIdle(driver, operator)) {
+                    intake.stopWrist();
+                  }
+                }));
 
     wristDownTrigger
         .whileTrue(Commands.run(() -> intake.setWristOpenLoop(2.0), intake))
-        .onFalse(Commands.runOnce(intake::stopWrist, intake));
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  if (manualWristIdle(driver, operator)) {
+                    intake.stopWrist();
+                  }
+                }));
 
     // -------- Operator: shooter --------
     revShooterTrigger
         .whileTrue(Commands.run(() -> shooter.setVelocity(RPM.of(2500)), shooter))
-        .onFalse(Commands.runOnce(() -> shooter.setVelocity(RPM.of(0)), shooter));
+        .onFalse(
+            Commands.runOnce(
+                () -> {
+                  if (!robotState.isAutoAimEnabled()) {
+                    shooter.setVelocity(RPM.of(0));
+                  }
+                }));
   }
 }
