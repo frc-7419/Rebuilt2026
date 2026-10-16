@@ -56,11 +56,11 @@ public final class ControlManager {
    */
   private static final double kIntakeDownDeg = 120.0;
   /** Same profile as the operator wiggle on pov-left. */
-  private static final double kWiggleMidpointDeg = 80.0;
+  private static final double kWiggleMidpointDeg = 70.0;
 
   private static final double kWiggleAmplitudeDeg = 60.0;
   /** Shoot button must be held this long before the wrist wiggle starts. */
-  private static final double kShootWiggleDelaySec = 2.0;
+  private static final double kShootWiggleDelaySec = 1.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;

@@ -52,7 +52,7 @@ public final class IntakeCommands {
   public static void applyWristWiggle(Intake intake, Angle midpoint, Angle amplitude) {
     intake.setWristAngle(
         Degrees.of(
-            amplitude.in(Degrees) * Math.sin(Timer.getTimestamp() * 25) + midpoint.in(Degrees)));
+            amplitude.in(Degrees) * Math.sin(Timer.getTimestamp() * 10) + midpoint.in(Degrees)));
   }
 
   public static Command setWristAngleWiggle(
