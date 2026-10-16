@@ -68,8 +68,8 @@ public final class TurretConstants {
   public static final int kEncoderRightId = 6;
   public static final int kEncoderLeftId = 7;
 
-  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.070068);
-  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.504639);
+  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.591797);
+  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.512695);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
