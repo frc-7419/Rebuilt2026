@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -42,8 +43,6 @@ public final class ControlManager {
   private static final double kShootSerializerVolts = 12;
   private static final double kShootFeederVolts = 11.0;
   private static final double kIntakeVolts = 8.0;
-  /** Linear speed multiplier while driver left trigger is held (precision / creep). */
-  private static final double kSlowDriveLinearScale = 0.35;
   /** Matches {@link frc.robot.commands.DriveCommands} joystick deadband. */
   private static final double kDriveJoystickDeadband = 0.1;
 
@@ -58,7 +57,10 @@ public final class ControlManager {
   private static final double kIntakeDownDeg = 120.0;
   /** Same profile as the operator wiggle on pov-left. */
   private static final double kWiggleMidpointDeg = 100.0;
+
   private static final double kWiggleAmplitudeDeg = 70.0;
+  /** Shoot button must be held this long before the wrist wiggle starts. */
+  private static final double kShootWiggleDelaySec = 2.0;
 
   // --------------- Singleton ---------------
   private static ControlManager instance;
@@ -73,8 +75,14 @@ public final class ControlManager {
   // --------------- State ---------------
   private final RobotState robotState = RobotState.getInstance();
 
-  /** Updated by driver trigger {@code whileTrue} / {@code startEnd} bindings. */
-  private final double[] driveLinearScale = {1.0};
+  /** FPGA time when the shoot button last went down. NaN while it is released. */
+  private double shootButtonPressedAtSec = Double.NaN;
+
+  /** Previous cycle's {@link RobotState#isShooting()}, so the wrist can drop when a shot ends. */
+  private boolean wasShooting = false;
+
+  /** True after this shot hold has wiggled, so the wrist drops when the button is released. */
+  private boolean wiggledThisShot = false;
 
   private ControlManager() {}
 
@@ -89,8 +97,8 @@ public final class ControlManager {
   }
 
   /**
-   * Teleop drive: field-relative, with linear speed scaled while the left trigger is held. Kept
-   * here so {@link frc.robot.commands.DriveCommands} stays unchanged.
+   * Teleop drive: field-relative. Kept here so {@link frc.robot.commands.DriveCommands} stays
+   * unchanged.
    */
   private Command driverTeleopDrive(Drive drive, CommandXboxController driver) {
     return Commands.run(
@@ -99,12 +107,11 @@ public final class ControlManager {
               linearVelocityFromJoysticks(-driver.getLeftY(), -driver.getLeftX());
           double omega = MathUtil.applyDeadband(-driver.getRightX(), kDriveJoystickDeadband);
           omega = Math.copySign(omega * omega, omega);
-          double scale = driveLinearScale[0];
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * scale,
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * scale,
-                  omega * drive.getMaxAngularSpeedRadPerSec() * scale);
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                  omega * drive.getMaxAngularSpeedRadPerSec());
           boolean isFlipped =
               DriverStation.getAlliance().isPresent()
                   && DriverStation.getAlliance().get() == Alliance.Red;
@@ -120,18 +127,47 @@ public final class ControlManager {
 
   // --------------- Intake ---------------
 
-  private static boolean intakeBumpersHeld(
+  private static boolean forwardIntakeHeld(
       CommandXboxController driver, CommandXboxController operator) {
-    return driver.rightBumper().getAsBoolean()
-        || operator.rightBumper().getAsBoolean()
-        || operator.leftBumper().getAsBoolean();
+    return driver.leftTrigger().getAsBoolean() || operator.leftTrigger().getAsBoolean();
+  }
+
+  private static boolean reverseIntakeHeld(
+      CommandXboxController driver, CommandXboxController operator) {
+    return driver.leftBumper().getAsBoolean() || operator.leftBumper().getAsBoolean();
+  }
+
+  private static boolean intakeRequested(
+      CommandXboxController driver, CommandXboxController operator) {
+    return forwardIntakeHeld(driver, operator) || reverseIntakeHeld(driver, operator);
+  }
+
+  private static boolean shootButtonHeld(
+      CommandXboxController driver, CommandXboxController operator) {
+    return driver.rightTrigger().getAsBoolean() || operator.rightTrigger().getAsBoolean();
   }
 
   /** Manual wrist buttons and their release actions stay idle while intake or shooting owns it. */
   private boolean manualWristIdle(CommandXboxController driver, CommandXboxController operator) {
-    return !intakeBumpersHeld(driver, operator)
+    return !intakeRequested(driver, operator)
         && !robotState.isIntaking()
         && !robotState.isShooting();
+  }
+
+  /**
+   * Tracks how long the shoot button has been held. Wiggle is allowed only after {@link
+   * #kShootWiggleDelaySec} and while {@link RobotState#isShooting()} is true.
+   */
+  private boolean shootWiggleReady(CommandXboxController driver, CommandXboxController operator) {
+    if (!shootButtonHeld(driver, operator)) {
+      shootButtonPressedAtSec = Double.NaN;
+      return false;
+    }
+    double now = Timer.getFPGATimestamp();
+    if (Double.isNaN(shootButtonPressedAtSec)) {
+      shootButtonPressedAtSec = now;
+    }
+    return robotState.isShooting() && (now - shootButtonPressedAtSec) >= kShootWiggleDelaySec;
   }
 
   /** Commands the deployed wrist angle. Does not run the wheel. */
@@ -171,16 +207,18 @@ public final class ControlManager {
   /**
    * Single Intake owner for teleop and for shooting outside an auto intake command.
    *
-   * <p>Priority: bumper intake (wrist down, wheel only when down), then shoot wiggle while not
-   * intaking, then hold the last wrist setpoint. Idle does not clear a stow or deploy angle.
+   * <p>Priority: trigger intake (wrist down, wheel only when down), then shoot wiggle after the
+   * shoot button has been held for {@link #kShootWiggleDelaySec}. Releasing that shot commands the
+   * wrist down. Idle does not clear a stow or deploy angle.
    */
   private Command intakeModeCommand(
       Intake intake, CommandXboxController driver, CommandXboxController operator) {
     return Commands.run(
             () -> {
-              boolean forward =
-                  driver.rightBumper().getAsBoolean() || operator.rightBumper().getAsBoolean();
-              boolean reverse = operator.leftBumper().getAsBoolean();
+              boolean forward = forwardIntakeHeld(driver, operator);
+              boolean reverse = reverseIntakeHeld(driver, operator);
+              boolean shooting = robotState.isShooting();
+              boolean wiggle = shootWiggleReady(driver, operator);
               if (forward || reverse) {
                 if (forward && reverse) {
                   holdIntakeDown(intake);
@@ -189,15 +227,24 @@ public final class ControlManager {
                 } else {
                   runWheelIfDown(intake, forward ? kIntakeVolts : -kIntakeVolts);
                 }
-              } else if (robotState.isShooting()) {
+              } else if (wiggle) {
+                wiggledThisShot = true;
                 robotState.setIntaking(false);
                 intake.stopWheel();
                 IntakeCommands.applyWristWiggle(
                     intake, Degrees.of(kWiggleMidpointDeg), Degrees.of(kWiggleAmplitudeDeg));
+              } else if (!shooting && wasShooting && wiggledThisShot) {
+                robotState.setIntaking(false);
+                intake.stopWheel();
+                holdIntakeDown(intake);
               } else {
                 robotState.setIntaking(false);
                 intake.stopWheel();
               }
+              if (!shooting) {
+                wiggledThisShot = false;
+              }
+              wasShooting = shooting;
             },
             intake)
         .finallyDo(
@@ -208,8 +255,8 @@ public final class ControlManager {
   }
 
   /**
-   * Lowers the wrist and runs the intake wheel once it is down. One command so PathPlanner does
-   * not schedule a second Intake requirement. Incoming commands cannot cancel it.
+   * Lowers the wrist and runs the intake wheel once it is down. One command so PathPlanner does not
+   * schedule a second Intake requirement. Incoming commands cannot cancel it.
    */
   public Command runIntakeLowerAndWheel(Intake intake) {
     return runIntakeWheel(intake, kIntakeVolts);
@@ -340,30 +387,37 @@ public final class ControlManager {
       Intake intake,
       Vision vision,
       Serializer serializer) {
-    // Driver triggers
+    // Driver triggers. Reset pose is Start so it is not next to the intake bumper.
     Trigger stopSwerveTrigger = driver.x();
     Trigger lockPushOrientationTrigger = driver.a();
-    Trigger resetPoseTrigger = driver.leftBumper();
-    Trigger driverSlowDriveTrigger = driver.leftTrigger();
+    Trigger resetPoseTrigger = driver.start();
 
-    // Operator triggers: mode toggles
+    // Operator triggers: mode toggles. Operator Start stays hub mode.
     Trigger hubModeTrigger = operator.start();
     Trigger autoAimTrigger = operator.x();
 
-    // Intake request and shooting. Manual wrist is off while either owns the wrist, so those
-    // bindings cannot cancel the intake default command or a kCancelIncoming auto intake.
+    // Both controllers: left trigger intake, left bumper reverse intake, right trigger shoot,
+    // right bumper reverse serializer. Manual wrist stays off while intake or shooting owns it.
     Trigger intakeRequestedTrigger =
-        operator.rightBumper().or(operator.leftBumper()).or(driver.rightBumper());
-    Trigger shootTrigger = operator.rightTrigger().or(driver.rightTrigger());
+        driver
+            .leftTrigger()
+            .or(operator.leftTrigger())
+            .or(driver.leftBumper())
+            .or(operator.leftBumper());
+    Trigger shootTrigger = driver.rightTrigger().or(operator.rightTrigger());
     Trigger shootingTrigger = new Trigger(robotState::isShooting);
     Trigger manualWristAllowed =
         intakeRequestedTrigger
             .negate()
             .and(new Trigger(robotState::isIntaking).negate())
             .and(shootingTrigger.negate());
-    // Left trigger must not steal Serializer from a shot, or its onFalse stop would cancel it.
+    // Right bumper must not steal Serializer from a shot, or its release stop would cancel it.
     Trigger reverseSerializerTrigger =
-        operator.leftTrigger().and(shootTrigger.negate()).and(shootingTrigger.negate());
+        driver
+            .rightBumper()
+            .or(operator.rightBumper())
+            .and(shootTrigger.negate())
+            .and(shootingTrigger.negate());
 
     // Operator triggers: wrist
     Trigger intakeJerkingTrigger = operator.povLeft().and(manualWristAllowed);
@@ -373,13 +427,10 @@ public final class ControlManager {
     Trigger wristDownTrigger = operator.povDown().and(manualWristAllowed);
 
     // Operator triggers: shooter. Auto-aim already writes shooter RPM from the turret command.
-    Trigger revShooterTrigger = operator.y().and(new Trigger(robotState::isAutoAimEnabled).negate());
+    Trigger revShooterTrigger =
+        operator.y().and(new Trigger(robotState::isAutoAimEnabled).negate());
 
     // -------- Driver: drive & pose --------
-    driverSlowDriveTrigger.whileTrue(
-        Commands.startEnd(
-            () -> driveLinearScale[0] = kSlowDriveLinearScale, () -> driveLinearScale[0] = 1.0));
-
     drive.setDefaultCommand(driverTeleopDrive(drive, driver));
 
     lockPushOrientationTrigger.whileTrue(
