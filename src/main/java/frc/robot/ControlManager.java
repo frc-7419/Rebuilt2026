@@ -58,6 +58,7 @@ public final class ControlManager {
   private static final double kIntakeDownDeg = 120.0;
   /** Same profile as the operator wiggle on pov-left. */
   private static final double kWiggleMidpointDeg = 100.0;
+
   private static final double kWiggleAmplitudeDeg = 70.0;
 
   // --------------- Singleton ---------------
@@ -208,8 +209,8 @@ public final class ControlManager {
   }
 
   /**
-   * Lowers the wrist and runs the intake wheel once it is down. One command so PathPlanner does
-   * not schedule a second Intake requirement. Incoming commands cannot cancel it.
+   * Lowers the wrist and runs the intake wheel once it is down. One command so PathPlanner does not
+   * schedule a second Intake requirement. Incoming commands cannot cancel it.
    */
   public Command runIntakeLowerAndWheel(Intake intake) {
     return runIntakeWheel(intake, kIntakeVolts);
@@ -373,7 +374,8 @@ public final class ControlManager {
     Trigger wristDownTrigger = operator.povDown().and(manualWristAllowed);
 
     // Operator triggers: shooter. Auto-aim already writes shooter RPM from the turret command.
-    Trigger revShooterTrigger = operator.y().and(new Trigger(robotState::isAutoAimEnabled).negate());
+    Trigger revShooterTrigger =
+        operator.y().and(new Trigger(robotState::isAutoAimEnabled).negate());
 
     // -------- Driver: drive & pose --------
     driverSlowDriveTrigger.whileTrue(
