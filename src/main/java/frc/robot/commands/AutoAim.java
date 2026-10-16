@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
@@ -22,13 +23,15 @@ import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.TurretConstants;
 import frc.robot.util.KinematicsHelper;
+import frc.robot.util.ShotCalculator;
 import frc.robot.util.ShotWarmstartTable;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
-/** Auto-aim: hub shots (funnel solver) or pass shots (drag solver). */
+/** Auto-aim with a shared calculator and a retained legacy comparison path. */
 public final class AutoAim {
 
   private static final double kFieldLengthMeters = 16.54;
@@ -54,8 +57,191 @@ public final class AutoAim {
     updateAutoAim(turret, shooter, hood, hubMode, false);
   }
 
-  /** allowFullRange true = use full 720° while shooting; false = stay in [-180°, 180°] */
+  public enum AimMode {
+    LEGACY,
+    COMPARE,
+    CALCULATOR_STATIC,
+    MOVING
+  }
+
+  private static final ShotCalculator calculator = new ShotCalculator();
+  private static final LoggedDashboardChooser<AimMode> aimMode =
+      new LoggedDashboardChooser<>("AutoAim/Mode");
+  private static final LoggedNetworkNumber releaseDelay =
+      new LoggedNetworkNumber("AutoAim/ReleaseDelaySec", 0.0);
+  private static final LoggedNetworkBoolean measuredCalibration =
+      new LoggedNetworkBoolean("AutoAim/UseMeasuredCalibration", false);
+  private static final LoggedNetworkBoolean detailedTrajectory =
+      new LoggedNetworkBoolean("AutoAim/DetailedTrajectory", false);
+  private static AimMode activeMode = AimMode.COMPARE;
+  private static boolean activeCalibration;
+  private static boolean wasEnabled;
+  private static boolean updatedThisCycle;
+  private static double legacyAngle, legacyHood, legacyRpm;
+  private static ShotCalculator.Solution latestSolution;
+
+  static {
+    aimMode.addDefaultOption("Compare (legacy outputs)", AimMode.COMPARE);
+    aimMode.addOption("Legacy", AimMode.LEGACY);
+    aimMode.addOption("Calculator (static model)", AimMode.CALCULATOR_STATIC);
+    aimMode.addOption("Calculator (moving)", AimMode.MOVING);
+  }
+
+  /** Called before CommandScheduler.run(); changing the output mode requires disabling first. */
+  public static void beginCycle() {
+    boolean enabled = DriverStation.isEnabled();
+    if (!enabled) {
+      AimMode requested = aimMode.get();
+      if (requested != null && requested != activeMode
+          || activeCalibration != measuredCalibration.get()) {
+        calculator.resetTracking();
+        if (requested != null) activeMode = requested;
+        activeCalibration = measuredCalibration.get();
+      }
+    }
+    if (enabled != wasEnabled || !updatedThisCycle) calculator.resetTracking();
+    wasEnabled = enabled;
+    updatedThisCycle = false;
+    latestSolution = null;
+    calculator.beginCycle();
+    Logger.recordOutput("AutoAim/ActiveMode", activeMode.name());
+    Logger.recordOutput("AutoAim/MeasuredCalibrationEnabled", activeCalibration);
+  }
+
+  public static boolean shouldLogTrajectory() {
+    return Constants.currentMode != Constants.Mode.REAL || detailedTrajectory.get();
+  }
+
+  public static ShotCalculator.Solution getLatestSolution() {
+    return latestSolution;
+  }
+
+  /** Uses the configured physical travel range while shooting, otherwise [-180, 180] degrees. */
   public static void updateAutoAim(
+      Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
+    if (updatedThisCycle) return;
+    updatedThisCycle = true;
+    long started = System.nanoTime();
+    RobotState state = RobotState.getInstance();
+    var pose = state.getLatestFieldToRobot();
+    if (pose == null) {
+      state.setAutoAimArcValid(false);
+      return;
+    }
+    if (activeMode != AimMode.LEGACY) {
+      var speeds = state.getLatestRobotRelativeChassisSpeed();
+      double now = Timer.getFPGATimestamp();
+      double delay = releaseDelay.get();
+      Pose2d releasePose =
+          ShotCalculator.predictReleasePose(
+              pose.getValue(),
+              speeds.vxMetersPerSecond,
+              speeds.vyMetersPerSecond,
+              state.getHeadingRateRadPerSec(),
+              MathUtil.clamp(now - pose.getKey(), 0.0, ShotCalculator.MAX_POSE_AGE_SEC)
+                  + (Double.isFinite(delay)
+                      ? MathUtil.clamp(delay, 0.0, ShotCalculator.MAX_RELEASE_DELAY_SEC)
+                      : 0.0));
+      boolean effectiveHub = useHubMode(hubMode, releasePose, state.isRedAlliance());
+      long solveStarted = System.nanoTime();
+      latestSolution =
+          calculator.calculate(
+              new ShotCalculator.Input(
+                  now,
+                  pose.getKey(),
+                  pose.getValue(),
+                  speeds.vxMetersPerSecond,
+                  speeds.vyMetersPerSecond,
+                  state.getHeadingRateRadPerSec(),
+                  turret.getAngle().in(Radians),
+                  resolveTarget(releasePose, state, effectiveHub),
+                  effectiveHub,
+                  isPassCenter(),
+                  allowFullRange,
+                  getLaunchVelConstant(),
+                  delay,
+                  activeMode != AimMode.CALCULATOR_STATIC,
+                  activeCalibration,
+                  state.getPoseResetSequence(),
+                  getTurretOmegaAlpha()));
+      Logger.recordOutput("ShotCalculator/SolveTimeMs", (System.nanoTime() - solveStarted) / 1e6);
+      logSolution(latestSolution, turret, shooter, hood, now - pose.getKey());
+    }
+    if (activeMode == AimMode.LEGACY || activeMode == AimMode.COMPARE) {
+      updateLegacyAutoAim(turret, shooter, hood, hubMode, allowFullRange);
+      if (latestSolution != null) {
+        Logger.recordOutput(
+            "AutoAim/Compare/TurretDeltaDeg",
+            Math.toDegrees(MathUtil.angleModulus(latestSolution.turretAngleRad() - legacyAngle)));
+        Logger.recordOutput(
+            "AutoAim/Compare/HoodDeltaDeg",
+            Math.toDegrees(latestSolution.hoodAngleRad() - legacyHood));
+        Logger.recordOutput(
+            "AutoAim/Compare/RpmDelta",
+            (state.isShooting() ? latestSolution.wheelRpm() : 0.0) - legacyRpm);
+      }
+    } else {
+      var shot = latestSolution;
+      shooter.setVelocity(RPM.of(state.isShooting() ? shot.wheelRpm() : 0.0));
+      double hoodRad = shot.hoodAngleRad();
+      // Preserve the obstacle override even when the calculator is holding a prior finite shot.
+      if (ShotCalculator.inObstacleZone(
+          KinematicsHelper.getTurretPivotTranslation(pose.getValue()).getX()))
+        hoodRad = HoodConstants.kMaxAngle.in(Radians);
+      hood.setAngle(state.isShooting() ? Radians.of(hoodRad) : HoodConstants.kMaxAngle);
+      turret.setAngleWithVelocity(
+          Radians.of(shot.turretAngleRad()), RadiansPerSecond.of(shot.turretVelocityRadPerSec()));
+      state.setAutoAimArcValid(shot.valid());
+      Logger.recordOutput("AutoAim/ValidShot", shot.valid());
+      Logger.recordOutput("AutoAim/TOF", shot.timeOfFlightSec());
+      Logger.recordOutput("AutoAim/DistanceM", shot.distanceM());
+      Logger.recordOutput("AutoAim/TurretDesiredDeg", Math.toDegrees(shot.turretAngleRad()));
+      Logger.recordOutput("AutoAim/HoodAngleCommandedDeg", Math.toDegrees(hoodRad));
+    }
+    Logger.recordOutput("AutoAim/UpdateTimeMs", (System.nanoTime() - started) / 1e6);
+  }
+
+  private static void logSolution(
+      ShotCalculator.Solution shot, Turret turret, Shooter shooter, Hood hood, double age) {
+    double turretError = shot.turretAngleRad() - turret.getAngle().in(Radians);
+    double hoodError = shot.hoodAngleRad() - hood.getAngle().in(Radians);
+    double rpmError = shot.wheelRpm() - shooter.getRPM();
+    Logger.recordOutput("ShotCalculator/Valid", shot.valid());
+    Logger.recordOutput("ShotCalculator/Reason", shot.reason());
+    Logger.recordOutput("ShotCalculator/Converged", shot.converged());
+    Logger.recordOutput("ShotCalculator/Iterations", shot.iterations());
+    Logger.recordOutput("ShotCalculator/PoseAgeSec", age);
+    Logger.recordOutput("ShotCalculator/ReleasePose", shot.releasePose());
+    Logger.recordOutput("ShotCalculator/VirtualTarget", shot.virtualTarget());
+    Logger.recordOutput("ShotCalculator/PivotVelocity", shot.pivotVelocity());
+    Logger.recordOutput("ShotCalculator/TOF", shot.timeOfFlightSec());
+    Logger.recordOutput("ShotCalculator/WheelRpm", shot.wheelRpm());
+    Logger.recordOutput("ShotCalculator/HoodAngleDeg", Math.toDegrees(shot.hoodAngleRad()));
+    Logger.recordOutput("ShotCalculator/TurretAngleDeg", Math.toDegrees(shot.turretAngleRad()));
+    Logger.recordOutput("ShotCalculator/DistanceM", shot.distanceM());
+    Logger.recordOutput("ShotCalculator/MeasuredCalibration", shot.measuredCalibration());
+    Logger.recordOutput("ShotCalculator/TurretVelocityRadPerSec", shot.turretVelocityRadPerSec());
+    Logger.recordOutput("ShotCalculator/TurretErrorDeg", Math.toDegrees(turretError));
+    Logger.recordOutput("ShotCalculator/HoodErrorDeg", Math.toDegrees(hoodError));
+    Logger.recordOutput("ShotCalculator/WheelRpmError", rpmError);
+    boolean turretReady = Math.abs(turretError) <= Math.toRadians(2.0);
+    boolean hoodReady = Math.abs(hoodError) <= Math.toRadians(2.0);
+    boolean rpmReady =
+        shot.wheelRpm() > 100 && Math.abs(rpmError) <= ShooterConstants.kRpmToleranceForReady;
+    Logger.recordOutput("ShotCalculator/Readiness/Turret", turretReady);
+    Logger.recordOutput("ShotCalculator/Readiness/Hood", hoodReady);
+    Logger.recordOutput("ShotCalculator/Readiness/Shooter", rpmReady);
+    Logger.recordOutput(
+        "ShotCalculator/Readiness/All",
+        RobotState.getInstance().isShooting()
+            && shot.valid()
+            && turretReady
+            && hoodReady
+            && rpmReady);
+  }
+
+  /** Original implementation retained for comparison and rollback. */
+  private static void updateLegacyAutoAim(
       Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
     RobotState state = RobotState.getInstance();
     var latestPose = state.getLatestFieldToRobot();
@@ -288,6 +474,9 @@ public final class AutoAim {
     double turretOmega =
         -headingRate * turretOmegaAlpha; // scale counter-rotation feedforward for on-robot tuning
 
+    legacyAngle = desiredTurretRad;
+    legacyHood = hoodAngleRad;
+    legacyRpm = rpm;
     turret.setAngleWithVelocity(Radians.of(desiredTurretRad), RadiansPerSecond.of(turretOmega));
 
     boolean turretClamped =
@@ -375,16 +564,18 @@ public final class AutoAim {
         Logger.recordOutput("AutoAim/HubCenterZM", aimTarget.getZ());
       }
 
-      Translation3d[] traj =
-          buildTrajectory(
-              robotPose, hoodAngleRad, desiredTurretRad, pivotVx, pivotVy, launchSpeedMps);
-      Logger.recordOutput("AutoAim/Trajectory", traj);
-      if (traj.length > 0) {
-        Translation3d end = traj[traj.length - 1];
-        Logger.recordOutput("AutoAim/TrajectoryEndpoint", end);
-        Logger.recordOutput("AutoAim/TrajectoryEndXErrorM", end.getX() - staticTarget.getX());
-        Logger.recordOutput("AutoAim/TrajectoryEndYErrorM", end.getY() - staticTarget.getY());
-        Logger.recordOutput("AutoAim/TrajectoryEndZM", end.getZ());
+      if (shouldLogTrajectory()) {
+        Translation3d[] traj =
+            buildTrajectory(
+                robotPose, hoodAngleRad, desiredTurretRad, pivotVx, pivotVy, launchSpeedMps);
+        Logger.recordOutput("AutoAim/Trajectory", traj);
+        if (traj.length > 0) {
+          Translation3d end = traj[traj.length - 1];
+          Logger.recordOutput("AutoAim/TrajectoryEndpoint", end);
+          Logger.recordOutput("AutoAim/TrajectoryEndXErrorM", end.getX() - staticTarget.getX());
+          Logger.recordOutput("AutoAim/TrajectoryEndYErrorM", end.getY() - staticTarget.getY());
+          Logger.recordOutput("AutoAim/TrajectoryEndZM", end.getZ());
+        }
       }
     }
   }
