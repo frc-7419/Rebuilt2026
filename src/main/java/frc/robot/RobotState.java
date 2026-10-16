@@ -129,15 +129,32 @@ public class RobotState {
     }
   }
 
+  private long poseResetSequence;
+
+  public long getPoseResetSequence() {
+    return poseResetSequence;
+  }
+
   public void resetPose(Pose2d pose) {
+    resetPose(pose, edu.wpi.first.wpilibj.Timer.getFPGATimestamp());
+  }
+
+  public void resetPose(Pose2d pose, double timestamp) {
+    poseResetSequence++;
     estimatedPose = pose;
     fieldToRobot.clear();
-    fieldToRobot.addSample(0.0, pose);
+    fieldToRobot.addSample(timestamp, pose);
   }
 
   public void addOdometryMeasurement(double timestamp, Pose2d pose) {
     fieldToRobot.addSample(timestamp, pose);
     estimatedPose = pose;
+  }
+
+  public void correctLatestPose(Pose2d pose) {
+    var latest = getLatestFieldToRobot();
+    if (latest != null) addOdometryMeasurement(latest.getKey(), pose);
+    else estimatedPose = pose;
   }
 
   public void addDriveMotionMeasurements(

@@ -17,6 +17,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import java.util.function.Consumer;
 
 /** TalonFX implementation of TurretIO. */
 public class TurretIOTalonFX implements TurretIO {
@@ -36,14 +37,13 @@ public class TurretIOTalonFX implements TurretIO {
 
   // Control requests
   private final VoltageOut voltageRequest = new VoltageOut(0);
-  private final PositionVoltage positionVoltageRequest = new PositionVoltage(0.0);
+  private final PositionControl positionRequest;
 
   private boolean positionControl = false;
-  private double goalPositionRotations = 0.0;
-  private double goalVelocityRotPerSec = 0.0;
 
   public TurretIOTalonFX() {
     motor = new TalonFX(TurretConstants.kTurretMotorId);
+    positionRequest = new PositionControl(request -> motor.setControl(request));
     rightEncoder = new CANcoder(TurretConstants.kEncoderRightId);
     leftEncoder = new CANcoder(TurretConstants.kEncoderLeftId);
 
@@ -64,7 +64,7 @@ public class TurretIOTalonFX implements TurretIO {
 
     BaseStatusSignal.setUpdateFrequencyForAll(4.0, motorAppliedVolts, motorCurrent);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(40.0, turretVelocity, turretPosition, rotorPosition);
+    BaseStatusSignal.setUpdateFrequencyForAll(100.0, turretVelocity, turretPosition, rotorPosition);
 
     BaseStatusSignal.setUpdateFrequencyForAll(4.0, rightEncoderPosition, leftEncoderPosition);
   }
@@ -81,6 +81,13 @@ public class TurretIOTalonFX implements TurretIO {
             rightEncoderPosition,
             leftEncoderPosition);
     inputs.connected = status.equals(StatusCode.OK);
+    org.littletonrobotics.junction.Logger.recordOutput(
+        "Turret/PositionAgeSec", turretPosition.getTimestamp().getLatency());
+    org.littletonrobotics.junction.Logger.recordOutput(
+        "Turret/FusedSensorUnlicensed",
+        motor.getFault_UsingFusedCANcoderWhileUnlicensed().getValue());
+    org.littletonrobotics.junction.Logger.recordOutput(
+        "Turret/RemoteSensorInvalid", motor.getFault_RemoteSensorDataInvalid().getValue());
     inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
     inputs.currentAmps = motorCurrent.getValueAsDouble();
     inputs.velocity = turretVelocity.getValue();
@@ -90,13 +97,10 @@ public class TurretIOTalonFX implements TurretIO {
     inputs.leftEncoderPosition = leftEncoderPosition.getValue();
 
     if (positionControl) {
-      positionVoltageRequest.Position = goalPositionRotations;
-      positionVoltageRequest.Velocity = goalVelocityRotPerSec;
+      inputs.requestedPosition =
+          Rotations.of(positionRequest.goalPositionRotations).plus(positionOffset);
+      inputs.requestedVelocity = RotationsPerSecond.of(positionRequest.goalVelocityRotPerSec);
 
-      inputs.requestedPosition = Rotations.of(goalPositionRotations).plus(positionOffset);
-      inputs.requestedVelocity = RotationsPerSecond.of(goalVelocityRotPerSec);
-
-      motor.setControl(positionVoltageRequest.withEnableFOC(true));
     } else {
       inputs.requestedPosition = inputs.turretPosition;
       inputs.requestedVelocity = turretVelocity.getValue();
@@ -117,12 +121,33 @@ public class TurretIOTalonFX implements TurretIO {
   @Override
   public void setState(Angle position, AngularVelocity velocity) {
     positionControl = true;
-    goalPositionRotations = position.minus(positionOffset).in(Rotations);
-    goalVelocityRotPerSec = velocity.in(RotationsPerSecond);
+    positionRequest.setState(position, velocity, positionOffset);
   }
 
   @Override
   public void zeroRotor(Angle offset) {
     positionOffset = offset.minus(turretPosition.getValue());
+  }
+
+  /** Sends position/velocity together at command time; offsets stay in mechanism rotations. */
+  static final class PositionControl {
+    private final Consumer<PositionVoltage> output;
+    private final PositionVoltage request = new PositionVoltage(0.0);
+    private double goalPositionRotations;
+    private double goalVelocityRotPerSec;
+
+    PositionControl(Consumer<PositionVoltage> output) {
+      this.output = output;
+    }
+
+    void setState(Angle position, AngularVelocity velocity, Angle offset) {
+      goalPositionRotations = position.minus(offset).in(Rotations);
+      goalVelocityRotPerSec = velocity.in(RotationsPerSecond);
+      output.accept(
+          request
+              .withPosition(goalPositionRotations)
+              .withVelocity(goalVelocityRotPerSec)
+              .withEnableFOC(true));
+    }
   }
 }
