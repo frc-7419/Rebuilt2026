@@ -52,10 +52,10 @@ public final class Constants {
   public static final Pose2d kHubPoseBlue = new Pose2d(4.620, 4.030, Rotation2d.kZero);
 
   /** Passing target high field */
-  public static final Pose2d kPassingPoseHighBlue = new Pose2d(2.25, 6.25, Rotation2d.kZero);
+  public static final Pose2d kPassingPoseHighBlue = new Pose2d(0, 6, Rotation2d.kZero);
 
   /** Passing target low field */
-  public static final Pose2d kPassingPoseLowBlue = new Pose2d(2.25, 1.25, Rotation2d.kZero);
+  public static final Pose2d kPassingPoseLowBlue = new Pose2d(0, 2, Rotation2d.kZero);
 
   /** Field midpoint */
   public static final double kPassingYThresholdMeters = 4.0;
@@ -70,7 +70,7 @@ public final class Constants {
   public static final double kHubFunnelHeightMeters = 72 * 0.0254;
 
   /** Clearance above rim the ball must pass. FunnelClear Z = rim + this. */
-  public static final double kHubFunnelClearanceMeters = 0.1;
+  public static final double kHubFunnelClearanceMeters = 0.3;
 
   /** When true, sim tracks fuel stored (capacity) and only launches if fuelStored > 0. */
   public static final boolean kSimulateFuelCapacity = true;
@@ -82,4 +82,6 @@ public final class Constants {
    * Max intake rate (fuel per second) when simulating capacity; used for canIntake() rate limit.
    */
   public static final double kMaxIntakeRatePerSecond = 50.0;
+
+  public static final int kLimelightMode = 0;
 }

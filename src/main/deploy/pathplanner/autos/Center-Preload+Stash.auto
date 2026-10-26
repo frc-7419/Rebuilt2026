@@ -43,9 +43,16 @@
                       }
                     },
                     {
-                      "type": "named",
+                      "type": "parallel",
                       "data": {
-                        "name": "AutoShoot"
+                        "commands": [
+                          {
+                            "type": "named",
+                            "data": {
+                              "name": "AutoShoot"
+                            }
+                          }
+                        ]
                       }
                     }
                   ]

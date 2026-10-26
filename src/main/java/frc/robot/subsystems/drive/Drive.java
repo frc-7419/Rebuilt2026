@@ -38,6 +38,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -64,7 +66,7 @@ public class Drive extends SubsystemBase {
               Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
 
   // PathPlanner config constants
-  private static final double ROBOT_MASS_KG = 74.088;
+  private static final double ROBOT_MASS_KG = 56.2455;
   private static final double ROBOT_MOI = 6.883;
   private static final double WHEEL_COF = 1.2;
   private static final RobotConfig PP_CONFIG =
@@ -104,6 +106,10 @@ public class Drive extends SubsystemBase {
       new SwerveDriveOdometry(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
   private ChassisSpeeds desiredFieldRelativeSpeeds = new ChassisSpeeds();
 
+  private Field2d robotField = new Field2d();
+  private double lastOdometryTimestamp = Double.NaN;
+  private long rejectedOdometrySamples;
+
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -129,7 +135,7 @@ public class Drive extends SubsystemBase {
         this::getChassisSpeeds,
         this::runVelocity,
         new PPHolonomicDriveController(
-            new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
+            new PIDConstants(8.0, 0.0, 0.0), new PIDConstants(10.0, 0.0, 0.0)),
         PP_CONFIG,
         () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this);
@@ -158,12 +164,13 @@ public class Drive extends SubsystemBase {
   @Override
   public void periodic() {
     odometryLock.lock(); // Prevents odometry updates while reading data
-    gyroIO.updateInputs(gyroInputs);
-    Logger.processInputs("Drive/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
+    try {
+      gyroIO.updateInputs(gyroInputs);
+      Logger.processInputs("Drive/Gyro", gyroInputs);
+      for (var module : modules) module.periodic();
+    } finally {
+      odometryLock.unlock();
     }
-    odometryLock.unlock();
 
     RobotState robotState = RobotState.getInstance();
     // Stop moving when disabled
@@ -183,7 +190,33 @@ public class Drive extends SubsystemBase {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
+    double[][] moduleTimes = new double[4][];
+    int[] positionCounts = new int[4];
+    for (int m = 0; m < 4; m++) {
+      // Simulation advances each module once per scheduler tick, without the hardware sampler.
+      moduleTimes[m] =
+          Constants.currentMode == Mode.SIM ? sampleTimestamps : modules[m].getOdometryTimestamps();
+      positionCounts[m] = modules[m].getOdometryPositions().length;
+    }
+    int maximumSamples = sampleCount;
+    for (int m = 0; m < 4; m++)
+      maximumSamples = Math.max(maximumSamples, Math.max(moduleTimes[m].length, positionCounts[m]));
+    rejectedOdometrySamples += maximumSamples - sampleCount;
+    int acceptedThisCycle = 0;
     for (int i = 0; i < sampleCount; i++) {
+      if (!OdometrySamples.aligned(
+              i,
+              sampleTimestamps[i],
+              moduleTimes,
+              positionCounts,
+              gyroInputs.connected,
+              gyroInputs.odometryYawTimestamps,
+              gyroInputs.odometryYawPositions.length)
+          || (Double.isFinite(lastOdometryTimestamp)
+              && sampleTimestamps[i] <= lastOdometryTimestamp)) {
+        rejectedOdometrySamples++;
+        continue;
+      }
       // Read wheel positions and deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
@@ -208,21 +241,40 @@ public class Drive extends SubsystemBase {
       }
 
       // Update odometry-only pose (before vision corrections)
-      Pose2d odometryOnlyPose = odometryOnly.update(rawGyroRotation, modulePositions);
-
-      // robotState.addOdometryMeasurement(sampleTimestamps[i], odometryOnlyPose);
+      odometryOnly.update(rawGyroRotation, modulePositions);
 
       // Apply update to pose estimator (includes vision corrections)
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+
+      lastOdometryTimestamp = sampleTimestamps[i];
+      robotState.addOdometryMeasurement(
+          lastOdometryTimestamp, poseEstimator.getEstimatedPosition());
+      acceptedThisCycle++;
     }
 
     Pose2d visionCorrectedPose = poseEstimator.getEstimatedPosition();
-    robotState.addOdometryMeasurement(Timer.getFPGATimestamp(), visionCorrectedPose);
-    // robotState.setEstimatedPose(visionCorrectedPose);
+    robotField.setRobotPose(visionCorrectedPose);
+    Logger.recordOutput("Odometry/AcceptedSamples", acceptedThisCycle);
+    Logger.recordOutput("Odometry/RejectedSamples", rejectedOdometrySamples);
+    Logger.recordOutput(
+        "Odometry/SampleAgeSec",
+        Double.isFinite(lastOdometryTimestamp)
+            ? Timer.getFPGATimestamp() - lastOdometryTimestamp
+            : -1.0);
+    if (Constants.currentMode == Mode.REAL) {
+      var sampler = PhoenixOdometryThread.getInstance();
+      Logger.recordOutput("Odometry/QueueOverflows", sampler.getOverflowCount());
+      Logger.recordOutput("Odometry/SamplerErrors", sampler.getErrorCount());
+      Logger.recordOutput("Odometry/SamplerStatus", sampler.getLastStatus());
+      var bus = TunerConstants.kCANBus.getStatus();
+      Logger.recordOutput("Drive/CANivoreUtilization", bus.BusUtilization);
+      Logger.recordOutput("Drive/CANivoreStatus", bus.Status.toString());
+    }
 
     Pose2d odometryOnlyPose = odometryOnly.getPoseMeters();
     Logger.recordOutput("Odometry/OdometryOnly", odometryOnlyPose);
     Logger.recordOutput("Odometry/VisionCorrected", visionCorrectedPose);
+    SmartDashboard.putData(robotField);
     Logger.recordOutput(
         "Odometry/VisionCorrection",
         new Pose2d(
@@ -233,6 +285,11 @@ public class Drive extends SubsystemBase {
     ChassisSpeeds measuredFieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
             measuredRobotRelativeSpeeds, visionCorrectedPose.getRotation());
+    double headingRateRadPerSec =
+        gyroInputs.connected
+            ? gyroInputs.yawVelocityRadPerSec
+            : measuredRobotRelativeSpeeds.omegaRadiansPerSecond;
+    robotState.setHeadingRateRadPerSec(headingRateRadPerSec);
     double timestamp = Timer.getFPGATimestamp();
     robotState.addDriveMotionMeasurements(
         timestamp,
@@ -242,6 +299,7 @@ public class Drive extends SubsystemBase {
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+    robotState.setGyroDeviceConnected(gyroInputs.connected);
   }
 
   /**
@@ -251,6 +309,8 @@ public class Drive extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds) {
     desiredFieldRelativeSpeeds = speeds;
+    desiredFieldRelativeSpeeds.omegaRadiansPerSecond =
+        -desiredFieldRelativeSpeeds.omegaRadiansPerSecond;
 
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
@@ -365,6 +425,12 @@ public class Drive extends SubsystemBase {
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
     odometryOnly.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    RobotState.getInstance()
+        .resetPose(
+            pose,
+            Double.isFinite(lastOdometryTimestamp)
+                ? lastOdometryTimestamp
+                : Timer.getFPGATimestamp());
   }
 
   /**
@@ -382,6 +448,7 @@ public class Drive extends SubsystemBase {
       Matrix<N3, N1> visionMeasurementStdDevs) {
     poseEstimator.addVisionMeasurement(
         visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
+    RobotState.getInstance().correctLatestPose(poseEstimator.getEstimatedPosition());
   }
 
   /** Returns the maximum linear speed in meters per sec. */

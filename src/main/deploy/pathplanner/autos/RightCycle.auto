@@ -17,9 +17,22 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "StartRightToPickupRight"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartRightToPickupRight"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
@@ -35,7 +48,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 3.0
+                  "waitTime": 5.0
                 }
               },
               {
@@ -43,14 +56,33 @@
                 "data": {
                   "name": "AutoShoot"
                 }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
+                }
               }
             ]
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "RightMinShootToRightDeepPickup"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "RightMinShootToRightDeepPickup"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
@@ -60,9 +92,22 @@
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "AutoShoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
+                }
+              }
+            ]
           }
         }
       ]

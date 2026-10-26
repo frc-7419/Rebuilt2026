@@ -18,8 +18,8 @@ import org.littletonrobotics.junction.Logger;
 
 public final class KinematicsHelper {
   private static final double kGravity = 9.81;
-  private static final int kSweepSamples = 80;
-  private static final int kBisectionIters = 20;
+  private static final int kSweepSamples = 40;
+  private static final int kBisectionIters = 12;
 
   private static final Transform3d kRobotToTurretTransform =
       new Transform3d(
@@ -69,7 +69,7 @@ public final class KinematicsHelper {
       double effectiveDistM,
       double effectiveFunnelClearHeightM) {}
 
-  private static final int kFunnelRetryAttempts = 5;
+  private static final int kFunnelRetryAttempts = 3;
   private static final double kFunnelRetryIncrementM = 0.08;
   private static final double[] kDistOffsetM = {0.0, 0.0254, 0.0508, 0.1016, 0.1524};
   private static final double[] kHubZOffsetM = {0.1016, 0.0508, 0.0};
@@ -90,8 +90,9 @@ public final class KinematicsHelper {
     double minHood = HoodConstants.kMinAngle.in(Radians);
     double maxHood = HoodConstants.kMaxAngle.in(Radians);
 
-    double theta = maxHood;
-    double v0 = fallbackLaunchSpeedMps;
+    double[] guess = ShotWarmstartTable.getInitialGuess(Math.max(0.01, distM));
+    double theta = MathUtil.clamp(guess[0], minHood, maxHood);
+    double v0 = MathUtil.clamp(guess[1], 0.5, 40.0);
     double tof = 0.01;
     boolean funnelMet = false;
     double usedDistM = Math.max(distM, 0.01);
@@ -137,58 +138,67 @@ public final class KinematicsHelper {
         }
         if (funnelMet) break;
       }
+
       if (!funnelMet) {
+        double x = Math.max(distM, 0.01);
+        theta = maxHood;
+
+        // Priority 1: steep shot at max hood through funnel clearance point
         for (double distOffsetM : kDistOffsetM) {
-          double x = Math.max(distM + distOffsetM, 0.01);
-          double yDist = targetHeightM - launchHeightM;
-          double d1 = x - r;
+          double xTry = Math.max(distM + distOffsetM, 0.01);
+          double d1 = xTry - r;
           if (d1 <= 1e-6) continue;
           for (int attempt = 0; attempt < kFunnelRetryAttempts; attempt++) {
             double tryClearM = funnelClearHeightM + attempt * kFunnelRetryIncrementM;
             double hClear = tryClearM - launchHeightM;
-            theta = maxHood;
-            v0 = singleConstraintSpeed(d1, hClear, theta, g);
-            if (v0 <= 0.0 || Double.isNaN(v0)) continue;
-            double yAtHub = heightAtDist(x, theta, v0, g);
-            if (Math.abs(yAtHub - yDist) > 0.03) continue;
-            tof = x / (v0 * Math.cos(theta));
+            double tryV0 = singleConstraintSpeed(d1, hClear, maxHood, g);
+            if (tryV0 <= 0.0 || Double.isNaN(tryV0)) continue;
+            double yAtHub = heightAtDist(xTry, maxHood, tryV0, g);
+            if (Math.abs(yAtHub - (targetHeightM - launchHeightM)) > 0.03) continue;
+            v0 = tryV0;
+            tof = xTry / (v0 * Math.cos(maxHood));
             funnelMet = true;
-            usedDistM = x;
+            usedDistM = xTry;
             usedFunnelClear = tryClearM;
             break;
           }
           if (funnelMet) break;
         }
+
+        // Priority 2: max hood with hub Z offset
         if (!funnelMet) {
-          double x = Math.max(distM, 0.01);
-          theta = maxHood;
           for (double zOff : kHubZOffsetM) {
             double tryTargetZ = targetHeightM + zOff;
             double yDist = tryTargetZ - launchHeightM;
-            v0 = singleConstraintSpeed(x, yDist, theta, g);
-            if (v0 > 0.0 && !Double.isNaN(v0) && Double.isFinite(v0)) {
-              tof = x / (v0 * Math.cos(theta));
+            double tryV0 = singleConstraintSpeed(x, yDist, maxHood, g);
+            if (tryV0 > 0.0 && !Double.isNaN(tryV0) && Double.isFinite(tryV0)) {
+              v0 = tryV0;
+              tof = x / (v0 * Math.cos(maxHood));
               usedDistM = x;
               break;
             }
           }
-          if (tof < 1e-6) {
-            double yDist = targetHeightM - launchHeightM;
-            v0 = singleConstraintSpeed(x, yDist, theta, g);
-            tof = x / (v0 * Math.cos(theta));
-            usedDistM = x;
-          }
+        }
+
+        // Priority 3: bare single-constraint fallback
+        if (!funnelMet && tof < 1e-6) {
+          double yDist = targetHeightM - launchHeightM;
+          v0 = singleConstraintSpeed(x, yDist, maxHood, g);
+          tof = x / (v0 * Math.cos(maxHood));
+          usedDistM = x;
         }
       }
     }
 
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/FunnelConstraintMet", funnelMet);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/HoodAngleDeg", Math.toDegrees(theta));
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/LaunchSpeedMps", v0);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/TOF", tof);
-    Logger.recordOutput("KinematicsHelper/FunnelSolve/DistM", usedDistM);
-    Logger.recordOutput(
-        "KinematicsHelper/FunnelSolve/FunnelClearDeltaM", usedFunnelClear - launchHeightM);
+    if (!funnelMet) {
+      Logger.recordOutput("KinematicsHelper/FunnelSolve/FunnelConstraintMet", false);
+      Logger.recordOutput("KinematicsHelper/FunnelSolve/HoodAngleDeg", Math.toDegrees(theta));
+      Logger.recordOutput("KinematicsHelper/FunnelSolve/LaunchSpeedMps", v0);
+      Logger.recordOutput("KinematicsHelper/FunnelSolve/TOF", tof);
+      Logger.recordOutput("KinematicsHelper/FunnelSolve/DistM", usedDistM);
+      Logger.recordOutput(
+          "KinematicsHelper/FunnelSolve/FunnelClearDeltaM", usedFunnelClear - launchHeightM);
+    }
 
     return new FunnelShotSolution(
         theta, v0, Math.max(tof, 0.01), funnelMet, usedDistM, usedFunnelClear);
@@ -278,6 +288,9 @@ public final class KinematicsHelper {
       double launchSpeedMps,
       double minAngleRad,
       double maxAngleRad) {
+    double[] warmGuess = ShotWarmstartTable.getInitialGuess(horizontalDistMeters);
+    double warmHood = MathUtil.clamp(warmGuess[0], minAngleRad, maxAngleRad);
+
     double bestAngle = minAngleRad;
     double bestError = Double.POSITIVE_INFINITY;
 
@@ -287,10 +300,16 @@ public final class KinematicsHelper {
     double highTof = 0.0;
     int rootsFound = 0;
 
+    var warm = simulateToRange(horizontalDistMeters, launchSpeedMps, warmHood, launchHeightMeters);
+    if (warm.valid) {
+      bestAngle = warmHood;
+      bestError = Math.abs(warm.zAtRange - targetHeightMeters);
+    }
+
     double prevAngle = minAngleRad;
     var prev = simulateToRange(horizontalDistMeters, launchSpeedMps, prevAngle, launchHeightMeters);
     double prevF = prev.zAtRange - targetHeightMeters;
-    if (prev.valid) {
+    if (prev.valid && Math.abs(prevF) < bestError) {
       bestError = Math.abs(prevF);
       bestAngle = prevAngle;
     }
@@ -324,7 +343,6 @@ public final class KinematicsHelper {
         highTof = root.timeOfFlightSec;
         rootsFound++;
       }
-
       prevAngle = angle;
       prev = cur;
       prevF = f;
@@ -342,28 +360,32 @@ public final class KinematicsHelper {
       result = new ShotSolution(clamped, tof, "ClosestInRange");
     }
 
-    Logger.recordOutput("KinematicsHelper/DistM", horizontalDistMeters);
-    Logger.recordOutput("KinematicsHelper/LaunchHeightM", launchHeightMeters);
-    Logger.recordOutput("KinematicsHelper/TargetHeightM", targetHeightMeters);
-    Logger.recordOutput("KinematicsHelper/DeltaHeightM", targetHeightMeters - launchHeightMeters);
-    Logger.recordOutput("KinematicsHelper/LaunchSpeedMps", launchSpeedMps);
-    Logger.recordOutput("KinematicsHelper/MinAngleDeg", Math.toDegrees(minAngleRad));
-    Logger.recordOutput("KinematicsHelper/MaxAngleDeg", Math.toDegrees(maxAngleRad));
-    Logger.recordOutput("KinematicsHelper/RootsFound", rootsFound);
-    Logger.recordOutput("KinematicsHelper/BestErrorM", bestError);
-    Logger.recordOutput(
-        "KinematicsHelper/LowRootDeg", Double.isNaN(lowRoot) ? -999.0 : Math.toDegrees(lowRoot));
-    Logger.recordOutput(
-        "KinematicsHelper/HighRootDeg", Double.isNaN(highRoot) ? -999.0 : Math.toDegrees(highRoot));
     Logger.recordOutput("KinematicsHelper/SolverStatus", result.status());
     Logger.recordOutput("KinematicsHelper/SolvedAngleDeg", Math.toDegrees(result.hoodAngleRad()));
     Logger.recordOutput("KinematicsHelper/SolvedTOF", result.timeOfFlightSec());
-    var verify =
-        simulateToRange(
-            horizontalDistMeters, launchSpeedMps, result.hoodAngleRad(), launchHeightMeters);
-    Logger.recordOutput("KinematicsHelper/VerifyZAtRangeM", verify.zAtRange);
-    Logger.recordOutput("KinematicsHelper/VerifyZErrorM", verify.zAtRange - targetHeightMeters);
-    Logger.recordOutput("KinematicsHelper/VerifyValid", verify.valid);
+
+    if (!"SolvedHighArc".equals(result.status())) {
+      Logger.recordOutput("KinematicsHelper/DistM", horizontalDistMeters);
+      Logger.recordOutput("KinematicsHelper/LaunchHeightM", launchHeightMeters);
+      Logger.recordOutput("KinematicsHelper/TargetHeightM", targetHeightMeters);
+      Logger.recordOutput("KinematicsHelper/DeltaHeightM", targetHeightMeters - launchHeightMeters);
+      Logger.recordOutput("KinematicsHelper/LaunchSpeedMps", launchSpeedMps);
+      Logger.recordOutput("KinematicsHelper/MinAngleDeg", Math.toDegrees(minAngleRad));
+      Logger.recordOutput("KinematicsHelper/MaxAngleDeg", Math.toDegrees(maxAngleRad));
+      Logger.recordOutput("KinematicsHelper/RootsFound", rootsFound);
+      Logger.recordOutput("KinematicsHelper/BestErrorM", bestError);
+      Logger.recordOutput(
+          "KinematicsHelper/LowRootDeg", Double.isNaN(lowRoot) ? -999.0 : Math.toDegrees(lowRoot));
+      Logger.recordOutput(
+          "KinematicsHelper/HighRootDeg",
+          Double.isNaN(highRoot) ? -999.0 : Math.toDegrees(highRoot));
+      var verify =
+          simulateToRange(
+              horizontalDistMeters, launchSpeedMps, result.hoodAngleRad(), launchHeightMeters);
+      Logger.recordOutput("KinematicsHelper/VerifyZAtRangeM", verify.zAtRange);
+      Logger.recordOutput("KinematicsHelper/VerifyZErrorM", verify.zAtRange - targetHeightMeters);
+      Logger.recordOutput("KinematicsHelper/VerifyValid", verify.valid);
+    }
 
     return result;
   }

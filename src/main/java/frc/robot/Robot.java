@@ -17,6 +17,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.AutoAim;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.SimulatedRobotState;
 import frc.robot.subsystems.intake.IntakeConstants;
@@ -87,6 +88,8 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    long loopStarted = System.nanoTime();
+    AutoAim.beginCycle();
     RobotState state = RobotState.getInstance();
     // Optionally switch the thread to high priority to improve loop
     // timing (see the template project documentation for details)
@@ -102,10 +105,8 @@ public class Robot extends LoggedRobot {
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
 
-    // Show in sim and replay simulation
-    // if (Constants.currentMode == Constants.Mode.REAL) {
-    robotContainer.updateShooterTrajectoryVisualization();
-    // }
+    // Detailed trajectories are opt-in on hardware to keep visualization off the control path.
+    if (AutoAim.shouldLogTrajectory()) robotContainer.updateShooterTrajectoryVisualization();
 
     Rotation3d turretYaw =
         new Rotation3d(0, 0, state.getLatestTurretAngle().getValue().in(Radians));
@@ -140,6 +141,12 @@ public class Robot extends LoggedRobot {
                     0, -state.getLatestIntakeWristPosition().getValue().in(Radians), 0)));
     Logger.recordOutput(
         "ComponentPoses", new Pose3d[] {turretPose, hoodPose, intakePose, hopperPose});
+    if (Constants.currentMode == Constants.Mode.REAL) {
+      Logger.recordOutput(
+          "Robot/RioCANUtilization",
+          edu.wpi.first.wpilibj.RobotController.getCANStatus().percentBusUtilization);
+    }
+    Logger.recordOutput("Robot/PeriodicTimeMs", (System.nanoTime() - loopStarted) / 1e6);
   }
 
   /** This function is called once when the robot is disabled. */
@@ -147,6 +154,7 @@ public class Robot extends LoggedRobot {
   public void disabledInit() {
     robotContainer.getVision().useMegatag1();
     LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 1);
+    LimelightHelpers.SetIMUAssistAlpha(VisionConstants.kLimelightFourTable, 0.005);
   }
 
   /** This function is called periodically when disabled. */
@@ -163,7 +171,7 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
-    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 3);
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, Constants.kLimelightMode);
   }
 
   /** This function is called periodically during autonomous. */
@@ -178,7 +186,7 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
-    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, 3);
+    LimelightHelpers.SetIMUMode(VisionConstants.kLimelightFourTable, Constants.kLimelightMode);
   }
 
   /** This function is called periodically during operator control. */

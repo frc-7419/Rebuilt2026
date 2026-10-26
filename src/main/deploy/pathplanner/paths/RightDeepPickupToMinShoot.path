@@ -3,37 +3,42 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.79727611400463,
-        "y": 3.897
+        "x": 6.041200331125827,
+        "y": 1.9804387417218527
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.052240399718917,
-        "y": 1.337964285714286
+        "x": 5.877145994713675,
+        "y": -0.012821445685794242
       },
       "isLocked": false,
       "linkedName": "RightDeepPickup"
     },
     {
       "anchor": {
-        "x": 4.262803672316384,
-        "y": 0.5603481417725982
+        "x": 3.5510430463576164,
+        "y": 0.5574917218543056
       },
       "prevControl": {
-        "x": 7.662471139780064,
-        "y": 0.5816948648103306
+        "x": 5.560801171790861,
+        "y": 0.628345827273803
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "ShootRight"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 180.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 5.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -48,7 +53,7 @@
   "folder": "Shoot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -83.48019824834306
+    "rotation": 91.16913932790733
   },
   "useDefaultConstraints": true
 }

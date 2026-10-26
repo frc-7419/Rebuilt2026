@@ -7,10 +7,10 @@ import static edu.wpi.first.wpilibj2.command.Commands.run;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.RobotState;
@@ -19,22 +19,23 @@ import frc.robot.subsystems.hood.HoodConstants;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.turret.Turret;
-import frc.robot.subsystems.turret.TurretConstants;
 import frc.robot.util.KinematicsHelper;
+import frc.robot.util.ShotCalculator;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
-/** Auto-aim: hub shots (funnel solver) or pass shots (drag solver). */
+/** Auto-aim for stationary and moving shots using one shared calculator. */
 public final class AutoAim {
 
   private static final double kFieldLengthMeters = 16.54;
-  private static final double kLaunchOffsetMeters = 0.28;
+  private static final double kAllianceLineXBlue = 4.5;
+  private static final double kLaunchOffsetMeters = ShotCalculator.LAUNCH_OFFSET_M;
   private static final double kGravity = 9.81;
   private static final double kTrajectoryDt = 0.02;
   private static final int kTrajectoryMaxPts = 128;
-  private static final int kLeadIterations = 3;
 
   private AutoAim() {}
 
@@ -43,227 +44,142 @@ public final class AutoAim {
     updateAutoAim(turret, shooter, hood, hubMode, false);
   }
 
-  /** allowFullRange true = use full 720° while shooting; false = stay in [-180°, 180°] */
+  private static final ShotCalculator calculator = new ShotCalculator();
+  private static final LoggedNetworkNumber releaseDelay =
+      new LoggedNetworkNumber("AutoAim/ReleaseDelaySec", 0.0);
+  private static final LoggedNetworkBoolean measuredCalibration =
+      new LoggedNetworkBoolean("AutoAim/UseMeasuredCalibration", false);
+  private static final LoggedNetworkBoolean detailedTrajectory =
+      new LoggedNetworkBoolean("AutoAim/DetailedTrajectory", false);
+  private static boolean activeCalibration;
+  private static boolean wasEnabled;
+  private static boolean updatedThisCycle;
+  /** Called before CommandScheduler.run(); calibration changes latch only while disabled. */
+  public static void beginCycle() {
+    boolean enabled = DriverStation.isEnabled();
+    if (!enabled && activeCalibration != measuredCalibration.get()) {
+      calculator.resetTracking();
+      activeCalibration = measuredCalibration.get();
+    }
+    if (enabled != wasEnabled || !updatedThisCycle) calculator.resetTracking();
+    wasEnabled = enabled;
+    updatedThisCycle = false;
+    calculator.beginCycle();
+    Logger.recordOutput("AutoAim/ActiveMode", "MOVING");
+    Logger.recordOutput("AutoAim/MeasuredCalibrationEnabled", activeCalibration);
+  }
+
+  public static boolean shouldLogTrajectory() {
+    return Constants.currentMode != Constants.Mode.REAL || detailedTrajectory.get();
+  }
+
+  /** Uses the configured physical travel range while shooting, otherwise [-180, 180] degrees. */
   public static void updateAutoAim(
       Turret turret, Shooter shooter, Hood hood, boolean hubMode, boolean allowFullRange) {
+    if (updatedThisCycle) return;
+    updatedThisCycle = true;
+    long started = System.nanoTime();
     RobotState state = RobotState.getInstance();
-    var latestPose = state.getLatestFieldToRobot();
-    if (latestPose == null) {
+    var pose = state.getLatestFieldToRobot();
+    if (pose == null) {
       state.setAutoAimArcValid(false);
       return;
     }
-
-    Pose2d robotPose = latestPose.getValue();
-    Translation3d staticTarget = resolveTarget(robotPose, state, hubMode);
-
-    Translation2d turretPivotFieldEarly = KinematicsHelper.getTurretPivotTranslation(robotPose);
-    double staticDistM = turretPivotFieldEarly.getDistance(staticTarget.toTranslation2d());
-
-    double velConstant = getLaunchVelConstant();
-    double launchHeight = Constants.hoodBasePose.getZ();
-
-    Translation2d turretPivotField = turretPivotFieldEarly;
-
-    var fieldSpeeds = state.getLatestMeasuredFieldRelativeChassisSpeeds();
-    double robotVx = fieldSpeeds != null ? fieldSpeeds.vxMetersPerSecond : 0.0;
-    double robotVy = fieldSpeeds != null ? fieldSpeeds.vyMetersPerSecond : 0.0;
-    double robotOmega = fieldSpeeds != null ? fieldSpeeds.omegaRadiansPerSecond : 0.0;
-
-    Translation2d pivotOffset = turretPivotField.minus(robotPose.getTranslation());
-    double pivotVx = robotVx - robotOmega * pivotOffset.getY();
-    double pivotVy = robotVy + robotOmega * pivotOffset.getX();
-
-    double maxHoodRad = HoodConstants.kMaxAngle.in(Radians);
-
-    // Iterate to converge on motion-compensated aim
-    Translation3d aimTarget = staticTarget;
-    double hoodAngleRad = 0.0;
-    double tof = 0.0;
-    double launchSpeedMps = 5.0;
-    double lastDistM = 0.0;
-    double lastFunnelRadiusM = 0.0;
-    double lastFunnelClearHeightM = 0.0;
-    double lastEffectiveDistFromLaunchM = 0.0;
-    boolean lastFunnelConstraintMet = true;
-
-    for (int i = 0; i < kLeadIterations; i++) {
-      aimTarget = KinematicsHelper.predictTargetPos(staticTarget, pivotVx, pivotVy, tof);
-      double dist = turretPivotField.getDistance(aimTarget.toTranslation2d());
-
-      if (hubMode) {
-        double scaledFunnelRadius =
-            staticDistM > 1e-6
-                ? Constants.kHubFunnelRadiusMeters * dist / staticDistM
-                : Constants.kHubFunnelRadiusMeters;
-        double funnelClearHeight =
-            Constants.kHubFunnelHeightMeters + Constants.kHubFunnelClearanceMeters;
-        lastDistM = dist;
-        lastFunnelRadiusM = scaledFunnelRadius;
-        lastFunnelClearHeightM = funnelClearHeight;
-        double fallbackSpeedMps = (ShooterConstants.kAutoAimRPM / 60.0) * velConstant;
-        double distFromLaunch = Math.max(0.01, dist - kLaunchOffsetMeters);
-
-        var solved =
-            KinematicsHelper.solveFunnelClearance(
-                distFromLaunch,
-                launchHeight,
-                aimTarget.getZ(),
-                scaledFunnelRadius,
-                funnelClearHeight,
-                fallbackSpeedMps);
-        hoodAngleRad = solved.hoodAngleRad();
-        launchSpeedMps = solved.launchSpeedMps();
-        tof = solved.timeOfFlightSec();
-        lastEffectiveDistFromLaunchM = solved.effectiveDistM();
-        lastFunnelClearHeightM = solved.effectiveFunnelClearHeightM();
-        lastFunnelConstraintMet = solved.funnelConstraintMet();
-      } else {
-        double[] highArc =
-            KinematicsHelper.solveForTargetHighArc(
-                dist, launchHeight, aimTarget.getZ(), maxHoodRad);
-        hoodAngleRad = highArc[0];
-        launchSpeedMps = highArc[1];
-        tof = highArc[2];
-      }
-    }
-
-    double rpm = (launchSpeedMps / velConstant) * 60.0;
-    rpm = Math.max(ShooterConstants.kAutoAimRPMMin, Math.min(ShooterConstants.kAutoAimRPMMax, rpm));
-    if (!hubMode && !isPassCenter()) rpm = Math.min(rpm, getPassRPM());
-    double allianceLineXBlue = 4.5;
-    boolean pastAllianceLine =
-        state.isRedAlliance()
-            ? robotPose.getX() < (kFieldLengthMeters - allianceLineXBlue)
-            : robotPose.getX() > allianceLineXBlue;
-    if (hubMode && pastAllianceLine) {
-      rpm = ShooterConstants.kIdleRPM;
-      hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
-    }
-
-    final double kObstacleZoneXMin = 4.472;
-    final double kObstacleZoneXMax = 5.0;
-    final double kTurretObstacleRadiusM = 0.33;
-    double pivotX = turretPivotField.getX();
-    double blueBandMin = kObstacleZoneXMin - kTurretObstacleRadiusM;
-    double blueBandMax = kObstacleZoneXMax + kTurretObstacleRadiusM;
-    double redBandMin = kFieldLengthMeters - kObstacleZoneXMax - kTurretObstacleRadiusM;
-    double redBandMax = kFieldLengthMeters - kObstacleZoneXMin + kTurretObstacleRadiusM;
-    boolean inObstacleZone =
-        (pivotX >= blueBandMin && pivotX <= blueBandMax)
-            || (pivotX >= redBandMin && pivotX <= redBandMax);
-    if (inObstacleZone) {
-      hoodAngleRad = HoodConstants.kMaxAngle.in(Radians);
-    }
-
-    shooter.setVelocity(RPM.of(rpm));
-
-    hood.setAngle(Radians.of(hoodAngleRad));
-
-    Translation2d aimPoint2d = aimTarget.toTranslation2d();
-    if (hubMode && lastEffectiveDistFromLaunchM > 0) {
-      Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
-      double norm = toHub.getNorm();
-      if (norm >= 1e-6) {
-        double effectivePivotToHub = lastEffectiveDistFromLaunchM + kLaunchOffsetMeters;
-        aimPoint2d = turretPivotField.plus(toHub.times(effectivePivotToHub / norm));
-      }
-    }
-    double desiredRaw =
-        KinematicsHelper.getDesiredTurretAngleRadHalfTurn(robotPose, turretPivotField, aimPoint2d);
-    double minAngleRad = TurretConstants.kAbsoluteMinAngle.in(Radians);
-    double maxAngleRad = TurretConstants.kAbsoluteMaxAngle.in(Radians);
-
-    double desiredTurretRad;
-    if (!allowFullRange) {
-      desiredTurretRad = MathUtil.clamp(desiredRaw, -Math.PI, Math.PI);
-    } else {
-      desiredTurretRad =
-          KinematicsHelper.calculateAzimuthAngleRad(
-              robotPose, turretPivotField, aimPoint2d, turret.getAngle().in(Radians));
-    }
-    desiredTurretRad = MathUtil.clamp(desiredTurretRad, minAngleRad, maxAngleRad);
-
-    double turretOmega = -robotOmega; // counter-rotate to hold field heading
-
-    turret.setAngleWithVelocity(Radians.of(desiredTurretRad), RadiansPerSecond.of(turretOmega));
-
-    double minAngle = TurretConstants.kAbsoluteMinAngle.in(Radians);
-    double maxAngle = TurretConstants.kAbsoluteMaxAngle.in(Radians);
-    boolean turretClamped =
-        (desiredTurretRad - minAngle < 1e-4) || (maxAngle - desiredTurretRad < 1e-4);
-
-    boolean arcValid = (hubMode ? lastFunnelConstraintMet : true) && !turretClamped;
-    state.setAutoAimArcValid(arcValid);
-    Logger.recordOutput("AutoAim/ValidShot", arcValid);
-    Logger.recordOutput("AutoAim/FunnelConstraintMet", hubMode ? lastFunnelConstraintMet : true);
-    Logger.recordOutput("AutoAim/Inputs/RobotPose", robotPose);
-    Logger.recordOutput("AutoAim/Inputs/HubMode", hubMode);
-    Logger.recordOutput(
-        "AutoAim/Inputs/PassMode", isPassCenter() ? PassMode.CENTER.name() : PassMode.SIDES.name());
-    Logger.recordOutput("AutoAim/Inputs/StaticTarget", staticTarget);
-    Logger.recordOutput("AutoAim/Inputs/TurretPivotField", turretPivotField);
-    Logger.recordOutput("AutoAim/Inputs/LaunchSpeedMps", launchSpeedMps);
-    Logger.recordOutput("AutoAim/Inputs/RPM", rpm);
-    Logger.recordOutput("AutoAim/Inputs/StaticDistM", staticDistM);
-    Logger.recordOutput("AutoAim/Inputs/VelConstant", velConstant);
-    Logger.recordOutput("AutoAim/Inputs/LaunchHeightM", launchHeight);
-    Logger.recordOutput("AutoAim/Inputs/RobotVx", robotVx);
-    Logger.recordOutput("AutoAim/Inputs/RobotVy", robotVy);
-    Logger.recordOutput("AutoAim/Inputs/RobotOmega", robotOmega);
-    Logger.recordOutput("AutoAim/Inputs/PivotVx", pivotVx);
-    Logger.recordOutput("AutoAim/Inputs/PivotVy", pivotVy);
-    Logger.recordOutput("AutoAim/AimTarget", aimTarget);
-    Logger.recordOutput("AutoAim/AimPoint", aimPoint2d);
-
-    if (hubMode && lastDistM > 1e-6) {
-      Translation2d toHub = aimTarget.toTranslation2d().minus(turretPivotField);
-      double norm = toHub.getNorm();
-      double effectivePivotToHub =
-          lastEffectiveDistFromLaunchM > 0
-              ? lastEffectiveDistFromLaunchM + kLaunchOffsetMeters
-              : lastDistM;
-      double pivotToFunnel = Math.max(0.0, effectivePivotToHub - lastFunnelRadiusM);
-      Translation2d funnelXY =
-          norm >= 1e-6
-              ? turretPivotField.plus(toHub.div(norm).times(pivotToFunnel))
-              : turretPivotField;
-      Pose3d funnelClearancePose =
-          new Pose3d(funnelXY.getX(), funnelXY.getY(), lastFunnelClearHeightM, new Rotation3d());
-      Pose3d hubCenterPose =
-          new Pose3d(aimPoint2d.getX(), aimPoint2d.getY(), aimTarget.getZ(), new Rotation3d());
-      Logger.recordOutput("AutoAim/FunnelClearancePose", funnelClearancePose);
-      Logger.recordOutput("AutoAim/HubCenterPose", hubCenterPose);
-      Logger.recordOutput("AutoAim/FunnelClearanceZM", lastFunnelClearHeightM);
-      Logger.recordOutput("AutoAim/HubCenterZM", aimTarget.getZ());
-    }
-
-    Logger.recordOutput("AutoAim/DistanceM", turretPivotField.getDistance(aimPoint2d));
-    Logger.recordOutput(
-        "AutoAim/StaticDistanceM", turretPivotField.getDistance(staticTarget.toTranslation2d()));
-    Logger.recordOutput("AutoAim/TOF", tof);
-    Logger.recordOutput("AutoAim/HoodAngleCommandedDeg", Math.toDegrees(hoodAngleRad));
-    Logger.recordOutput("AutoAim/HoodAngleActualDeg", Math.toDegrees(hood.getAngle().in(Radians)));
-    Logger.recordOutput("AutoAim/TurretDesiredDeg", Math.toDegrees(desiredTurretRad));
-    Logger.recordOutput("AutoAim/TurretActualDeg", Math.toDegrees(turret.getAngle().in(Radians)));
-    Logger.recordOutput(
-        "AutoAim/TurretErrorDeg", Math.toDegrees(desiredTurretRad - turret.getAngle().in(Radians)));
-    Logger.recordOutput("AutoAim/TurretClamped", turretClamped);
-    Logger.recordOutput("AutoAim/TurretOmega", turretOmega);
-
-    Translation3d[] traj =
-        buildTrajectory(
-            robotPose, hoodAngleRad, desiredTurretRad, pivotVx, pivotVy, launchSpeedMps);
-    Logger.recordOutput("AutoAim/Trajectory", traj);
-    if (traj.length > 0) {
-      Translation3d end = traj[traj.length - 1];
-      Logger.recordOutput("AutoAim/TrajectoryEndpoint", end);
-      Logger.recordOutput("AutoAim/TrajectoryEndXErrorM", end.getX() - staticTarget.getX());
-      Logger.recordOutput("AutoAim/TrajectoryEndYErrorM", end.getY() - staticTarget.getY());
-      Logger.recordOutput("AutoAim/TrajectoryEndZM", end.getZ());
-    }
+    var speeds = state.getLatestRobotRelativeChassisSpeed();
+    double now = Timer.getFPGATimestamp();
+    double delay = releaseDelay.get();
+    Pose2d releasePose =
+        ShotCalculator.predictReleasePose(
+            pose.getValue(),
+            speeds.vxMetersPerSecond,
+            speeds.vyMetersPerSecond,
+            state.getHeadingRateRadPerSec(),
+            MathUtil.clamp(now - pose.getKey(), 0.0, ShotCalculator.MAX_POSE_AGE_SEC)
+                + (Double.isFinite(delay)
+                    ? MathUtil.clamp(delay, 0.0, ShotCalculator.MAX_RELEASE_DELAY_SEC)
+                    : 0.0));
+    boolean effectiveHub = useHubMode(hubMode, releasePose, state.isRedAlliance());
+    long solveStarted = System.nanoTime();
+    var shot =
+        calculator.calculate(
+            new ShotCalculator.Input(
+                now,
+                pose.getKey(),
+                pose.getValue(),
+                speeds.vxMetersPerSecond,
+                speeds.vyMetersPerSecond,
+                state.getHeadingRateRadPerSec(),
+                turret.getAngle().in(Radians),
+                resolveTarget(releasePose, state, effectiveHub),
+                effectiveHub,
+                isPassCenter(),
+                allowFullRange,
+                getLaunchVelConstant(),
+                delay,
+                true,
+                activeCalibration,
+                state.getPoseResetSequence(),
+                getTurretOmegaAlpha()));
+    Logger.recordOutput("ShotCalculator/SolveTimeMs", (System.nanoTime() - solveStarted) / 1e6);
+    logSolution(shot, turret, shooter, hood, now - pose.getKey());
+    shooter.setVelocity(RPM.of(state.isShooting() ? shot.wheelRpm() : 0.0));
+    double hoodRad = shot.hoodAngleRad();
+    // Preserve the obstacle override even when the calculator is holding a prior finite shot.
+    if (ShotCalculator.inObstacleZone(
+        KinematicsHelper.getTurretPivotTranslation(pose.getValue()).getX()))
+      hoodRad = HoodConstants.kMaxAngle.in(Radians);
+    hood.setAngle(state.isShooting() ? Radians.of(hoodRad) : HoodConstants.kMaxAngle);
+    turret.setAngleWithVelocity(
+        Radians.of(shot.turretAngleRad()), RadiansPerSecond.of(shot.turretVelocityRadPerSec()));
+    state.setAutoAimArcValid(shot.valid());
+    Logger.recordOutput("AutoAim/ValidShot", shot.valid());
+    Logger.recordOutput("AutoAim/TOF", shot.timeOfFlightSec());
+    Logger.recordOutput("AutoAim/DistanceM", shot.distanceM());
+    Logger.recordOutput("AutoAim/TurretDesiredDeg", Math.toDegrees(shot.turretAngleRad()));
+    Logger.recordOutput("AutoAim/HoodAngleCommandedDeg", Math.toDegrees(hoodRad));
+    Logger.recordOutput("AutoAim/UpdateTimeMs", (System.nanoTime() - started) / 1e6);
   }
 
-  /** Command that runs auto-aim every cycle. allowFullRange: true when shooting (use full 720°). */
+  private static void logSolution(
+      ShotCalculator.Solution shot, Turret turret, Shooter shooter, Hood hood, double age) {
+    double turretError = shot.turretAngleRad() - turret.getAngle().in(Radians);
+    double hoodError = shot.hoodAngleRad() - hood.getAngle().in(Radians);
+    double rpmError = shot.wheelRpm() - shooter.getRPM();
+    Logger.recordOutput("ShotCalculator/Valid", shot.valid());
+    Logger.recordOutput("ShotCalculator/Reason", shot.reason());
+    Logger.recordOutput("ShotCalculator/Converged", shot.converged());
+    Logger.recordOutput("ShotCalculator/Iterations", shot.iterations());
+    Logger.recordOutput("ShotCalculator/PoseAgeSec", age);
+    Logger.recordOutput("ShotCalculator/ReleasePose", shot.releasePose());
+    Logger.recordOutput("ShotCalculator/VirtualTarget", shot.virtualTarget());
+    Logger.recordOutput("ShotCalculator/PivotVelocity", shot.pivotVelocity());
+    Logger.recordOutput("ShotCalculator/TOF", shot.timeOfFlightSec());
+    Logger.recordOutput("ShotCalculator/WheelRpm", shot.wheelRpm());
+    Logger.recordOutput("ShotCalculator/HoodAngleDeg", Math.toDegrees(shot.hoodAngleRad()));
+    Logger.recordOutput("ShotCalculator/TurretAngleDeg", Math.toDegrees(shot.turretAngleRad()));
+    Logger.recordOutput("ShotCalculator/DistanceM", shot.distanceM());
+    Logger.recordOutput("ShotCalculator/MeasuredCalibration", shot.measuredCalibration());
+    Logger.recordOutput("ShotCalculator/TurretVelocityRadPerSec", shot.turretVelocityRadPerSec());
+    Logger.recordOutput("ShotCalculator/TurretErrorDeg", Math.toDegrees(turretError));
+    Logger.recordOutput("ShotCalculator/HoodErrorDeg", Math.toDegrees(hoodError));
+    Logger.recordOutput("ShotCalculator/WheelRpmError", rpmError);
+    boolean turretReady = Math.abs(turretError) <= Math.toRadians(2.0);
+    boolean hoodReady = Math.abs(hoodError) <= Math.toRadians(2.0);
+    boolean rpmReady =
+        shot.wheelRpm() > 100 && Math.abs(rpmError) <= ShooterConstants.kRpmToleranceForReady;
+    Logger.recordOutput("ShotCalculator/Readiness/Turret", turretReady);
+    Logger.recordOutput("ShotCalculator/Readiness/Hood", hoodReady);
+    Logger.recordOutput("ShotCalculator/Readiness/Shooter", rpmReady);
+    Logger.recordOutput(
+        "ShotCalculator/Readiness/All",
+        RobotState.getInstance().isShooting()
+            && shot.valid()
+            && turretReady
+            && hoodReady
+            && rpmReady);
+  }
+
+  /** Command that runs auto-aim every cycle. allowFullRange: true when shooting. */
   public static Command autoAim(
       Turret turret,
       Shooter shooter,
@@ -283,12 +199,11 @@ public final class AutoAim {
         hood);
   }
 
-  private static final LoggedNetworkNumber passRPMOverride =
-      new LoggedNetworkNumber("AutoAim/PassRPMOverride", -1.0);
-
   private static final LoggedNetworkNumber launchVelConstant =
       new LoggedNetworkNumber(
           "AutoAim/LaunchVelConstant", ShooterConstants.kFuelLaunchVelMetersPerSecPerRotPerSec);
+  private static final LoggedNetworkNumber turretOmegaAlpha =
+      new LoggedNetworkNumber("AutoAim/TurretOmegaAlpha", 1.0);
 
   public enum PassMode {
     CENTER,
@@ -307,19 +222,26 @@ public final class AutoAim {
 
   private static boolean isPassCenter() {
     PassMode mode = passModeChooser.get();
-    return mode == null || mode == PassMode.SIDES;
-  }
-
-  private static double getPassRPM() {
-    double override = passRPMOverride.get();
-    if (override >= ShooterConstants.kAutoAimRPMMin) {
-      return Math.min(override, ShooterConstants.kAutoAimRPMMax);
-    }
-    return ShooterConstants.kAutoAimRPM;
+    return mode == PassMode.CENTER;
   }
 
   public static double getLaunchVelConstant() {
     return launchVelConstant.get();
+  }
+
+  public static double getTurretOmegaAlpha() {
+    return turretOmegaAlpha.get();
+  }
+
+  public static boolean isPastAllianceLine(Pose2d robotPose, boolean isRedAlliance) {
+    return isRedAlliance
+        ? robotPose.getX() < (kFieldLengthMeters - kAllianceLineXBlue)
+        : robotPose.getX() > kAllianceLineXBlue;
+  }
+
+  public static boolean useHubMode(
+      boolean requestedHubMode, Pose2d robotPose, boolean isRedAlliance) {
+    return requestedHubMode && !isPastAllianceLine(robotPose, isRedAlliance);
   }
 
   private static final double kLaunchVelConstantStep = 0.01;

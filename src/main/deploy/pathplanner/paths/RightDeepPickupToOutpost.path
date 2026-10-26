@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.79727611400463,
-        "y": 3.897
+        "x": 6.041200331125827,
+        "y": 1.9804387417218527
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.052240399718917,
-        "y": 1.337964285714286
+        "x": 6.194065499665153,
+        "y": -0.02719047176129097
       },
       "isLocked": false,
       "linkedName": "RightDeepPickup"
     },
     {
       "anchor": {
-        "x": 4.262803672316384,
-        "y": 0.5603481417725982
+        "x": 3.5510430463576164,
+        "y": 0.5574917218543056
       },
       "prevControl": {
-        "x": 7.626166026659604,
-        "y": 0.46589722369350195
+        "x": 5.854211585686643,
+        "y": 0.5371096993813105
       },
       "nextControl": {
-        "x": 0.8644089353123174,
-        "y": 0.6557828493921054
+        "x": 0.1514416775757108,
+        "y": 0.5875766897211923
       },
       "isLocked": false,
       "linkedName": "ShootRight"
@@ -56,7 +56,7 @@
       "minWaypointRelativePos": 1.0001982868020303,
       "maxWaypointRelativePos": 2.0,
       "constraints": {
-        "maxVelocity": 1.2,
+        "maxVelocity": 0.8,
         "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -75,7 +75,7 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 5.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -90,7 +90,7 @@
   "folder": "Shoot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -83.48019824834306
+    "rotation": 91.16913932790733
   },
   "useDefaultConstraints": true
 }

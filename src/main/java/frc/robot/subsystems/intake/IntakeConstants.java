@@ -12,7 +12,8 @@ public final class IntakeConstants {
   private IntakeConstants() {}
 
   // Motor IDs
-  public static final int kIntakeWheelMotorId = 25;
+  public static final int kIntakeWheelMotorLeftId = 25;
+  public static final int kIntakeWheelMotorRightId = 26;
   public static final int kIntakeWristMotorId = 23;
 
   // Wrist configuration
@@ -36,6 +37,11 @@ public final class IntakeConstants {
 
   static {
     wheelMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    wheelMotorConfig.CurrentLimits.StatorCurrentLimit = 60;
+    wheelMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    wheelMotorConfig.CurrentLimits.SupplyCurrentLimit = 20;
+    wheelMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    wheelMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     wheelSlot0Configs.kP = 0.43;
     wheelSlot0Configs.kI = 0.0;
     wheelSlot0Configs.kD = 0.0;
@@ -50,9 +56,11 @@ public final class IntakeConstants {
   static {
     wristMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     wristMotorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-    wristSlot0Configs.kP = 2.0;
+    wristMotorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    wristMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    wristSlot0Configs.kP = 2.3;
     wristSlot0Configs.kI = 0.0;
-    wristSlot0Configs.kD = 0.3;
+    wristSlot0Configs.kD = 0.31;
     wristSlot0Configs.kV = 0.0;
     wristSlot0Configs.kS = 0.0;
   }

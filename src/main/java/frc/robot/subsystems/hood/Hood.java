@@ -32,6 +32,7 @@ public class Hood extends SubsystemBase {
     RobotState.getInstance().addHoodUpdates(timestamp, inputs.position);
 
     hoodDisconnectedAlert.set(!inputs.connected && Constants.currentMode != Mode.SIM);
+    RobotState.getInstance().setHoodDeviceConnected(inputs.connected);
   }
 
   /** Sets the hood in open loop (volts). Cancels any position hold. */

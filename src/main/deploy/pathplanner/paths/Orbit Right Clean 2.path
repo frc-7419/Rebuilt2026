@@ -1,0 +1,63 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 0.775,
+        "y": 0.486561403508772
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 1.623970760233918,
+        "y": 0.5502105263157886
+      },
+      "isLocked": false,
+      "linkedName": "OrbitRightCleanEnd1"
+    },
+    {
+      "anchor": {
+        "x": 0.510111111111111,
+        "y": 2.8097543859649123
+      },
+      "prevControl": {
+        "x": 0.4570701754385966,
+        "y": 1.4625146198830408
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": -53.98143997200755
+    },
+    {
+      "waypointRelativePos": 0.6824034334763927,
+      "rotationDegrees": -72.64653116854116
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 1.0,
+    "maxAcceleration": 1.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": "RightOrbitAuto",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": false
+}

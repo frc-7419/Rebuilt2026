@@ -48,7 +48,7 @@ deploy {
                     directory = '/home/lvuser/deploy'
                     // Change to true to delete files on roboRIO that no
                     // longer exist in deploy directory on roboRIO
-                    deleteOldFiles = false
+                    deleteOldFiles = true
                 }
             }
         }
@@ -68,6 +68,16 @@ def includeDesktopSupport = true
 task(replayWatch, type: JavaExec) {
     mainClass = "org.littletonrobotics.junction.ReplayWatch"
     classpath = sourceSets.main.runtimeClasspath
+}
+
+tasks.register('generateShotWarmstartTable', JavaExec) {
+    group = 'utility'
+    description = 'Print Java literals for ShotWarmstartTable via KinematicsHelper.solveFunnelClearance'
+    dependsOn compileJava, extractReleaseNative
+    def jniReleaseDir = layout.buildDirectory.dir('jni/release')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'frc.robot.tools.GenerateShotWarmstartTable'
+    systemProperty 'java.library.path', jniReleaseDir.get().asFile.absolutePath
 }
 
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.

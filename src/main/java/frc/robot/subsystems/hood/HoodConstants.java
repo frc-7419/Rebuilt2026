@@ -16,10 +16,10 @@ public final class HoodConstants {
   public static final double kMaxVoltage = 12.0;
   public static final double kDeadband = 0.05;
 
-  public static final double kMotorToHoodGearRatio = (50.0 / 8.0) * (144.0 / 10.0);
+  public static final double kMotorToHoodGearRatio = (54.0 / 10.0) * (144.0 / 10.0);
 
-  public static final Angle kMinAngle = Degrees.of(30.0);
-  public static final Angle kMaxAngle = Degrees.of(64.0);
+  public static final Angle kMinAngle = Degrees.of(45.0);
+  public static final Angle kMaxAngle = Degrees.of(75.0);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
@@ -35,9 +35,9 @@ public final class HoodConstants {
     motorSlot0Configs.kV = 0.0;
     motorSlot0Configs.kS = 0.0;
 
-    double cruiseRotPerSec = 0.5;
+    double cruiseRotPerSec = 1;
     motionMagicConfigs.MotionMagicCruiseVelocity = cruiseRotPerSec * kMotorToHoodGearRatio;
-    motionMagicConfigs.MotionMagicAcceleration = motionMagicConfigs.MotionMagicCruiseVelocity / 0.2;
+    motionMagicConfigs.MotionMagicAcceleration = motionMagicConfigs.MotionMagicCruiseVelocity / 0.4;
   }
 
   public static final double kSimP = 20.0;

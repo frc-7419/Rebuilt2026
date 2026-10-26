@@ -28,7 +28,16 @@
       "linkedName": "Outpost"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.3281413441422597,
+      "rotationDegrees": -179.09788235167616
+    },
+    {
+      "waypointRelativePos": 0.583001002440725,
+      "rotationDegrees": -90.32594186801366
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],

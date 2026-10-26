@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoAim;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.TurretCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.simulation.FuelSim;
 import frc.robot.simulation.FuelSimLaunch;
@@ -193,6 +194,8 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
     autoChooser.addOption(
+        "Turret Simple FF Characterization", TurretCommands.feedforwardCharacterization(turret));
+    autoChooser.addOption(
         "Drive SysId (Quasistatic Forward)",
         drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
     autoChooser.addOption(
@@ -203,8 +206,19 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
+    autoChooser.addOption(
+        "Shooter SysId (Quasistatic Forward)",
+        shooter.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Shooter SysId (Quasistatic Reverse)",
+        shooter.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption(
+        "Shooter SysId (Dynamic Forward)", shooter.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Shooter SysId (Dynamic Reverse)", shooter.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
     controlManager.configureButtonBindings(
-        driver, operator, drive, turret, shooter, hood, intake, serializer);
+        driver, operator, drive, turret, shooter, hood, intake, vision, serializer);
 
     if (Constants.currentMode == Constants.Mode.SIM) {
       fuelSim = new FuelSim("FuelSim");
@@ -299,9 +313,9 @@ public class RobotContainer {
     var fieldSpeeds = state.getLatestMeasuredFieldRelativeChassisSpeeds();
     double robotVx = fieldSpeeds.vxMetersPerSecond;
     double robotVy = fieldSpeeds.vyMetersPerSecond;
-    double robotOmega = fieldSpeeds.omegaRadiansPerSecond;
-    double pivotVx = robotVx - robotOmega * pivotOffset.getY();
-    double pivotVy = robotVy + robotOmega * pivotOffset.getX();
+    double headingRate = state.getHeadingRateRadPerSec();
+    double pivotVx = robotVx - headingRate * pivotOffset.getY();
+    double pivotVy = robotVy + headingRate * pivotOffset.getX();
 
     Translation3d[] traj =
         AutoAim.buildTrajectoryFromState(

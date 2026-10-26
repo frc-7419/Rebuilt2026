@@ -86,7 +86,7 @@ public class SerializerIOTalonFX implements SerializerIO {
 
   @Override
   public void setSerializerOpenLoop(double volts) {
-    serializerMotor.setControl(voltageRequest.withOutput(volts));
+    serializerMotor.setControl(voltageRequest.withOutput(volts).withEnableFOC(true));
   }
 
   @Override
@@ -97,7 +97,7 @@ public class SerializerIOTalonFX implements SerializerIO {
 
   @Override
   public void setFeederOpenLoop(double volts) {
-    feederMotor.setControl(feederVoltageRequest.withOutput(volts));
+    feederMotor.setControl(feederVoltageRequest.withOutput(volts).withEnableFOC(true));
   }
 
   @Override

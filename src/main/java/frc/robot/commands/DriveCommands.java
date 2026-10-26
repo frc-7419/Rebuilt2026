@@ -32,10 +32,10 @@ import java.util.function.Supplier;
 
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
-  private static final double ANGLE_KP = 5.0;
+  private static final double ANGLE_KP = 0.1;
   private static final double ANGLE_KD = 0.4;
-  private static final double ANGLE_MAX_VELOCITY = 8.0;
-  private static final double ANGLE_MAX_ACCELERATION = 20.0;
+  private static final double ANGLE_MAX_VELOCITY = 1.0;
+  private static final double ANGLE_MAX_ACCELERATION = 3.0;
   private static final double FF_START_DELAY = 2.0; // Secs
   private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
@@ -286,5 +286,27 @@ public class DriveCommands {
     double[] positions = new double[4];
     Rotation2d lastAngle = Rotation2d.kZero;
     double gyroDelta = 0.0;
+  }
+
+  public static Command driveFixedVelocity(
+      Drive drive, double xVelocity, double yVelocity, double omega) {
+
+    return Commands.runEnd(
+        () -> {
+          ChassisSpeeds speeds = new ChassisSpeeds(xVelocity, yVelocity, omega);
+
+          boolean isFlipped =
+              DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get() == Alliance.Red;
+
+          drive.runVelocity(
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  speeds,
+                  isFlipped
+                      ? drive.getRotation().plus(Rotation2d.fromDegrees(180))
+                      : drive.getRotation()));
+        },
+        () -> drive.runVelocity(new ChassisSpeeds()),
+        drive);
   }
 }

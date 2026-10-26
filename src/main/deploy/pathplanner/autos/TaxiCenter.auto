@@ -17,15 +17,41 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "StartCenterToCenter"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "StartCenterToCenter"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "AutoShoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoShoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "WiggleIntake"
+                }
+              }
+            ]
           }
         }
       ]

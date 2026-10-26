@@ -27,7 +27,7 @@ public final class TurretConstants {
   public static final double kMaxVoltage = 12.0;
 
   // Maximum rotation range in degreess
-  public static final double kAbsoluteTurretMaxRotations = 600;
+  public static final double kAbsoluteTurretMaxRotations = 500d;
 
   /**
    * The absolute min and max angles are the physical limits of the turret, which is set based on
@@ -68,8 +68,8 @@ public final class TurretConstants {
   public static final int kEncoderRightId = 6;
   public static final int kEncoderLeftId = 7;
 
-  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.854);
-  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.057);
+  public static final Angle rightEncoderZeroOffset = Rotations.of(-0.591797);
+  public static final Angle leftEncoderZeroOffset = Rotations.of(-0.512695);
 
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
@@ -80,12 +80,12 @@ public final class TurretConstants {
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    motorConfig.CurrentLimits.StatorCurrentLimit = 30;
-    motorSlot0Configs.kP = 300;
+    motorConfig.CurrentLimits.StatorCurrentLimit = 80;
+    motorSlot0Configs.kP = 100;
     motorSlot0Configs.kI = 0;
-    motorSlot0Configs.kD = 10.2;
-    motorSlot0Configs.kV = 8.99;
-    motorSlot0Configs.kS = 0.44;
+    motorSlot0Configs.kD = 4;
+    motorSlot0Configs.kV = 8.91129;
+    motorSlot0Configs.kS = 0.22268;
     motorFeedbackConfigs.RotorToSensorRatio = kMotorToRightEncoderGearRatio;
     motorFeedbackConfigs.SensorToMechanismRatio = kRightEncoderToTurretGearRatio;
     motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = kAbsoluteMaxAngle.in(Rotations);

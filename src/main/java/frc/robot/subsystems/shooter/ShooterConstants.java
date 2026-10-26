@@ -8,7 +8,9 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -32,20 +34,52 @@ public final class ShooterConstants {
   public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
   public static final Slot0Configs motorSlot0Configs = motorConfig.Slot0;
 
+  /** kV in V/RPS */
+  public static final double kShooterKv = 0.13;
+
+  public static final double kShooterKp = 0.4;
+  public static final double kShooterKs = 0.467;
+
+  public static final double kShooterBangHandoffFraction = 0.95;
+  public static final double kShooterBangStatorAmps = 120;
+
   static {
     motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     motorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    motorSlot0Configs.kP = 0.63;
+    motorSlot0Configs.kP = kShooterKp;
     motorSlot0Configs.kI = 0;
     motorSlot0Configs.kD = 0;
-    motorSlot0Configs.kV = 0.1369;
-    motorSlot0Configs.kS = 0.2;
+    motorSlot0Configs.kV = kShooterKv;
+    motorSlot0Configs.kS = kShooterKs;
+
+    motorConfig.CurrentLimits.StatorCurrentLimit = 120;
+    motorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    motorConfig.CurrentLimits.SupplyCurrentLimit = 60;
+    motorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
   }
 
-  public static final double kSimP = 1.0;
-  public static final double kSimI = 0.0;
-  public static final double kSimD = 0.0;
+  private static final DCMotor kSimMotor = DCMotor.getKrakenX60Foc(2);
+  private static final double kTwoPi = 2.0 * Math.PI;
+
+  /** Ideal kV for sim */
+  public static final double kSimKv =
+      12.0 / (kSimMotor.freeSpeedRadPerSec * kMotorToShooterGearRatio / kTwoPi);
+
+  public static final double kSimKp = 0.4;
+  public static final double kSimKs = 0;
+
+  public static double computeVelocityVolts(
+      double targetRps, double actualRps, double kv, double kP, double kS) {
+    double negErrorRps = Math.max(0.0, targetRps - actualRps);
+    double volts = kv * targetRps + kP * negErrorRps + kS;
+    return MathUtil.clamp(volts, -kMaxVoltage, kMaxVoltage);
+  }
+
+  public static double computeVelocityVolts(
+      double targetRps, double actualRps, double kv, double kP) {
+    return computeVelocityVolts(targetRps, actualRps, kv, kP, 0.0);
+  }
 
   public static final Angle kHoodZeroed = Degrees.of(0.0);
 
@@ -54,7 +88,7 @@ public final class ShooterConstants {
   public static final Distance kShooterWheelRadius = Meters.of(0.050);
 
   /** Estimated velocity, tune to robot */
-  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.229;
+  public static final double kFuelLaunchVelMetersPerSecPerRotPerSec = 0.172;
 
   /** Default RPM for pass shots */
   public static final double kAutoAimRPM = 3000.0;
@@ -66,5 +100,8 @@ public final class ShooterConstants {
   public static final double kAutoAimRPMMin = 1000.0;
 
   /** Hardware bound */
-  public static final double kAutoAimRPMMax = 3500.0;
+  public static final double kAutoAimRPMMax = 7000.0;
+
+  /** RPM tolerance for "at speed" */
+  public static final double kRpmToleranceForReady = 300.0;
 }

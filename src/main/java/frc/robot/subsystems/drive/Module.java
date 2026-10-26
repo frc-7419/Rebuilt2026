@@ -16,6 +16,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import frc.robot.RobotState;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -57,7 +58,13 @@ public class Module {
     Logger.processInputs("Drive/Module" + Integer.toString(index), inputs);
 
     // Calculate positions for odometry
-    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
+    int sampleCount =
+        Math.min(
+            inputs.odometryTimestamps.length,
+            Math.min(inputs.odometryDrivePositionsRad.length, inputs.odometryTurnPositions.length));
+    Logger.recordOutput(
+        "Drive/Module" + index + "/MissingOdometrySamples",
+        inputs.odometryTimestamps.length - sampleCount);
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
       double positionMeters = inputs.odometryDrivePositionsRad[i] * constants.WheelRadius;
@@ -69,6 +76,10 @@ public class Module {
     driveDisconnectedAlert.set(!inputs.driveConnected);
     turnDisconnectedAlert.set(!inputs.turnConnected);
     turnEncoderDisconnectedAlert.set(!inputs.turnEncoderConnected);
+
+    RobotState.getInstance()
+        .setSwerveModuleDeviceConnections(
+            index, inputs.driveConnected, inputs.turnConnected, inputs.turnEncoderConnected);
   }
 
   /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */

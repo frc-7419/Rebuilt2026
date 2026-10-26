@@ -41,8 +41,8 @@ public class HoodIOTalonFX implements HoodIO {
 
     zeroRotor();
 
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        4.0, motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
+    BaseStatusSignal.setUpdateFrequencyForAll(4.0, motorAppliedVolts, motorCurrent);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, motorVelocity, motorPosition);
   }
 
   @Override
@@ -50,6 +50,7 @@ public class HoodIOTalonFX implements HoodIO {
     var status =
         BaseStatusSignal.refreshAll(motorAppliedVolts, motorCurrent, motorVelocity, motorPosition);
     inputs.connected = status.equals(StatusCode.OK);
+    Logger.recordOutput("Hood/PositionAgeSec", motorPosition.getTimestamp().getLatency());
     inputs.appliedVolts = motorAppliedVolts.getValueAsDouble();
     inputs.currentAmps = motorCurrent.getValueAsDouble();
 

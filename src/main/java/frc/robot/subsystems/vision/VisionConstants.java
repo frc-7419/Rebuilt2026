@@ -17,6 +17,10 @@ public class VisionConstants {
 
   public static String kLimelightFourTable = "limelight-four";
   public static String kLimelightThreeTable = "limelight-three";
+  public static String kLimelightTwoTable = "limelight-two";
+
+  public static final double kMaxMT1SingleTagAmbiguity = 0.20;
+  public static final double kMaxMT1MultiTagAmbiguity = 0.35;
 
   // Camera pose constants (in robot space: [forward, side, up, roll, pitch, yaw])
   public static final double kLimelightFourCameraForwardM = 0.0877665;
@@ -46,5 +50,19 @@ public class VisionConstants {
     0,
     kLimelightThreeCameraPitchDeg,
     kLimelightThreeCameraYawDeg
+  };
+  public static final double kLimelightTwoCameraForwardM = 0.296361;
+  public static final double kLimelightTwoCameraSideM = -0.327042;
+  public static final double kLimelightTwoCameraHeightM = 0.337597;
+  public static final double kLimelightTwoCameraRollDeg = 180;
+  public static final double kLimelightTwoCameraPitchDeg = 10;
+  public static final double kLimelightTwoCameraYawDeg = 75;
+  public static final double[] kLimelightTwoCameraPose = {
+    kLimelightTwoCameraForwardM,
+    kLimelightTwoCameraSideM,
+    kLimelightTwoCameraHeightM,
+    kLimelightTwoCameraRollDeg,
+    kLimelightTwoCameraPitchDeg,
+    kLimelightTwoCameraYawDeg
   };
 }

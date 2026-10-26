@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.681593026620371,
-        "y": 5.33500708912037
+        "x": 3.589750889679717,
+        "y": 4.020500072337963
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.057273075810186,
-        "y": 6.038680049189814
+        "x": 1.965430938869532,
+        "y": 4.724173032407408
       },
       "isLocked": false,
       "linkedName": "StartCenter"
@@ -38,7 +38,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 5.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -53,7 +53,7 @@
   "folder": "Stash",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -51.91680273043146
+    "rotation": 0.0
   },
   "useDefaultConstraints": true
 }
